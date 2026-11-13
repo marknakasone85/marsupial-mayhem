@@ -19,7 +19,7 @@
     }
 
     control(me, opp, dt, world) {
-      const ctrl = { left: false, right: false, down: false, jump: false, shoot: false, jumpP: false, attackP: false, bigP: false, specialP: false, shootP: false, grenadeP: false };
+      const ctrl = { left: false, right: false, down: false, jump: false, shoot: false, jumpP: false, attackP: false, bigP: false, specialP: false, shootP: false, grenadeP: false, joeyP: false, pouchP: false };
       if (!opp || opp.state === 'ko' || me.state === 'ko' || opp.playingDead) return ctrl;
       this.timer -= dt;
       this.blockT -= dt;
@@ -47,7 +47,11 @@
         const aggressive = Math.random() < this.cfg.aggression;
         const spec = MG.SPECIALS[me.def.special];
         const range = spec && spec.range ? spec.range : [0, 150];
-        if (me.canSpecial && dist >= range[0] && dist <= range[1] && Math.random() < this.cfg.special) {
+        if (me.pouch && (me.pouch !== 'heart' ? dist < 260 : me.hp < me.maxHp * 0.5)) {
+          ctrl.pouchP = true;
+        } else if (me.joeyReady && dist < 380 && Math.random() < this.cfg.aggression * 0.35) {
+          ctrl.joeyP = true;
+        } else if (me.canSpecial && dist >= range[0] && dist <= range[1] && Math.random() < this.cfg.special) {
           ctrl.specialP = true;
         } else if (me.canSpecial && Math.random() < this.cfg.special) {
           // special ready but out of range: get into range for it

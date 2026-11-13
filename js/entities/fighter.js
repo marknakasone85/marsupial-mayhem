@@ -91,12 +91,35 @@
       this.hintT = 0;
       this.ctrl = {};
       this.alive = true;
+      this.pouch = null;      // one saved item: 'heart' or a power-up
+      this.joey = opts.noJoey ? null : new MG.Joey(this, opts.joeyLevel || 1, { rescue: opts.joeyRescue !== false });
     }
 
     has(ability) { return (this.def.abilities || []).includes(ability); }
     get box() { return { x: this.x - this.w / 2, y: this.y - this.h, w: this.w, h: this.h }; }
     get canSpecial() { return this.meter >= SPECIAL_COST; }
     get ammo() { return this.weapon ? this.weapon.ammo : 0; }
+    get joeyReady() { return !!this.joey && this.joey.ready; }
+    get joeyOut() { return !!this.joey && this.joey.state !== 'home'; }
+
+    // The pouch saves an item you don't need right now (one at a time). Returns true if it was saved.
+    store(type, world) {
+      if (this.pouch) return false;
+      this.pouch = type;
+      MG.Audio.pickup();
+      world.fx.text(this.x, this.y - this.h - 66, 'SAVED IN THE POUCH!', '#ffd23f', 18); // above Stripes's snack popup
+      return true;
+    }
+    usePouch(world) {
+      if (!this.pouch) {
+        if (this.hintT <= 0) { this.say(world, 'The pouch is empty', '#cccccc', 15); this.hintT = 1.5; }
+        return;
+      }
+      const type = this.pouch;
+      this.pouch = null;
+      if (type === 'heart') { this.heal(40); MG.Audio.heal(); this.say(world, '+40 HP (from the pouch)', '#ff4d6d', 18); }
+      else { this.powerUp(type); MG.Audio.powerUp(); this.say(world, MG.POWER_NAMES[type], MG.Art.POWER_COLORS[type], 22); }
+    }
 
     powerUp(type, secs) { this.powers[type] = secs || MG.POWER_TIME; }
     heal(n) { this.hp = Math.min(this.maxHp, this.hp + n); }
@@ -129,11 +152,18 @@
         if (this.powers[k] <= 0) delete this.powers[k];
       }
 
+      if (this.joey) this.joey.update(dt, world);
       if (this.state === 'ko' || this.state === 'win') {
         this.vx *= Math.pow(0.05, dt);
         this.physics(dt, world);
         return;
       }
+      // the joey and the pouch work whenever you're on your feet
+      if (ctrl && ctrl.joeyP && this.state !== 'hurt' && this.joey && !this.joey.rush(world) && this.hintT <= 0) {
+        this.say(world, this.joey.state === 'home' ? 'Your joey needs a rest' : 'Your joey is busy', '#f6b3c4', 15);
+        this.hintT = 1.2;
+      }
+      if (ctrl && ctrl.pouchP && this.state !== 'hurt') this.usePouch(world);
       if (this.state === 'hurt') {
         this.hitstun -= dt;
         if (this.onGround) this.vx = approach(this.vx, 0, 1400 * dt);
@@ -486,6 +516,7 @@
     }
 
     knockOut(world) {
+      if (this.joey && this.joey.tryRescue(world)) return;
       this.hp = 0;
       this.state = 'ko';
       this.move = null;
@@ -542,6 +573,7 @@
         // art hints for specials and traits
         x1: sp ? JSON.stringify(sp) : 0,
         gl: this.gliding ? 1 : 0, np: this.napping ? 1 : 0, cl: this.cling || 0,
+        jy: this.joey ? this.joey.renderState() : 0, pu: this.pouch || 0,
       };
     }
 
@@ -606,6 +638,8 @@
           glide: !!s.gl || !!sp.glide, dive: !!sp.dive, dead: !!sp.dead, nap: !!s.np, screech: !!sp.screech, tongue: !!sp.tongue,
         }));
       }
+      // the joey: in the pouch, on the back, or out hopping about
+      if (Array.isArray(s.jy)) MG.Art.joey(ctx, def, s, s.jy);
       if (s.ps && (s.ps > 2 || Math.floor(s.t * 8) % 2 === 0)) {
         const r = h * 0.62 + Math.sin(s.t * 6) * 3;
         ctx.fillStyle = 'rgba(82,183,136,0.18)';

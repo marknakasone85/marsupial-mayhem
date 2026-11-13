@@ -46,7 +46,7 @@ check(MG.Audio.muted === false, 'SOUND switches back on');
 // controls: every scheme has every action, and keys reach the "controller state"
 ['P1', 'P2', 'SOLO'].forEach(function (s) {
   var c = MG.Controls[s];
-  check(['left', 'right', 'up', 'down', 'attack', 'big', 'special', 'shoot', 'grenade'].every(function (k) { return c[k] && c[k].length; }),
+  check(['left', 'right', 'up', 'down', 'attack', 'big', 'special', 'shoot', 'grenade', 'joey', 'pouch'].every(function (k) { return c[k] && c[k].length; }),
     s + ' controls have every action');
 });
 key('KeyF', true);
@@ -56,7 +56,7 @@ key('KeyJ', true);
 check(MG.readControls(MG.Controls.SOLO).attackP === true && !MG.readControls(MG.Controls.P1).attackP, 'J attacks when playing alone only');
 frames(1); key('KeyJ', false); frames(1);
 var ids = MG.Touch.buttons.map(function (b) { return b.id; }).join(',');
-check(ids === 'Left,Right,Down,Attack,Jump,Big,Shoot,Special,Grenade,Pause', 'phone touch buttons: ' + ids);
+check(ids === 'Left,Right,Down,Attack,Jump,Big,Shoot,Special,Grenade,Joey,Pouch,Pause', 'phone touch buttons: ' + ids);
 
 // saves use the game's own name, so they never mix with Sloth Slap's
 MG.Save.set('probe', 7);

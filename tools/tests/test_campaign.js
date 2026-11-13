@@ -37,7 +37,7 @@ sc.enemies.forEach(function (e) { if (e.zone === 0) e.alive = false; }); frames(
 check(g0.opened && sc.checkpoint > g0.x, 'clear them and the gate opens: CHECKPOINT');
 
 // knocked out: continue from the checkpoint with your grenades
-p.grenades = 5; p.invuln = 0; p.powers = {};
+p.grenades = 5; p.invuln = 0; p.powers = {}; p.joey.rescueUsed = true; // (the joey's rescue is tested in test_joey.js)
 p.takeHit({ dmg: 999, kbx: 0, kby: 0, stun: 0.1 }, sc); frames(150);
 check(sc.state === 'dead' && !!menuItem(sc.menu, 'Continue from Checkpoint'), 'knocked out: Continue from Checkpoint');
 menuItem(sc.menu, 'Continue from Checkpoint').act(); frames(5);
@@ -109,6 +109,6 @@ key('ArrowRight', true); frames(30); key('ArrowRight', false);
 check(Math.abs(a.x - ax) < 2 && b.x > bx + 40, 'player 2 moves with the arrow keys only');
 check(sc.enemies[0].maxHp > MG.ENEMY_TYPES[sc.enemies[0].type].hp, 'pests are tougher with two players');
 check(b.coat === 1 && sc.hudModel().strips.length === 2, 'player 2 has a sandy coat and their own key strip');
-b.invuln = 0; b.takeHit({ dmg: 999, kbx: 0, kby: 0, stun: 0.1 }, sc); frames(60 * 6);
+b.invuln = 0; b.joey.rescueUsed = true; b.takeHit({ dmg: 999, kbx: 0, kby: 0, stun: 0.1 }, sc); frames(60 * 6);
 check(sc.slots[1].f.state !== 'ko' && sc.state === 'play', 'a knocked-out partner hops back in after 5 seconds');
 done('campaign');

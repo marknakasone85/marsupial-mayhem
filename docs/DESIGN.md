@@ -48,12 +48,35 @@ Tell the story with simple in-engine panels between worlds and on the world map:
 - Grin Isle is on the horizon from the start, sunny and smiling.
 - In co-op everyone sees the same map, and the host picks the level.
 
-## The signature mechanic: the pouch (confirmed by the owner, 13 Nov 2026)
+## The signature mechanic: the pouch (details agreed with the owner, 13 Nov 2026)
 
-Each playable marsupial carries something in its pouch:
-- **A joey sidekick** that pops out to help (a quick extra attack, a revive, or picking up items), and grows stronger through the campaign.
-- **One stored item:** grab a power-up and keep it for later instead of using it at once.
-- **Funny true detail:** numbats have no pouch, so the numbat's joey rides on its back. Wombats, bilbies and Tasmanian devils have backwards-facing pouches, and the art can show it.
+Every playable marsupial has a **joey** (a baby of its own kind) and a **pouch slot** for one saved item.
+
+**Who carries the joey where** (the owner: go by the names; only females have a pouch):
+| In a pouch (mums) | On the back (boys, and the numbat) |
+|---|---|
+| Tank (wombat: the pouch faces backwards), Chompers (devil: backwards too), Zip (sugar glider), Paddles (water opossum: a watertight pouch), Bins (brushtail possum) | Boomer, Stinker, Benny, Earl, Dead Fred, Drowsy (koala males are the ones that bellow), and Stripes (numbats have no pouch at all, so their young really do ride on the mother's back) |
+
+**The joey helps by itself** (no button needed):
+- When a pest is close, it hops out, nips it and hops back.
+- It fetches pickups that are nearby and brings them over.
+- **Once per map, a rescue:** when you're knocked out, your joey gets you back up with some health ("JOEY TO THE RESCUE!").
+
+**The JOEY button** sends it out for a bigger hit (a "Joey Rush" at the nearest pest). Its own helping and the button share one cooldown, shown as a little joey icon with a ring on the HUD.
+
+**The joey grows:** every map a character clears makes that character's joey a level stronger (more damage, a little bigger), up to level 5, saved in the browser.
+
+**The pouch saves an item by itself when you don't need it right now:** a heart picked up at full health, or a power-up grabbed while another power-up is still running, goes into the pouch (one item). The **POUCH button** uses it later. With the pouch full, pickups work straight away as before. Grenades and weapons are never stored (they're carried anyway).
+
+**Duels stay fair:** everyone's joey is level 1 and the pouch starts empty (supply drops can fill it). Joeys nip and fetch in duels, but there is no rescue.
+
+**Controls** (added everywhere: key strip, Pause > Controls, touch buttons):
+| | Player 1 | Player 2 | Gamepad | Phones |
+|---|---|---|---|---|
+| JOEY | Q | [ | Back / View | JOEY button |
+| POUCH | T | ] | RT (shoot stays on RB) | POUCH button (shows the saved item) |
+
+**Wi-Fi:** the joey and the pouch are in the snapshots, and the JOEY and POUCH presses are sent like any other button.
 
 ## Weapons, shop and upgrades (the owner's choices, 13 Nov 2026)
 

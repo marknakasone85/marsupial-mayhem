@@ -503,6 +503,52 @@
     ctx.restore();
   };
 
+  // ---------------------------------------------------------------- joeys
+  // Where on its parent a joey rides, in the parent's own coordinates (feet at 0, 0, facing right).
+  function joeySpot(def) {
+    if (def.art === 'kangaroo') return { back: [-14, -104], pouch: [16, -52], backPouch: [-20, -52], mini: 0.3, h: 150 };
+    const k = LOOKS[def.look];
+    return {
+      back: [-k.rx * 0.25, -(k.L + k.ry * 1.75)], pouch: [k.rx * 0.45, -(k.L + k.ry * 0.55)], backPouch: [-k.rx * 0.62, -(k.L + k.ry * 0.45)],
+      mini: 0.36, h: k.L + k.ry * 2 + k.hr * 2,
+    };
+  }
+
+  // A parent's joey: peeking out of the pouch, out of a backwards pouch, or riding on the back.
+  //  s = the parent's render state; j = [x, y, out?, level, facing, carrying]
+  A.joey = function (ctx, def, s, j) {
+    if (!j) return;
+    const spot = joeySpot(def);
+    const grow = 1 + 0.05 * ((j[3] || 1) - 1);
+    const ps = def.scale * spot.mini * grow;
+    if (j[2]) {
+      // out and about: a mini version of its parent, hopping
+      A.shadow(ctx, j[0], j[1], 12);
+      A.character(ctx, def, { x: j[0], y: j[1], facing: j[4] || 1, scale: ps, t: s.t * 1.3, pose: 'jump', colors: null });
+      return;
+    }
+    if (s.pose === 'ko' || s.hide) return;
+    const how = def.joey || 'back';
+    const f = s.f || 1;
+    const [lx, ly] = spot[how];
+    const px = s.x + f * lx * def.scale, py = s.y + ly * def.scale - (s.pose === 'walk' ? Math.abs(Math.sin((s.walk || 0) * Math.PI)) * 10 * def.scale : 0);
+    if (how === 'back') {
+      // riding on the back, hanging on
+      A.character(ctx, def, { x: px, y: py + 4, facing: f, scale: ps * 0.9, t: s.t, pose: 'idle', colors: null });
+      return;
+    }
+    // peeking out of the pouch: only the head and shoulders show above the pouch's edge
+    const mh = spot.h * ps;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(px - 60, py - mh - 40, 120, mh + 42);
+    ctx.clip();
+    A.character(ctx, def, { x: px, y: py + mh * 0.5, facing: how === 'backPouch' ? -f : f, scale: ps, t: s.t, pose: 'idle', colors: null });
+    ctx.restore();
+    ctx.strokeStyle = '#2b1a14'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(px, py + 1, 9 * def.scale, 3, 0, 0, Math.PI); ctx.stroke();
+  };
+
   // Draws any playable character (portraits, select screen, lobby cards).
   A.character = function (ctx, def, o) {
     const coat = o.colors || null;

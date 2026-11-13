@@ -437,6 +437,7 @@
     get box() { return { x: this.x - 18, y: this.y - 40, w: 36, h: 40 }; }
     update(dt, world) {
       this.t += dt;
+      if (this.carried) return; // a joey is bringing it over
       const floor = world && world.floorBelow ? world.floorBelow(this.x, this.y) : this.y;
       if (this.y < floor) {
         this.vy += 1400 * dt;

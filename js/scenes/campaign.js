@@ -99,8 +99,11 @@
     spawnFighter(slot, x, keep) {
       const def = slot.def;
       const coat = def.coats ? slot.id % def.coats.length : 0;
-      const f = new MG.Fighter(def, x, { team: 'player', mercy: 0.8, coat });
-      if (keep) { f.grenades = keep.grenades; f.weapon = keep.weapon; }
+      const f = new MG.Fighter(def, x, { team: 'player', mercy: 0.8, coat, joeyLevel: MG.joeyLevel(slot.cid) });
+      if (keep) {
+        f.grenades = keep.grenades; f.weapon = keep.weapon; f.pouch = keep.pouch;
+        if (keep.joey && f.joey) f.joey.rescueUsed = keep.joey.rescueUsed; // the rescue is once per map
+      }
       f.tagColor = MG.PLAYER_COLORS[slot.id % 4];
       slot.f = f;
       slot.respawnT = 0;
@@ -451,6 +454,10 @@
       pk.taken = true;
       const say = (text, color, size = 22) => this.fx.text(pk.x, pk.y - 50, text, color, size);
       if (f.has('snackSpeed')) { f.powerUp('snack', 4); this.fx.text(f.x, f.y - f.h - 40, 'TERMITE SNACK! (speed)', '#ffb703', 16); }
+      // the pouch saves what you don't need right now: a heart at full health, a power-up while one is running
+      if (pk.type === 'heart' && f.hp >= f.maxHp && f.store('heart', this)) return;
+      if (MG.POWER_TYPES.includes(pk.type) && MG.POWER_TYPES.some((k) => f.powers[k]) && f.store(pk.type, this)) return;
+
       if (pk.type === 'scrap') {
         f.heal(10);
         MG.Audio.munch();
@@ -489,6 +496,12 @@
       MG.Audio.win();
       MG.Audio.stopMusic();
       this.hpBonus = Math.round((fs.reduce((s, f) => s + Math.max(0, f.hp) / f.maxHp, 0) / fs.length) * 500);
+      // every map cleared makes each character's joey a level stronger (saved in the browser)
+      this.joeyGrew = [];
+      for (const cid of new Set(this.slots.map((s) => s.cid))) {
+        const lv = MG.growJoey(cid);
+        if (lv) this.joeyGrew.push(`${MG.charById(cid).name}'S JOEY GREW! (level ${lv})`);
+      }
       this.score += this.hpBonus;
       const best = MG.Save.get('best', {});
       if (!best[this.L.id] || this.score > best[this.L.id]) {
@@ -501,7 +514,7 @@
       items.push({ label: 'Play Again', act: () => this.restart() });
       if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
       items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
-      this.menu = new MG.MenuList(items, W / 2, 290, { w: 320, h: 42, gap: 8 });
+      this.menu = new MG.MenuList(items, W / 2, 316, { w: 320, h: 40, gap: 7 });
     }
 
     pause() {
@@ -565,6 +578,7 @@
         const f = s.f;
         return {
           tag: `P${s.id + 1}`, color: MG.PLAYER_COLORS[s.id % 4], name: s.def.name, cid: s.cid,
+          joeyLevel: f.joey ? f.joey.level : 0, joeyCool: f.joey ? MG.U.clamp(f.joey.cool / 8, 0, 1) : 0, joeyReady: f.joeyReady, pouch: f.pouch,
           colors: f.coat ? MG.coatFor(s.def, f.coat) : null,
           hp: f.hp, mhp: f.maxHp, meter: f.meter, canSpecial: f.canSpecial, ammo: f.ammo, grenades: f.grenades,
           powers: Object.keys(f.powers).map((k) => [k, f.powers[k]]), respawnT: s.respawnT, ko: f.state === 'ko',
@@ -609,7 +623,7 @@
       MG.CampaignHUD.draw(ctx, this.hudModel());
       MG.CampaignHUD.overlays(ctx, {
         state: this.state, stateT: this.stateT, t: this.t, L: this.L, score: this.score,
-        hpBonus: this.hpBonus, newBest: this.newBest, coop: this.coop, showControls: this.showControls,
+        hpBonus: this.hpBonus, newBest: this.newBest, coop: this.coop, showControls: this.showControls, joeyGrew: this.joeyGrew,
       });
       if (this.menu && !this.showControls) this.menu.draw(ctx);
     }

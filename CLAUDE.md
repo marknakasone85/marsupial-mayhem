@@ -14,7 +14,9 @@ Planning finished on 13 Nov 2026. Later that day the owner answered the open que
 
 **Milestone 2 (home Wi-Fi) was built on 13 Nov 2026:** WI-FI menu, host lobby with join code, join screen with a number pad, friends' view drawn from snapshots, drop-in, reconnect as the same player, Back to Lobby. Tested with 3 players through the whole map, and live in the app's browser against the real share server. Still to do: the family plays it together at home on real phones.
 
-**Milestone 3 (the roster) was built on 13 Nov 2026:** all 12 marsupials with their own moves, specials and traits, a select screen (12 tiles + 2 locked secret tiles), Tournament Duel (vs CPU at 3 levels, 2 players on one keyboard, 3 stages, supply drops) and Wi-Fi battles for 2-4 with CPU fillers. Still to do: the owner tries the characters and says which feel right. Next is Milestone 4 (the pouch) in `docs/BUILD_PLAN.md`; it needs the owner's answer on the male-character pouch question in `docs/DECISIONS.md`. `docs/README.md` lists the plan files.
+**Milestone 3 (the roster) was built on 13 Nov 2026:** all 12 marsupials with their own moves, specials and traits, a select screen (12 tiles + 2 locked secret tiles), Tournament Duel (vs CPU at 3 levels, 2 players on one keyboard, 3 stages, supply drops) and Wi-Fi battles for 2-4 with CPU fillers. Still to do: the owner tries the characters and says which feel right.
+
+**Milestone 4 (the pouch) was built on 13 Nov 2026:** a joey for every character (in the pouch for the mums, a backwards pouch for Tank and Chompers, on the back for the boys and Stripes) that nips pests and fetches pickups by itself, a JOEY button (Joey Rush, one shared cooldown), a rescue once per map, joey levels 1-5 that grow with each map cleared (saved), and the pouch slot (a spare heart or power-up is saved by itself; POUCH uses it). In the campaign, duels (level 1, no rescue) and Wi-Fi. Still to do: the owner tries it. Next is Milestone 5 (weapons, shop and upgrades) in `docs/BUILD_PLAN.md`. `docs/README.md` lists the plan files.
 
 ## Rules the owner cares about
 
@@ -46,7 +48,7 @@ Copy and adapt Sloth Slap's `tools/share_server.py` and `share-on-network.comman
 
 ## Adding a character
 
-1. Add it to `MG.CHARACTERS` in `js/data/characters.js`: build, stats (see the build ranges in `docs/ROSTER.md`), `basic` and `big` (a `style` for the art plus any numbers that differ from the build's defaults), `abilities`, `special`, `specialName`, `trait`, a checked `fact`.
+1. Add it to `MG.CHARACTERS` in `js/data/characters.js`: build, stats (see the build ranges in `docs/ROSTER.md`), `basic` and `big` (a `style` for the art plus any numbers that differ from the build's defaults), `abilities`, `special`, `specialName`, `trait`, a checked `fact`, and `joey` (`'pouch'` for a mum, `'backPouch'` if her pouch faces backwards, `'back'` for the boys and pouchless species).
 2. Art: a kangaroo-family animal uses `art: 'kangaroo'` with `colors`; anything else gets a preset in `MG.Art.LOOKS` (`js/art/critters.js`) and `art: 'critter', look: '<preset>'`. New attack styles go in `A.critter`.
 3. A new special goes in `MG.SPECIALS` (with a `range` for the CPU), a new trait in `MG.ABILITIES`.
 4. The select screen fits 14 tiles (2 rows of 7). Add checks to `tools/tests/test_roster.js`; `test_duel.js` plays every character automatically.
@@ -60,6 +62,8 @@ Copy and adapt Sloth Slap's `tools/share_server.py` and `share-on-network.comman
 - Duels label CPUs "CPU" and number people among people only (P1 = host), on every screen.
 - A poison hit (stink cloud) hurts without stunning, so pests can still run away from it.
 - Every pest still in front of a closed gate comes running when the players get near it (hidden cats come out too). A pig once idled just off the shared co-op screen and the gate never opened.
+- Joeys share one cooldown (`MG.Joey`: nip 5 s, fetch 3.5 s, rush 8 s). The rescue is used up for the whole map: a checkpoint respawn keeps `rescueUsed` and the pouch. Duels make level-1 joeys with no rescue.
+- The pouch saves a heart only at full health and a power-up only while one is already running; grenades and gatling ammo are never saved. With the pouch full, pickups work as normal.
 - Wi-Fi: a friend whose button messages stop for 1.5 s lets go of every key (no ghost walking off), and a guest view replaces each player's state on every update (zero values are left out of snapshots, so old values must not linger).
 
 ## Content guardrails
@@ -79,23 +83,24 @@ Script order lives in `index.html`: plain `<script>` tags, no modules. Everythin
 | Area | Files |
 |---|---|
 | Game loop, 960x540 scaling, host ticker, hit-stop, slow motion, `MG.U` helpers, `MG.Save` (localStorage, keys start `marsupialmayhem.`) | `js/core/engine.js` |
-| Keyboard, gamepad and pointer as virtual keys; control schemes `MG.Controls` (SOLO/P1/P2: left, right, up, down, attack, big, special, shoot, grenade); `MG.readControls` (presses like `attackP`, plus held `shoot` and `jump`); `MG.Menu` | `js/core/input.js` |
-| Phone touch buttons (HIT, BIG, SUPER, SHOOT, BOOM = grenade, JUMP, BLOCK...) on their own layer | `js/core/touch.js` |
+| Keyboard, gamepad and pointer as virtual keys; control schemes `MG.Controls` (SOLO/P1/P2: left, right, up, down, attack, big, special, shoot, grenade, joey, pouch; gamepad RB shoot, LT grenade, Back joey, RT pouch); `MG.readControls` (presses like `attackP`, plus held `shoot` and `jump`); `MG.Menu` | `js/core/input.js` |
+| Phone touch buttons (HIT, BIG, SUPER, SHOOT, BOOM = grenade, JUMP, BLOCK, JOEY, POUCH showing the saved item...) on their own layer | `js/core/touch.js` |
 | Synthesised sounds and step-sequencer music (`SONGS`: `title`, `outback`, `boss`) | `js/core/audio.js` |
 | Particles, popups, shake, blast rings, blood or confetti, slow-motion finisher; `MG.Settings.blood` (ON by default) | `js/core/fx.js` |
 | Art drawn in code: shared helpers (`MG.Art.taper`, `oval`, `shadow`), kangaroos (Boomer, Stinker, Benny), grenade and gatling | `js/art/kangaroo.js` |
-| Art: one rig for the other 9 marsupials (`MG.Art.critter` with a species preset in `MG.Art.LOOKS`), `MG.Art.character` (draws anyone), `MG.Art.portrait`, the burrow mound | `js/art/critters.js` |
+| Art: one rig for the other 9 marsupials (`MG.Art.critter` with a species preset in `MG.Art.LOOKS`), `MG.Art.character` (draws anyone), `MG.Art.portrait`, the burrow mound, `MG.Art.joey` (a mini parent peeking from the pouch, riding on the back or hopping out) | `js/art/critters.js` |
 | Art: rabbits (and Big Buck), feral cats, feral pigs, long grass | `js/art/pests.js` |
 | Art: Outback background, decorations, wooden platforms, crates, gates, finish line, pickups, projectiles | `js/art/outback.js` |
 | Data: the 12 playable characters `MG.CHARACTERS` (build, stats, `basic`/`big` move styles and numbers, `abilities`, `special`, trait, fact, art + look), the 2 locked `MG.SECRETS`, `MG.coatFor`; maps `MG.LEVELS` | `js/data/*.js` |
 | Trait modules `MG.ABILITIES` (hooks: update, physics, jump, hit, speed) run by `MG.Abilities` | `js/entities/abilities.js` |
+| The joey `MG.Joey` (nip, fetch, Joey Rush, rescue, `renderState` for Wi-Fi) and saved joey levels `MG.joeyLevel` / `MG.growJoey` | `js/entities/joey.js` |
 | The 12 specials `MG.SPECIALS` (start, update, land, pose, CPU range) | `js/entities/specials.js` |
 | CPU opponent `MG.CPU` (3 levels: JOEY, CHAMPION, LEGEND) | `js/entities/ai.js` |
-| Fighter `MG.Fighter` (each character's attack and big attack, combos, specials and traits through the modules above, grenade pin and punt, gatling, power-ups, `renderState`/`drawState`) and `MG.Projectile` (gumnuts, shockwaves, cubes that become walls, stink clouds, waves, wallabies, bins, the tongue) | `js/entities/fighter.js` |
+| Fighter `MG.Fighter` (each character's attack and big attack, combos, specials and traits through the modules above, grenade pin and punt, gatling, power-ups, the joey and the pouch (`store`, `usePouch`), `renderState`/`drawState`) and `MG.Projectile` (gumnuts, shockwaves, cubes that become walls, stink clouds, waves, wallabies, bins, the tongue) | `js/entities/fighter.js` |
 | The kick grenade `MG.Grenade` (fuse, bounces, kicks, blast that never hurts players) | `js/entities/grenade.js` |
 | Pests `MG.Enemy` (behaviours: swarmer, ambusher, charger, boss), `MG.Crate`, `MG.Pickup` | `js/entities/enemy.js` |
 | Wi-Fi client `MG.Net` (header `X-Mayhem`; `rejoin()` sends the old token so the relay gives back the same player number) and `MG.Sync`: records effects and sounds for guests, `snapshot(scene)` (the campaign, ~1-2 KB, zero values left out), `sendInput` (held left/right/down/shoot/jump + presses in `MG.PRESS_KEYS`) | `js/net/*.js` |
-| Drawing helpers, controls page, key strip, `MG.MenuList` | `js/scenes/ui.js` |
+| Drawing helpers, controls page, key strip (compact = labels under the keys, for two strips side by side), `UI.pouchItem`, `MG.MenuList` | `js/scenes/ui.js` |
 | Title screen `MG.MenuScene` (PLAY, 2 PLAYERS, WI-FI, CONTROLS, BLOOD, SOUND) | `js/scenes/menu.js` |
 | Campaign `MG.CampaignScene` (the world interface, camera, gates by zone, boss arena, pause, win/lose; with `net: true` it hosts: `onNet`, `netInput`, drop-in, snapshots ~30/s, Back to Lobby), `MG.drawCampaignWorld` (shared by host and guests) and the HUD `MG.CampaignHUD` | `js/scenes/campaign.js`, `campaign_hud.js` |
 | Wi-Fi screens: `MG.WifiScene` (HOST / JOIN), `MG.LobbyScene` (host: join code, player cards, START), `MG.JoinScene` (code pad, I'm ready) | `js/scenes/lobby.js` |
@@ -108,7 +113,7 @@ Script order lives in `index.html`: plain `<script>` tags, no modules. Everythin
 ## Testing
 
 - **Automated:** `tools/run-tests.sh` (a few seconds). It syntax-checks every game file, runs `tools/tests/test_*.js` in macOS's built-in JavaScriptCore with a fake browser (`harness.js`), and checks the share server's safety rules (`test_server.py`). Add checks with `check(ok, 'what')` and add new test names to the `for t in ...` list.
-  Tests: `boot` (title screen, settings, Wi-Fi rules), `boomer` (every move, the grenade, the gatling, power-ups, each pest), `campaign` (map, gates, checkpoints, Big Buck, win/lose, blood, pause, touch, 2 players), `solo` (a bot plays the map 3 times and must finish most runs), `roster` (all 12 characters: every attack, big attack, special and trait, every pose drawn), `duel` (CPU vs CPU with every character, fair fights, supply drops, rounds, 2 players, the select flow, a Wi-Fi battle with a guest view), `coop` (3 Wi-Fi players through every map with every snapshot drawn by a guest view, update sizes, lobby, drop-in, leave, reconnect, the friend's side, the WI-FI menu), and `test_server.py` (the share server's file and address rules, plus a live run of the relay: join code, lockout, tokens, size cap, one host, rejoin as the same player, full at 4).
+  Tests: `boot` (title screen, settings, Wi-Fi rules), `boomer` (every move, the grenade, the gatling, power-ups, each pest), `campaign` (map, gates, checkpoints, Big Buck, win/lose, blood, pause, touch, 2 players), `solo` (a bot plays the map 3 times and must finish most runs), `roster` (all 12 characters: every attack, big attack, special and trait, every pose drawn), `joey` (who carries their joey where, nip, fetch, Joey Rush, rescue once per map, growing, duels, the pouch rules, the controls everywhere, every joey drawn, Wi-Fi presses and snapshots), `duel` (CPU vs CPU with every character, fair fights, supply drops, rounds, 2 players, the select flow, a Wi-Fi battle with a guest view), `coop` (3 Wi-Fi players through every map with every snapshot drawn by a guest view, update sizes, lobby, drop-in, leave, reconnect, the friend's side, the WI-FI menu), and `test_server.py` (the share server's file and address rules, plus a live run of the relay: join code, lockout, tokens, size cap, one host, rejoin as the same player, full at 4).
 - **Live Wi-Fi test in the app's browser:** start `python3 tools/share_server.py --local --port 8790 --hours 1` in a Terminal tab (this computer only, so it never clashes with the family's port 8020), open `http://localhost:8790` (host) and `http://127.0.0.1:8790`, `http://mayhem.localhost:8790` (friends: separate addresses keep their saves apart), call `MG.Engine.startHostTicker()` in each tab (hidden tabs don't animate), and close the Terminal tab afterwards.
 - **Visual:** `.claude/launch.json` has `marsupial-mayhem` (`share_server.py --local` on port 8790, this computer only). The app's preview tool reads `launch.json` from the folder the session **started** in (moving a session to this folder later didn't change that), so start Claude sessions in this folder. A session started in another game's folder must never add this game to that folder's `launch.json`. Without the preview, headless Chrome can screenshot the double-clicked page: load the game scripts in a scratch page, drive `MG.Engine.frame()` yourself, then keep redrawing the frozen frame (a window resize clears the canvas).
 - A hidden preview pane doesn't animate: drive scenes with `MG.Engine.frame(t)` or the host ticker.

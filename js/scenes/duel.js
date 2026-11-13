@@ -29,6 +29,15 @@
     extras(ctx, s, x, y, align) {
       const r = align === 'right';
       let ix = r ? x - 10 : x + 10;
+      // the joey (pink when ready) and the pouch's saved item
+      ctx.fillStyle = s.joeyReady ? '#f6b3c4' : 'rgba(246,179,196,0.3)';
+      ctx.beginPath(); ctx.arc(ix, y, 6, 0, Math.PI * 2); ctx.fill();
+      UI.text(ctx, 'JOEY', r ? ix - 10 : ix + 10, y, 11, s.joeyReady ? '#f6b3c4' : '#a98a92', r ? 'right' : 'left');
+      ix += r ? -52 : 52;
+      if (s.pouch) {
+        UI.pouchItem(ctx, s.pouch, ix, y, 7);
+        ix += r ? -22 : 22;
+      }
       if (s.grenades > 0) {
         MG.Art.grenade(ctx, ix, y, { r: 6, pin: true });
         UI.text(ctx, 'x' + s.grenades, r ? ix - 10 : ix + 10, y, 12, '#9ef01a', r ? 'right' : 'left');
@@ -161,7 +170,8 @@
       const n = this.slots.length;
       this.slots.forEach((s, i) => {
         const x = n === 2 ? (i === 0 ? 260 : W - 260) : 140 + i * ((W - 280) / Math.max(1, n - 1));
-        s.f = new MG.Fighter(s.def, x, { team: 'd' + s.id, facing: x < W / 2 ? 1 : -1, autoFace: true, grenades: 0, coat: coatIndex(this.slots, s) });
+        s.f = new MG.Fighter(s.def, x, { team: 'd' + s.id, facing: x < W / 2 ? 1 : -1, autoFace: true, grenades: 0, coat: coatIndex(this.slots, s),
+          joeyLevel: 1, joeyRescue: false }); // fair fights: level-1 joeys, no rescue
         s.f.tag = this.tagOf(s);
         s.f.tagColor = this.colorOf(s);
         s.ghost = 1;
@@ -364,6 +374,9 @@
       pk.taken = true;
       const say = (text, color) => this.fx.text(pk.x, pk.y - 50, text, color, 20);
       if (f.has('snackSpeed')) f.powerUp('snack', 4);
+      // the pouch saves what you don't need right now: a heart at full health, a power-up while one is running
+      if (pk.type === 'heart' && f.hp >= f.maxHp && f.store('heart', this)) return;
+      if (MG.POWER_TYPES.includes(pk.type) && MG.POWER_TYPES.some((k) => f.powers[k]) && f.store(pk.type, this)) return;
       if (pk.type === 'heart') { f.heal(30); MG.Audio.heal(); say('+30 HP', '#ff4d6d'); }
       else if (pk.type === 'grenades') { f.giveGrenades(2); MG.Audio.ammo(); say('+2 GRENADES', '#9ef01a'); }
       else if (pk.type === 'gatling') { f.giveWeapon('gatling', 50); MG.Audio.powerUp(); say('GUMNUT GATLING!', '#ffb703'); }
@@ -473,6 +486,7 @@
         sides: this.slots.map((s) => ({
           tag: this.tagOf(s), color: this.colorOf(s), name: s.def.name, hp: Math.max(0, s.f.hp), mhp: s.f.maxHp, ghost: s.ghost,
           meter: s.f.meter, canSpecial: s.f.canSpecial, ammo: s.f.ammo, grenades: s.f.grenades, wins: s.wins, ko: s.f.state === 'ko',
+          joeyReady: s.f.joeyReady, pouch: s.f.pouch,
         })),
       };
     }
@@ -532,7 +546,7 @@
       sub: scene.state === 'matchEnd' && scene.matchWinner ? `${scene.matchWinner.def.name} is the Marsupial Champion!` : 0,
       pl: scene.slots.map((s) => this.compact(Object.assign(s.f.renderState(), {
         id: s.id, tag: scene.tagOf(s), tc: scene.colorOf(s), hp: Math.max(0, Math.round(s.f.hp)), mhp: s.f.maxHp,
-        gh: r2(s.ghost), me: Math.round(s.f.meter), cs: s.f.canSpecial ? 1 : 0, am: s.f.ammo, gr: s.f.grenades,
+        gh: r2(s.ghost), me: Math.round(s.f.meter), cs: s.f.canSpecial ? 1 : 0, am: s.f.ammo, gr: s.f.grenades, jr: s.f.joeyReady ? 1 : 0,
         wins: s.wins, cpu: s.cpu ? 1 : 0,
       }))),
       pr: scene.projectiles.map(this.projState),

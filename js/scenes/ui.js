@@ -69,19 +69,21 @@
         ['Attack', 'F', ', (comma)', 'X'],
         ['Big Attack', 'G', '. (period)', 'Y'],
         ['Special', 'H', '/ (slash)', 'B'],
-        ['Shoot (hold)', 'R', '; (semicolon)', 'RB / RT'],
+        ['Shoot (hold)', 'R', '; (semicolon)', 'RB'],
         ['Grenade, then kick it', 'E', "' (quote)", 'LT'],
+        ['Joey (send it out)', 'Q', '[', 'Back / View'],
+        ['Pouch (use saved item)', 'T', ']', 'RT'],
         ['Pause', 'Esc / P', 'Esc / P', 'Start'],
       ];
       rows.forEach((r, i) => {
-        const y = 202 + i * 25;
+        const y = 196 + i * 21.5;
         const col = i === 0 ? '#9bf6ff' : '#ffffff';
-        UI.text(ctx, r[0], 140, y, 17, '#ffd23f');
+        UI.text(ctx, r[0], 140, y, 16, '#ffd23f');
         UI.text(ctx, r[1], 400, y, 17, col, 'center');
         UI.text(ctx, r[2], 570, y, 17, col, 'center');
         UI.text(ctx, r[3], 735, y, 17, col, 'center');
       });
-      UI.text(ctx, 'Playing alone? Arrows + J (attack) / K (big) / L (special) / ; (shoot) / \' (grenade) work too.', W / 2, 460, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Playing alone? Arrows + J (attack) K (big) L (special) ; (shoot) \' (grenade) [ (joey) ] (pouch) work too.', W / 2, 460, 14, '#cccccc', 'center');
       UI.text(ctx, 'Grenade: pull the pin and drop it, then kick it with attack, big attack or the grenade key.', W / 2, 478, 14, '#cccccc', 'center');
       UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 496, 14, '#cccccc', 'center');
       UI.text(ctx, 'Press any key to go back.', W / 2, 512, 13, '#9bf6ff', 'center');
@@ -90,17 +92,16 @@
     // Key-hint strip along the bottom edge. Lights up the move the player is doing.
     //  opts.layout: 'wasd' | 'arrows' | 'pad' (solo, follows the keys in use) or 'p1' | 'p2' (duel)
     //  opts.x + opts.align ('left'|'right') to place it; centered otherwise
-    //  opts.compact: short labels, no pause key (for two strips side by side)
+    //  opts.compact: for two strips side by side: each label sits under its key, no pause key
     //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
     keyStrip(ctx, player, t, opts = {}) {
       const LAYOUTS = {
-        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade'], [['Esc'], 'pause']],
-        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'attack'], [['K'], 'big'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['Esc'], 'pause']],
-        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'attack'], [['Y'], 'big'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Start'], 'pause']],
-        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade']],
-        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'attack'], [['.'], 'big'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade']],
+        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch'], [['Esc'], 'pause']],
+        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'attack'], [['K'], 'big'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['['], 'joey'], [[']'], 'pouch'], [['Esc'], 'pause']],
+        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'attack'], [['Y'], 'big'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Back'], 'joey'], [['RT'], 'pouch'], [['Start'], 'pause']],
+        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch']],
+        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'attack'], [['.'], 'big'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['['], 'joey'], [[']'], 'pouch']],
       };
-      const SHORT = { attack: 'hit', special: 'spec', grenade: 'nade', move: '' };
       const compact = !!opts.compact;
       let items = LAYOUTS[opts.layout || MG.Input.lastDevice] || LAYOUTS.wasd;
       if (compact) items = items.filter(([, label]) => label !== 'pause');
@@ -110,52 +111,68 @@
         special: kind === 'special',
         shoot: !!player.firing,
         grenade: kind === 'pin' || kind === 'punt',
+        joey: !!player.joeyOut,
         block: player.state === 'block', jump: !player.onGround && player.state !== 'ko',
       };
-      const fs = compact ? 11 : 12;
-      const font = `bold ${fs}px ${FONT}`;
-      ctx.font = font;
-      const capW = (k) => Math.max(compact ? 16 : 20, ctx.measureText(k).width + (compact ? 8 : 10));
-      const gap = compact ? 6 : 14;
-      const shown = (label) => (compact && SHORT[label] !== undefined ? SHORT[label] : label);
-      const tagW = opts.tag ? ctx.measureText(opts.tag).width + 10 : 0;
-      let total = tagW;
-      for (const [keys, label] of items) {
-        for (const k of keys) total += capW(k) + 3;
-        total += ctx.measureText(shown(label)).width + 5 + gap;
-      }
-      total -= gap;
-      const y = MG.H - 20;
+      const fs = compact ? 11 : 12, lfs = compact ? 9 : 12;
+      const font = `bold ${fs}px ${FONT}`, lfont = `bold ${lfs}px ${FONT}`;
+      const textW = (str, f) => { ctx.font = f; return ctx.measureText(str).width; };
+      const capW = (k) => Math.max(compact ? 16 : 20, textW(k, font) + (compact ? 8 : 10));
+      const capH = compact ? 16 : 20;
+      const gap = compact ? 8 : 10;
+      // each item: its key caps, then the label beside them (or under them when compact)
+      const sizes = items.map(([keys, label]) => {
+        const kw = keys.reduce((a, k) => a + capW(k) + 3, 0) - 3;
+        const lw = textW(label, lfont);
+        return { kw, w: compact ? Math.max(kw, lw) : kw + 5 + lw };
+      });
+      const tagW = opts.tag ? textW(opts.tag, font) + 10 : 0;
+      const total = tagW + sizes.reduce((a, m) => a + m.w, 0) + gap * (items.length - 1);
+      const h = compact ? 34 : 28;
+      const y = MG.H - (compact ? 19 : 20);
       let x = opts.x === undefined ? (MG.W - total) / 2 : opts.align === 'right' ? opts.x - total : opts.x;
       ctx.fillStyle = 'rgba(20,10,30,0.55)';
       ctx.beginPath();
-      ctx.roundRect(x - 10, y - 14, total + 20, 28, 14);
+      ctx.roundRect(x - 10, y - h / 2, total + 20, h, 14);
       ctx.fill();
       if (opts.tag) {
         UI.text(ctx, opts.tag, x, y, fs, opts.tagColor || '#ffd23f');
         x += tagW;
       }
-      for (const [keys, label] of items) {
+      items.forEach(([keys, label], i) => {
+        const m = sizes[i];
         const ready = label === 'special' && player.canSpecial;
-        const empty = (label === 'shoot' && !(player.ammo > 0)) || (label === 'grenade' && !(player.grenades > 0));
+        const empty = (label === 'shoot' && !(player.ammo > 0)) || (label === 'grenade' && !(player.grenades > 0))
+          || (label === 'pouch' && !player.pouch) || (label === 'joey' && player.joeyReady === false);
         const on = active[label];
         const glow = ready && Math.floor(t * 4) % 2 === 0;
+        const ky = compact ? y - 6 : y;
+        let kx = compact ? x + (m.w - m.kw) / 2 : x;
         for (const k of keys) {
           const w = capW(k);
           ctx.fillStyle = on ? '#ffd23f' : glow ? '#00f5d4' : empty ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.88)';
           ctx.beginPath();
-          ctx.roundRect(x, y - 10, w, 20, 5);
+          ctx.roundRect(kx, ky - capH / 2, w, capH, 5);
           ctx.fill();
           ctx.fillStyle = 'rgba(0,0,0,0.25)';
-          ctx.fillRect(x + 2, y + 7, w - 4, 2);
-          UI.text(ctx, k, x + w / 2, y, fs, '#2b193d', 'center');
-          x += w + 3;
+          ctx.fillRect(kx + 2, ky + capH / 2 - 3, w - 4, 2);
+          UI.text(ctx, k, kx + w / 2, ky, fs, '#2b193d', 'center');
+          kx += w + 3;
         }
-        x += 2;
-        const text = shown(label);
-        UI.text(ctx, text, x, y, fs, on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#999999' : '#ffffff');
-        ctx.font = font;
-        x += ctx.measureText(text).width + gap + 3;
+        const color = on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#999999' : '#ffffff';
+        if (compact) UI.text(ctx, label, x + m.w / 2, y + 10, lfs, color, 'center');
+        else UI.text(ctx, label, kx + 2, y, fs, color);
+        x += m.w + gap;
+      });
+    },
+
+    // The pouch's saved item as a small icon (HUDs): a heart, or a power-up's colour and symbol.
+    pouchItem(ctx, type, x, y, r = 8) {
+      if (type === 'heart') { ctx.save(); ctx.translate(x, y + r * 1.1); ctx.scale(r / 16, r / 16); MG.Art.heart(ctx, 0, 0, 0); ctx.restore(); }
+      else if (type) {
+        ctx.fillStyle = MG.Art.POWER_COLORS[type] || '#ffffff';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        MG.Art.powerIcon(ctx, type, x, y, r * 0.62);
       }
     },
 

@@ -19,6 +19,10 @@ Where the plan left room, these are the choices made (the owner can change any o
 - **Dead Fred:** Play Dead lasts 1.6 s (nothing can hurt him, pests and CPUs ignore him), then a surprise chomp.
 - **Zip's Dive Bomb** aims at the nearest pest or opponent.
 
+## Joeys (Milestone 4)
+
+Mums with a pouch: Tank (backwards pouch), Chompers (backwards pouch), Zip, Paddles (watertight pouch) and Bins. Joey on the back: the boys Boomer, Stinker, Benny, Earl, Dead Fred and Drowsy, and Stripes (numbats have no pouch). Chosen by the owner on 13 Nov 2026 ("go by the names"); details in `DESIGN.md`.
+
 ## Stat starting points
 
 These use Sloth Slap's stat model; tune them by playtesting.

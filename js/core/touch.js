@@ -20,6 +20,8 @@
     { id: 'Shoot', corner: 'br', dx: 3.3, dy: 3.1, r: 0.85, label: 'SHOOT', color: '#ffb703' },
     { id: 'Special', corner: 'br', dx: 5.9, dy: 0.8, r: 0.75, label: 'SUPER', color: '#00f5d4' },
     { id: 'Grenade', corner: 'br', dx: 5.6, dy: 2.6, r: 0.75, label: 'BOOM', color: '#9ef01a' },
+    { id: 'Joey', corner: 'br', dx: 7.4, dy: 1.7, r: 0.7, label: 'JOEY', color: '#f6b3c4' },
+    { id: 'Pouch', corner: 'bl', dx: 0.75, dy: 3.45, r: 0.65, label: 'POUCH', color: '#ffd23f', icon: 'pouch' },
     { id: 'Pause', corner: 'tr', dx: 0.6, dy: 0.6, r: 0.55, icon: 'pause' },
   ];
 
@@ -146,6 +148,8 @@
         let alpha = down ? 0.8 : 0.42;
         if (b.id === 'Shoot' && player && player.ammo <= 0) alpha *= 0.5;
         if (b.id === 'Grenade' && player && player.grenades <= 0) alpha *= 0.5;
+        if (b.id === 'Pouch' && player && !player.pouch) alpha *= 0.5;
+        if (b.id === 'Joey' && player && !player.joeyReady) alpha *= 0.6;
         const ready = b.id === 'Special' && player && player.canSpecial;
         c.save();
         c.translate(b.x, b.y);
@@ -168,6 +172,11 @@
         } else if (b.icon === 'pause') {
           c.fillRect(-6 * k * 1.6, -8 * k * 1.6, 4 * k * 1.6, 16 * k * 1.6);
           c.fillRect(2 * k * 1.6, -8 * k * 1.6, 4 * k * 1.6, 16 * k * 1.6);
+        } else if (b.icon === 'pouch') {
+          // the pouch button shows the saved item
+          if (player && player.pouch === 'heart') MG.Art.heart(c, 0, b.r * 0.3, 0);
+          else if (player && player.pouch) { c.fillStyle = MG.Art.POWER_COLORS[player.pouch]; c.beginPath(); c.arc(0, -b.r * 0.12, b.r * 0.42, 0, Math.PI * 2); c.fill(); MG.Art.powerIcon(c, player.pouch, 0, -b.r * 0.12, b.r * 0.28); }
+          MG.UI.text(c, b.label, 0, b.r * 0.55, Math.max(8, b.r * 0.28), '#ffffff', 'center');
         } else if (b.icon === 'block') {
           drawShield(c, 0, -b.r * 0.15, b.r * 0.42);
           MG.UI.text(c, b.label, 0, b.r * 0.5, Math.max(9, b.r * 0.3), '#ffffff', 'center');

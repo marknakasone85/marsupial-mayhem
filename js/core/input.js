@@ -3,13 +3,13 @@
 // else can treat them exactly like keys.
 (function () {
   const PREVENT = new Set([
-    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Slash', 'Tab', 'Semicolon', 'Quote',
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Slash', 'Tab', 'Semicolon', 'Quote', 'BracketLeft', 'BracketRight',
   ]);
 
   // Which keys the player is using, so on-screen hints can match them.
   const ARROW_SIDE = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyJ', 'KeyK', 'KeyL',
-    'Comma', 'Period', 'Slash', 'Semicolon', 'Quote']);
-  const WASD_SIDE = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyR', 'KeyE']);
+    'Comma', 'Period', 'Slash', 'Semicolon', 'Quote', 'BracketLeft', 'BracketRight']);
+  const WASD_SIDE = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyR', 'KeyE', 'KeyQ', 'KeyT']);
 
   const I = (MG.Input = {
     lastDevice: 'wasd', // 'wasd' | 'arrows' | 'pad'
@@ -70,15 +70,17 @@
           st.Right = ax > 0.4 || b(15);
           st.Up = ay < -0.6 || b(12);
           st.Down = ay > 0.6 || b(13) || b(4);
-          st.R = b(5) || b(7);
-          st.L = b(6);
+          st.R = b(5);          // RB: shoot
+          st.L = b(6);          // LT: grenade
+          st.RT = b(7);         // RT: pouch
+          st.Back = b(8);       // Back / View: joey
           st.A = b(0);
           st.B = b(1);
           st.X = b(2);
           st.Y = b(3);
           st.Start = b(9);
         }
-        for (const k of ['Left', 'Right', 'Up', 'Down', 'A', 'B', 'X', 'Y', 'R', 'L', 'Start']) {
+        for (const k of ['Left', 'Right', 'Up', 'Down', 'A', 'B', 'X', 'Y', 'R', 'L', 'RT', 'Back', 'Start']) {
           const code = 'Pad' + i + k;
           const now = !!st[k];
           if (now && !this._padPrev[code]) { this.pressed[code] = true; this.lastDevice = 'pad'; }
@@ -111,6 +113,8 @@
     special: ['KeyH', 'Pad0B', 'TouchSpecial'],
     shoot: ['KeyR', 'Pad0R', 'TouchShoot'],
     grenade: ['KeyE', 'Pad0L', 'TouchGrenade'],
+    joey: ['KeyQ', 'Pad0Back', 'TouchJoey'],
+    pouch: ['KeyT', 'Pad0RT', 'TouchPouch'],
   };
   const P2 = {
     left: ['ArrowLeft', 'Pad1Left'],
@@ -122,6 +126,8 @@
     special: ['Slash', 'Numpad3', 'Pad1B'],
     shoot: ['Semicolon', 'Numpad4', 'Pad1R'],
     grenade: ['Quote', 'Numpad5', 'Pad1L'],
+    joey: ['BracketLeft', 'Numpad6', 'Pad1Back'],
+    pouch: ['BracketRight', 'Numpad7', 'Pad1RT'],
   };
   // Solo play accepts both halves of the keyboard plus J/K/L and Space.
   const SOLO = {};
@@ -145,6 +151,8 @@
       specialP: I.anyHit(scheme.special),
       shootP: I.anyHit(scheme.shoot),
       grenadeP: I.anyHit(scheme.grenade),
+      joeyP: I.anyHit(scheme.joey),
+      pouchP: I.anyHit(scheme.pouch),
       shoot: I.anyDown(scheme.shoot), // held: rapid-fire weapons keep firing
       jump: I.anyDown(scheme.up),     // held: higher hops
     };

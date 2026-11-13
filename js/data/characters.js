@@ -7,10 +7,12 @@ MG.BUILD_COLORS = { FAST: '#00f5d4', POWER: '#ff4d6d', BALANCED: '#ffd23f' };
 // Stats (Sloth Slap's model): speed = walk speed, atk = attack speed, power = damage, hp, weight = how
 // little hits push you. basic/big = the attack and big-attack moves (style = how the art moves).
 // abilities = trait modules in js/entities/abilities.js; special = js/entities/specials.js.
+// joey = where its joey rides: 'pouch' (mums), 'backPouch' (mums whose pouch faces backwards: wombat, devil)
+//        or 'back' (the boys, and the numbat, which has no pouch). Chosen by the owner: go by the names.
 MG.CHARACTERS = [
   // ---------------------------------------------------------------- POWER
   {
-    id: 'boomer', name: 'BOOMER', species: 'Red kangaroo', build: 'POWER', art: 'kangaroo', scale: 0.84,
+    id: 'boomer', joey: 'back', name: 'BOOMER', species: 'Red kangaroo', build: 'POWER', art: 'kangaroo', scale: 0.84,
     speed: 265, atk: 0.92, power: 1.55, hp: 140, weight: 1.4, jump: 1010, kickPower: 1.3,
     basic: { style: 'punch', combo: true }, big: { style: 'kick' },
     abilities: ['tailCounter'],
@@ -20,7 +22,7 @@ MG.CHARACTERS = [
     coats: [null, { fur: '#d08a3c', dark: '#9a5a22' }, { fur: '#8e8fa6', dark: '#5f6078' }, { fur: '#7a4a32', dark: '#4f2c1c' }],
   },
   {
-    id: 'stinker', name: 'STINKER', species: 'Western grey kangaroo', build: 'POWER', art: 'kangaroo', scale: 0.82,
+    id: 'stinker', joey: 'back', name: 'STINKER', species: 'Western grey kangaroo', build: 'POWER', art: 'kangaroo', scale: 0.82,
     colors: { fur: '#8a7768', dark: '#5e4f45', belly: '#d8cbbd', muzzle: '#a8978a' },
     speed: 245, atk: 0.85, power: 1.6, hp: 150, weight: 1.5, jump: 960, kickPower: 1.3,
     basic: { style: 'punch', dmg: 7 }, big: { style: 'haymaker', dmg: 17, kbx: 720, kby: -380, reach: 80 },
@@ -30,7 +32,7 @@ MG.CHARACTERS = [
     fact: 'Big males are nicknamed "stinkers" for their strong, curry-like smell.',
   },
   {
-    id: 'tank', name: 'TANK', species: 'Common wombat', build: 'POWER', art: 'critter', look: 'wombat', scale: 1,
+    id: 'tank', joey: 'backPouch', name: 'TANK', species: 'Common wombat', build: 'POWER', art: 'critter', look: 'wombat', scale: 1,
     speed: 235, atk: 0.82, power: 1.7, hp: 150, weight: 2.0, jump: 780, kickPower: 1.1,
     basic: { style: 'headbutt', dmg: 7 }, big: { style: 'bumBlock', dmg: 15, kbx: 840, kby: -320, reach: 84 },
     abilities: ['superArmour', 'sprintBurst'],
@@ -39,7 +41,7 @@ MG.CHARACTERS = [
     fact: 'Wombats make cube-shaped poo, block their burrows with a tough rump, and can sprint at about 40 km/h.',
   },
   {
-    id: 'chompers', name: 'CHOMPERS', species: 'Tasmanian devil', build: 'POWER', art: 'critter', look: 'devil', scale: 1,
+    id: 'chompers', joey: 'backPouch', name: 'CHOMPERS', species: 'Tasmanian devil', build: 'POWER', art: 'critter', look: 'devil', scale: 1,
     speed: 270, atk: 0.9, power: 1.5, hp: 130, weight: 1.3, jump: 880, kickPower: 1.0,
     basic: { style: 'bite', dmg: 6, combo: true }, big: { style: 'crunch', dmg: 15, guardBreak: true, reach: 76 },
     abilities: ['scavenger'],
@@ -49,7 +51,7 @@ MG.CHARACTERS = [
   },
   // ---------------------------------------------------------------- FAST
   {
-    id: 'zip', name: 'ZIP', species: 'Sugar glider', build: 'FAST', art: 'critter', look: 'glider', scale: 0.86,
+    id: 'zip', joey: 'pouch', name: 'ZIP', species: 'Sugar glider', build: 'FAST', art: 'critter', look: 'glider', scale: 0.86,
     speed: 390, atk: 1.35, power: 0.8, hp: 85, weight: 0.7, jump: 900, kickPower: 0.8,
     basic: { style: 'swipe' }, big: { style: 'spinKick', dmg: 10 },
     abilities: ['glide'],
@@ -58,7 +60,7 @@ MG.CHARACTERS = [
     fact: 'Sugar gliders glide between trees on flaps of skin, up to about 50 metres.',
   },
   {
-    id: 'stripes', name: 'STRIPES', species: 'Numbat', build: 'FAST', art: 'critter', look: 'numbat', scale: 0.9,
+    id: 'stripes', joey: 'back', name: 'STRIPES', species: 'Numbat', build: 'FAST', art: 'critter', look: 'numbat', scale: 0.9,
     speed: 380, atk: 1.3, power: 0.85, hp: 90, weight: 0.8, jump: 860, kickPower: 0.85,
     basic: { style: 'swipe' }, big: { style: 'tailFlick', dmg: 8, kbx: 160, kby: -520, stun: 0.9, reach: 80 },
     abilities: ['snackSpeed'],
@@ -67,7 +69,7 @@ MG.CHARACTERS = [
     fact: 'Numbats eat up to about 20,000 termites a day with a tongue about 10 cm long.',
   },
   {
-    id: 'earl', name: 'EARL', species: 'Greater bilby', build: 'FAST', art: 'critter', look: 'bilby', scale: 0.9,
+    id: 'earl', joey: 'back', name: 'EARL', species: 'Greater bilby', build: 'FAST', art: 'critter', look: 'bilby', scale: 0.9,
     speed: 370, atk: 1.25, power: 0.85, hp: 90, weight: 0.8, jump: 900, kickPower: 0.9,
     basic: { style: 'kick' }, big: { style: 'earSlap', dmg: 11, reach: 78 },
     abilities: ['earRadar', 'rabbitBane'],
@@ -76,7 +78,7 @@ MG.CHARACTERS = [
     fact: 'Bilbies have huge ears and dig spiral burrows. In Australia the Easter Bilby stands in for the rabbit.',
   },
   {
-    id: 'paddles', name: 'PADDLES', species: 'Water opossum', build: 'FAST', art: 'critter', look: 'yapok', scale: 0.9,
+    id: 'paddles', joey: 'pouch', name: 'PADDLES', species: 'Water opossum', build: 'FAST', art: 'critter', look: 'yapok', scale: 0.9,
     speed: 360, atk: 1.2, power: 0.9, hp: 95, weight: 0.9, jump: 860, kickPower: 0.9,
     basic: { style: 'swipe' }, big: { style: 'tailSlap', dmg: 11, reach: 86 },
     abilities: ['swimmer'],
@@ -86,7 +88,7 @@ MG.CHARACTERS = [
   },
   // ---------------------------------------------------------------- BALANCED
   {
-    id: 'benny', name: 'BENNY', species: 'Red-necked wallaby', build: 'BALANCED', art: 'kangaroo', scale: 0.7,
+    id: 'benny', joey: 'back', name: 'BENNY', species: 'Red-necked wallaby', build: 'BALANCED', art: 'kangaroo', scale: 0.7,
     colors: { fur: '#8e8a86', dark: '#625e5a', belly: '#e6e0d8', muzzle: '#b3aca5', neck: '#b9653a' },
     speed: 320, atk: 1.0, power: 1.05, hp: 110, weight: 1.0, jump: 950, kickPower: 1.15,
     basic: { style: 'kick', dmg: 5.5 }, big: { style: 'doubleKick', dmg: 8, hits: 2 },
@@ -96,7 +98,7 @@ MG.CHARACTERS = [
     fact: 'Common in eastern Australia. Small wild colonies also live on the Isle of Man and Lambay Island.',
   },
   {
-    id: 'drowsy', name: 'DROWSY', species: 'Koala', build: 'BALANCED', art: 'critter', look: 'koala', scale: 0.95,
+    id: 'drowsy', joey: 'back', name: 'DROWSY', species: 'Koala', build: 'BALANCED', art: 'critter', look: 'koala', scale: 0.95,
     speed: 300, atk: 1.0, power: 1.1, hp: 115, weight: 1.1, jump: 820, kickPower: 0.9,
     basic: { style: 'swipe' }, big: { style: 'treeHug', dmg: 14, kbx: 300, kby: -620, reach: 70 },
     abilities: ['powerNap', 'climb'],
@@ -105,7 +107,7 @@ MG.CHARACTERS = [
     fact: 'Koalas sleep up to about 20 hours a day on a low-energy gum-leaf diet. Males give a deep, loud bellow.',
   },
   {
-    id: 'bins', name: 'BINS', species: 'Common brushtail possum', build: 'BALANCED', art: 'critter', look: 'brushtail', scale: 0.92,
+    id: 'bins', joey: 'pouch', name: 'BINS', species: 'Common brushtail possum', build: 'BALANCED', art: 'critter', look: 'brushtail', scale: 0.92,
     speed: 330, atk: 1.05, power: 1.0, hp: 105, weight: 0.95, jump: 900, kickPower: 0.95,
     basic: { style: 'swipe', combo: true }, big: { style: 'tailWhip', dmg: 12, reach: 90 },
     abilities: ['wallCling'],
@@ -114,7 +116,7 @@ MG.CHARACTERS = [
     fact: 'A bold city possum famous for noisy fights in roofs at night. It is a major pest in New Zealand.',
   },
   {
-    id: 'deadfred', name: 'DEAD FRED', species: 'Virginia opossum', build: 'BALANCED', art: 'critter', look: 'opossum', scale: 0.92,
+    id: 'deadfred', joey: 'back', name: 'DEAD FRED', species: 'Virginia opossum', build: 'BALANCED', art: 'critter', look: 'opossum', scale: 0.92,
     speed: 310, atk: 1.0, power: 1.05, hp: 110, weight: 1.0, jump: 860, kickPower: 0.95,
     basic: { style: 'bite', combo: true }, big: { style: 'grinChomp', dmg: 14, reach: 72 },
     abilities: ['venomImmune'],

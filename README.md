@@ -4,7 +4,7 @@
 
 A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possums and friends battle it out in the Great Pouch Tournament, until uninvited pests crash the party.
 
-**Early days:** 12 marsupials and the first map are playable. Pick your marsupial, then box, kick, bite and grenade-punt your way along the Tournament Trail past rabbits, feral cats and feral pigs to a showdown with Big Buck. Or settle who's the champion in a **Tournament Duel**. More maps are on the way.
+**Early days:** 12 marsupials and the first map are playable. Pick your marsupial, then box, kick, bite and grenade-punt your way along the Tournament Trail past rabbits, feral cats and feral pigs to a showdown with Big Buck. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Or settle who's the champion in a **Tournament Duel**. More maps are on the way.
 
 ## The marsupials
 
@@ -65,13 +65,17 @@ Good to know:
 | Attack | F | , (comma) | X |
 | Big attack | G | . (period) | Y |
 | Special | H | / (slash) | B |
-| Shoot (hold) | R | ; (semicolon) | RB / RT |
+| Shoot (hold) | R | ; (semicolon) | RB |
 | Grenade | E | ' (quote) | LT |
+| Joey (send it out) | Q | [ | Back / View |
+| Pouch (use the saved item) | T | ] | RT |
 | Pause | Esc / P | Esc / P | Start |
 
-Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot) and ' (grenade) work too. On phones and tablets, touch buttons appear during play (BOOM is the grenade). The title screen's CONTROLS button and the pause menu show this table too.
+Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot), ' (grenade), [ (joey) and ] (pouch) work too. On phones and tablets, touch buttons appear during play (BOOM is the grenade). The title screen's CONTROLS button and the pause menu show this table too.
 
 **Tips:** some marsupials (Boomer, Chompers, Bins, Dead Fred) chain their attack: press it three times for a combo. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then kick it with attack (short), big attack (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
+
+**Joeys and the pouch:** every marsupial carries a joey, in the pouch or riding on the back. It hops out by itself to nip pests that get close and to fetch pickups, and the joey key sends it on a Joey Rush (then it needs a rest: watch the ring by JOEY on the screen). Once per map, if you're knocked out, your joey gets you back up. Clear a map and that marsupial's joey grows (up to level 5), so it hits harder. Pick up a heart at full health, or a power-up while another is running, and it goes in the pouch: press the pouch key when you need it. In duels every joey starts at level 1 and there's no rescue.
 
 ## Privacy
 

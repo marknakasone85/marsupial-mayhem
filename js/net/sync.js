@@ -18,7 +18,7 @@
     return o;
   };
   // What a Wi-Fi player can press (checked by the host, which ignores anything else)
-  MG.PRESS_KEYS = ['jumpP', 'attackP', 'bigP', 'specialP', 'shootP', 'grenadeP'];
+  MG.PRESS_KEYS = ['jumpP', 'attackP', 'bigP', 'specialP', 'shootP', 'grenadeP', 'joeyP', 'pouchP'];
   let depth = 0; // only record the outermost call (e.g. hitText calls text internally)
 
   const S = (MG.Sync = {
@@ -99,7 +99,7 @@
       const powers = (p) => Object.keys(p).map((k) => [k, r2(p[k])]);
       return {
         t: 'snap', n: ++this.seq, lv: scene.levelIndex, st: scene.state, stT: r2(scene.stateT), tm: r2(scene.t),
-        cam: r1(scene.camX), sc: scene.score, hb: scene.hpBonus || 0, nb: scene.newBest ? 1 : 0,
+        cam: r1(scene.camX), sc: scene.score, hb: scene.hpBonus || 0, nb: scene.newBest ? 1 : 0, jg: scene.joeyGrew && scene.joeyGrew.length ? scene.joeyGrew : 0,
         bo: scene.boss ? [Math.max(0, Math.round(scene.boss.hp)), scene.boss.maxHp, scene.bossAwake ? 1 : 0, scene.boss.alive ? 1 : 0] : 0,
         pl: scene.slots.map((sl) => {
           const f = sl.f;
@@ -107,6 +107,7 @@
             id: sl.id, tag: scene.coop ? `P${sl.id + 1}` : 0, tc: MG.PLAYER_COLORS[sl.id % 4],
             hp: Math.max(0, Math.round(f.hp)), mhp: f.maxHp, me: Math.round(f.meter), cs: f.canSpecial ? 1 : 0,
             am: f.ammo, gr: f.grenades, pw: powers(f.powers), rt: r1(sl.respawnT),
+            jr: f.joeyReady ? 1 : 0, jc: f.joey ? r2(MG.U.clamp(f.joey.cool / 8, 0, 1)) : 0,
           }));
         }),
         en: scene.enemies.map((e) => [e.uid, e.type, r1(e.x), r1(e.y), e.facing, e.flash > 0 ? 1 : 0, e.alive ? 1 : 0,

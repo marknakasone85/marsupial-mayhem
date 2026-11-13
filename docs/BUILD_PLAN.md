@@ -44,10 +44,15 @@ Early on purpose: everything after this is built and tested to work on Wi-Fi.
 - **Tournament Duel** vs CPU (three difficulties), 2 players on one keyboard, and 2–4 player Wi-Fi free-for-all with CPU fillers, on duel stages. Fair fights: weapons and armor only from stage pickups.
 - **Done when:** every character's special is tested and each feels different.
 
-## Milestone 4: the pouch
+## Milestone 4: the pouch (built 13 Nov 2026, waiting for the owner to try it)
 
-- A joey sidekick and a stored item in the pouch (`DESIGN.md`). The owner confirmed both on 13 Nov 2026; show the details before building.
-- **Done when:** it's in campaign and duel, it's tested, and the owner likes it.
+Details agreed with the owner on 13 Nov 2026 (`DESIGN.md`, "The signature mechanic: the pouch").
+- A joey for every character: in a pouch for the mums (backwards for Tank and Chompers), on the back for the boys and Stripes. Drawn as a mini version of the parent.
+- The joey nips nearby pests and fetches pickups by itself, rescues you once per map, and a JOEY button sends it on a Joey Rush. One shared cooldown with a HUD icon.
+- Joey levels 1-5: +1 for each map a character clears, saved in the browser. Duels: level 1 for everyone, no rescue.
+- The pouch slot: an unneeded heart or power-up is saved automatically; the POUCH button uses it.
+- New controls in the key strip, Pause > Controls, touch buttons and gamepad; JOEY/POUCH presses and joey state over Wi-Fi.
+- **Done when:** it's in campaign, duels and Wi-Fi, it's tested, and the owner likes it.
 
 ## Milestone 5: weapons, shop and upgrades
 

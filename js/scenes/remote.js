@@ -165,7 +165,7 @@
     wantsTouch() { return !!this.snap && !this.menu && !this.ended && !this.showControls && this.snap.st === 'play'; }
     touchPlayer() {
       const me = this.snap && this.snap.pl.find((p) => p.id === MG.Net.id);
-      return me ? { canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0 } : null;
+      return me ? { canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0, pouch: me.pu || null, joeyReady: !!me.jr } : null;
     }
 
     // ---------------- draw ----------------
@@ -193,7 +193,8 @@
       const strips = [];
       if (this.showStrip && me && s.st === 'play' && !this.menu && !MG.Touch.enabled) {
         strips.push({
-          fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0, firing: !!me.fi },
+          fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0, firing: !!me.fi,
+            pouch: me.pu || null, joeyReady: !!me.jr, joeyOut: Array.isArray(me.jy) && !!me.jy[2] },
           opts: { tag: `YOU (P${me.id + 1})`, tagColor: MG.PLAYER_COLORS[me.id % 4] },
         });
       }
@@ -211,13 +212,14 @@
             colors: p.coat ? MG.coatFor(def, p.coat) : null,
             hp: p.hp, mhp: p.mhp, meter: p.me || 0, canSpecial: !!p.cs, ammo: p.am || 0, grenades: p.gr || 0,
             powers: Array.isArray(p.pw) ? p.pw : [], respawnT: p.rt || 0, ko: p.st === 'ko',
+            joeyLevel: Array.isArray(p.jy) ? p.jy[3] : 0, joeyCool: p.jc || 0, joeyReady: !!p.jr, pouch: p.pu || null,
           };
         }),
         strips,
       });
       MG.CampaignHUD.overlays(ctx, {
         state: s.st, stateT: s.stT, t: s.tm, L: this.L, score: s.sc,
-        hpBonus: s.hb, newBest: s.nb, coop: s.pl.length > 1, guest: true, showControls: false,
+        hpBonus: s.hb, newBest: s.nb, coop: s.pl.length > 1, guest: true, showControls: false, joeyGrew: s.jg || null,
       });
       if (!me && !this.ended) UI.outlineText(ctx, 'Joining the team...', W / 2, 200, 26, '#ffffff', 'center');
       if (me && this.t < 5 && s.st === 'play') UI.outlineText(ctx, `You are P${me.id + 1}`, W / 2, 340, 28, MG.PLAYER_COLORS[me.id % 4], 'center');

@@ -15,6 +15,8 @@
 - **Name: Marsupial Mayhem™.** The owner wanted "Marsupial" in the name, something funny or satirical, and a name that can be registered as a trade mark later. Mark it ™ on the title screen, page title and README now. Use ® only once a registration has actually been granted. A web search on 13 Nov 2026 found no game with this exact name, but that isn't a trade mark search: the owner checks with the trade mark office (the USPTO in the US) before registering. The owner's other favourite, "Marsupial World Conquest", can be the name of the villains' plan.
 - **Story:** the marsupials play levels across a **Marsupial World map**. The story, and the reason they're fighting, develops as they go, with a twist: the **quokkas appear as allies**, and not until the late levels do they reveal themselves as **evil traitors in a dark alliance with the reptilians**. The good marsupials join forces to defeat them and save Marsupial World. Details are in `DESIGN.md` and `VILLAINS.md`.
 - **The pouch: both** the joey sidekick and the stored item.
+- **Male characters carry their joey on their back** (the owner, 13 Nov 2026), as numbat joeys really do. Only females have a pouch.
+- **Pouch details** (the owner, 13 Nov 2026): the joey helps **both** by itself and on a JOEY button; the pouch saves an item **by itself when it isn't needed** (POUCH button uses it); boys and mums **go by the names**; the joey **grows each map**. Full design in `DESIGN.md`.
 - **Weapons: all of these.**
   1. Each marsupial's own attacks (`ROSTER.md`).
   2. Various weapons: **a mix** of real-style weapons with funny marsupial twists, plus themed specials. Example names: gumnut gatling, drop-bear launcher, eucalyptus-oil flamethrower.
@@ -55,5 +57,5 @@
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.
 2. **Names to confirm:** the Croc Emperor, the Smile Squad, Grin Isle Holidays, the weapons, and the boss names in `VILLAINS.md`. All are placeholders.
 3. **Trade mark:** registering Marsupial Mayhem is the owner's own step, ideally before release. A trade mark lawyer can advise.
-4. **The pouch for male characters (before Milestone 4):** only female kangaroos have a pouch, and "boomer" is the name for a big male, so Boomer can't really carry a joey. Options: Boomer carries his joey on his back (like the numbat), the joey is a nephew who hitches a ride, or Boomer becomes a female "flyer" (the name for a female red kangaroo) with a different name. Other roster characters may raise the same question.
+4. ~~The pouch for male characters~~: answered 13 Nov 2026, their joeys ride on their back.
 5. **Names from Milestone 1 (placeholders):** the mini-boss Big Buck, the Gumnut Gatling, and the power-ups Gumleaf Shield, Billy Tea Rush and Super Wallop.

@@ -11,7 +11,7 @@
   }
 
   function playerPanel(ctx, x, y, p, t, coop) {
-    UI.panel(ctx, x, y, 262, 80, 'rgba(43,25,61,0.82)');
+    UI.panel(ctx, x, y, 262, 98, 'rgba(43,25,61,0.82)');
     portrait(ctx, x + 32, y + 38, p, t);
     UI.text(ctx, p.name, x + 64, y + 15, 15, '#ffffff');
     if (coop) UI.text(ctx, p.tag, x + 236, y + 15, 14, p.color, 'right');
@@ -40,11 +40,26 @@
       MG.Art.powerIcon(ctx, type, ix + 10, y + 67, 5);
       ix += 26;
     }
+    // the joey (with its cooldown ring and level) and the pouch's saved item
+    if (p.joeyLevel) {
+      const jx = x + 74, jy = y + 87;
+      ctx.fillStyle = p.joeyReady ? '#f6b3c4' : 'rgba(246,179,196,0.35)';
+      ctx.beginPath(); ctx.arc(jx, jy, 7, 0, Math.PI * 2); ctx.fill();
+      if (!p.joeyReady && p.joeyCool > 0) {
+        ctx.strokeStyle = '#f6b3c4'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(jx, jy, 9, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - p.joeyCool)); ctx.stroke();
+      }
+      UI.text(ctx, `JOEY Lv${p.joeyLevel}`, jx + 14, jy, 11, p.joeyReady ? '#f6b3c4' : '#a98a92');
+      UI.text(ctx, 'POUCH', x + 166, jy, 11, '#ffd23f');
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath(); ctx.arc(x + 220, jy, 9, 0, Math.PI * 2); ctx.fill();
+      if (p.pouch) UI.pouchItem(ctx, p.pouch, x + 220, jy, 8);
+    }
     if (p.canSpecial && Math.floor(t * 3) % 2 === 0) UI.outlineText(ctx, 'SPECIAL READY!', x + 156, y + 4, 11, '#00f5d4', 'center');
     if (p.ko) {
       ctx.fillStyle = 'rgba(20,10,30,0.6)';
-      ctx.beginPath(); ctx.roundRect(x, y, 262, 80, 16); ctx.fill();
-      UI.outlineText(ctx, p.respawnT > 0 ? 'Back in ' + Math.ceil(p.respawnT) + '...' : 'KNOCKED OUT', x + 131, y + 40, 18, '#ffffff', 'center');
+      ctx.beginPath(); ctx.roundRect(x, y, 262, 98, 16); ctx.fill();
+      UI.outlineText(ctx, p.respawnT > 0 ? 'Back in ' + Math.ceil(p.respawnT) + '...' : 'KNOCKED OUT', x + 131, y + 48, 18, '#ffffff', 'center');
     }
   }
 
@@ -109,6 +124,7 @@
         UI.outlineText(ctx, 'STAGE CLEAR!', W / 2, 150, 54, '#ffd23f', 'center');
         UI.outlineText(ctx, 'Health bonus +' + o.hpBonus + '     Score ' + o.score, W / 2, 206, 22, '#ffffff', 'center');
         if (o.newBest) UI.outlineText(ctx, 'NEW BEST SCORE!', W / 2, 240, 22, '#9ef01a', 'center');
+        (o.joeyGrew || []).slice(0, 2).forEach((txt, i) => UI.outlineText(ctx, txt, W / 2, 268 + i * 22, 17, '#f6b3c4', 'center'));
       }
     },
   };
