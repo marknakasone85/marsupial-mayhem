@@ -1,0 +1,376 @@
+// Home Wi-Fi: the WI-FI menu (host or join), the host's lobby and the join screen.
+// Same design as Sloth Slap's lobby. The relay is tools/share_server.py (port 8020).
+(function () {
+  const UI = MG.UI;
+  const I = MG.Input;
+  const W = MG.W, H = MG.H;
+  const MAX_PLAYERS = 4;
+  // only the computer running share-on-network.command can host (the server checks this too)
+  const isThisComputer = () => {
+    const h = String(location.hostname || '').toLowerCase();
+    return h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || h.endsWith('.localhost');
+  };
+
+  function bg(ctx, t) {
+    MG.Art.background(ctx, t * 25, t, MG.GROUND_Y);
+    ctx.fillStyle = 'rgba(20,10,30,0.5)';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // A player card: the character in that player's coat, their tag and status.
+  function card(ctx, x, y, p, slotId, label, t) {
+    UI.panel(ctx, x - 92, y - 168, 184, 216);
+    const color = MG.PLAYER_COLORS[slotId % 4];
+    UI.outlineText(ctx, `P${slotId + 1}`, x, y - 148, 20, color, 'center');
+    if (p && p.cid) {
+      const def = MG.charById(p.cid);
+      const coat = def.coats ? def.coats[slotId % def.coats.length] : null;
+      MG.Art.kangaroo(ctx, { x: x + 8, y: y - 10, facing: 1, scale: 0.72, t, pose: p.ready ? 'win' : 'idle', colors: coat });
+      UI.outlineText(ctx, def.name, x, y + 8, 15, '#ffffff', 'center');
+    } else {
+      UI.outlineText(ctx, '?', x, y - 70, 60, 'rgba(255,255,255,0.4)', 'center');
+    }
+    UI.text(ctx, label, x, y + 30, 13, label === 'READY!' ? '#52e07a' : '#cccccc', 'center');
+  }
+
+  function infoPanel(ctx, lines) {
+    UI.panel(ctx, 100, 170, W - 200, 70 + lines.length * 32);
+    lines.forEach((line, i) => UI.text(ctx, line, W / 2, 205 + i * 32, i === 0 ? 22 : 17, i === 0 ? '#ffd23f' : '#ffffff', 'center'));
+    UI.text(ctx, 'Press any key or tap to go back', W / 2, 220 + lines.length * 32, 13, '#9bf6ff', 'center');
+  }
+
+  // ---------------------------------------------------------------- WI-FI menu
+  MG.WifiScene = class {
+    constructor() {
+      this.t = 0;
+      this.info = null;
+      this.menu = new MG.MenuList([
+        { label: 'HOST A GAME', act: () => this.tryHost() },
+        { label: 'JOIN A GAME', act: () => this.tryJoin() },
+        { label: 'BACK', act: () => MG.Engine.setScene(new MG.MenuScene()) },
+      ], W / 2, 220, { w: 320, h: 48, gap: 12 });
+    }
+    enter() { MG.Audio.playMusic('title'); }
+
+    tryHost() {
+      if (!MG.Net.available() || !isThisComputer()) {
+        this.info = [
+          'To host a Wi-Fi game:',
+          '1. Double-click share-on-network.command in the game folder.',
+          '2. On THAT computer, open  http://localhost:8020  in a web browser.',
+          '3. Choose WI-FI, then HOST A GAME.',
+        ];
+        return;
+      }
+      MG.Engine.setScene(new MG.LobbyScene({}));
+    }
+
+    tryJoin() {
+      if (!MG.Net.available()) {
+        this.info = [
+          'To join a Wi-Fi game:',
+          'Open the address shown in the host\'s sharing window',
+          '(it starts with  http://  and ends with  :8020 )',
+          'then choose WI-FI, then JOIN A GAME.',
+        ];
+        return;
+      }
+      MG.Engine.setScene(new MG.JoinScene());
+    }
+
+    update(dt) {
+      this.t += dt;
+      if (this.info) {
+        if (I.anyPressed() || UI.backTapped()) { this.info = null; MG.Audio.select(); }
+        return;
+      }
+      if (MG.Menu.back() || UI.backTapped()) { MG.Engine.setScene(new MG.MenuScene()); return; }
+      const item = this.menu.update(dt);
+      if (item) item.act();
+    }
+
+    draw(ctx) {
+      bg(ctx, this.t);
+      UI.outlineText(ctx, 'WI-FI GAME', W / 2, 90, 54, '#ffd23f', 'center');
+      UI.text(ctx, '2 to 4 players on the same home Wi-Fi: computers, phones and tablets', W / 2, 140, 17, '#ffffff', 'center');
+      if (this.info) { infoPanel(ctx, this.info); UI.backButton(ctx); return; }
+      this.menu.draw(ctx);
+      UI.text(ctx, 'The host plays on the computer that runs share-on-network.command.', W / 2, H - 40, 14, '#dddddd', 'center');
+      UI.text(ctx, 'Only use it on your own home Wi-Fi.', W / 2, H - 20, 13, '#bbbbbb', 'center');
+      UI.backButton(ctx);
+    }
+  };
+
+  // ---------------------------------------------------------------- host lobby
+  // opts: {} new game   { resume: true, players, level }  back from a game (same join code)
+  //       { stopped: 'why' }  another window on this computer took over hosting
+  MG.LobbyScene = class {
+    constructor(opts = {}) {
+      this.t = 0;
+      this.players = opts.resume ? opts.players.map((p) => Object.assign({}, p)) : [{ id: 0, cid: 'boomer', ready: true }];
+      if (opts.resume) for (const p of this.players) if (p.id !== 0) p.ready = false;
+      this.level = Math.max(0, Math.min(MG.LEVELS.length - 1, opts.level || 0));
+      this.resume = !!opts.resume;
+      this.stopped = opts.stopped || null;
+      this.error = null;
+      this.ready = false;
+      this.syncT = 0;
+    }
+
+    enter() {
+      MG.Audio.playMusic('title');
+      if (this.stopped) { this.error = this.stopped; return; }
+      MG.Net.onMessage = (m, from) => this.onNet(m, from);
+      if (this.resume && MG.Net.role === 'host') { this.ready = true; this.broadcast(); return; }
+      MG.Net.host().then(() => { this.ready = true; this.broadcast(); })
+        .catch((e) => { this.error = e.message; });
+    }
+
+    onNet(m, from) {
+      if (!m) return;
+      if (from === 'server') {
+        if (m.t === 'joined' && typeof m.id === 'number') {
+          if (!this.players.some((p) => p.id === m.id)) this.players.push({ id: m.id, cid: null, ready: false });
+          MG.Net.send({ t: 'welcome', inGame: false, mode: 'campaign' }, m.id, true);
+          MG.Audio.confirm();
+        } else if (m.t === 'left') {
+          this.players = this.players.filter((p) => p.id !== m.id);
+        }
+        this.broadcast();
+        return;
+      }
+      if (m.t === 'pick') {
+        const p = this.players.find((q) => q.id === from);
+        if (p && MG.CHARACTERS.some((c) => c.id === m.cid)) {
+          p.cid = m.cid;
+          p.ready = !!m.ready;
+          if (p.ready) MG.Audio.select();
+          this.broadcast();
+        }
+      }
+    }
+
+    broadcast() {
+      if (!this.ready) return;
+      MG.Net.send({
+        t: 'lobby', mode: 'campaign', level: this.level,
+        place: `Map ${this.level + 1}: ${MG.LEVELS[this.level].name}`,
+        players: this.players.map((p) => ({ id: p.id, cid: p.cid, ready: p.ready })),
+      }, 'all', true);
+    }
+
+    start() {
+      const ready = this.players.filter((p) => p.ready && p.cid);
+      MG.Net.send({ t: 'start', mode: 'campaign', level: this.level }, 'all', true);
+      MG.Engine.setScene(new MG.CampaignScene({
+        level: this.level, net: true,
+        players: ready.map((p) => ({ id: p.id, cid: p.cid, local: p.id === 0 ? 'SOLO' : null })),
+      }));
+    }
+
+    changeMap(d) {
+      const n = MG.LEVELS.length;
+      if (n < 2) return;
+      this.level = (this.level + d + n) % n;
+      MG.Audio.select();
+      this.broadcast();
+    }
+
+    update(dt) {
+      this.t += dt;
+      if (MG.Menu.back() || UI.backTapped()) {
+        if (!this.stopped) MG.Net.leave();
+        MG.Engine.setScene(new MG.WifiScene());
+        return;
+      }
+      if (this.error || !this.ready) return;
+      MG.Net.maintain(dt, () => {
+        this.players = this.players.filter((p) => p.id === 0);
+        this.broadcast();
+      });
+      if (MG.Menu.left()) this.changeMap(-1);
+      if (MG.Menu.right()) this.changeMap(1);
+      const p = I.pointer;
+      if (p.pressed && Math.abs(p.x - W / 2) < 150 && p.y > 476 && p.y < 520) { MG.Audio.confirm(); this.start(); return; }
+      if (I.anyHit(['Enter', 'NumpadEnter', 'Pad0Start', 'Pad0A'])) { MG.Audio.confirm(); this.start(); return; }
+      this.syncT += dt;
+      if (this.syncT > 1) { this.syncT = 0; this.broadcast(); }
+    }
+
+    draw(ctx) {
+      bg(ctx, this.t);
+      UI.outlineText(ctx, 'WI-FI LOBBY', W / 2, 40, 36, '#ffd23f', 'center');
+      if (this.error) {
+        UI.panel(ctx, 110, 160, W - 220, 160);
+        UI.outlineText(ctx, this.stopped ? 'This window stopped hosting' : 'Could not start the Wi-Fi game', W / 2, 200, 24, '#ff4d6d', 'center');
+        UI.text(ctx, this.error, W / 2, 245, 16, '#ffffff', 'center');
+        UI.text(ctx, this.stopped ? 'Only one window can host. Play in the newest one.   Esc = back'
+          : 'Is the share-on-network window still open?   Esc = back', W / 2, 285, 14, '#cccccc', 'center');
+        UI.backButton(ctx);
+        return;
+      }
+      if (!this.ready) {
+        UI.text(ctx, 'Starting...', W / 2, 220, 20, '#ffffff', 'center');
+        return;
+      }
+      UI.panel(ctx, W / 2 - 340, 64, 680, 96);
+      UI.outlineText(ctx, `JOIN CODE:  ${MG.Net.code}`, W / 2, 92, 32, '#00f5d4', 'center');
+      UI.text(ctx, `On phones, tablets and other computers open:  ${String(MG.Net.address || '').replace(/^https?:\/\//, '')}`, W / 2, 124, 16, '#ffffff', 'center');
+      UI.text(ctx, 'then press WI-FI, JOIN A GAME and type the code.', W / 2, 146, 14, '#cccccc', 'center');
+      for (let i = 0; i < MAX_PLAYERS; i++) {
+        const x = 150 + i * 220;
+        const p = this.players.find((q) => q.id === i) || null;
+        const label = !p ? 'waiting for a player...' : p.id === 0 ? 'READY!' : p.ready ? 'READY!' : 'getting ready...';
+        card(ctx, x, 400, p, i, label, this.t + i);
+        if (i === 0) UI.text(ctx, 'you (host)', x, 446, 12, '#ffd23f', 'center');
+      }
+      const many = MG.LEVELS.length > 1;
+      UI.text(ctx, `MAP ${this.level + 1}: ${MG.LEVELS[this.level].name}` + (many ? '   (←/→ to change)' : ''), W / 2, 462, 15, '#ffffff', 'center');
+      const waiting = this.players.some((p) => p.id !== 0 && !p.ready);
+      ctx.fillStyle = '#ffd23f';
+      ctx.beginPath(); ctx.roundRect(W / 2 - 150, 478, 300, 40, 12); ctx.fill();
+      UI.text(ctx, waiting ? 'START (others can drop in later)' : 'START!', W / 2, 498, waiting ? 15 : 20, '#2b193d', 'center');
+      UI.text(ctx, 'Enter = start    Esc = cancel', W / 2, H - 10, 12, '#9bf6ff', 'center');
+    }
+  };
+
+  // ---------------------------------------------------------------- join (friends' devices)
+  // opts.rejoin: already connected (the host went back to the lobby): just get ready again
+  MG.JoinScene = class {
+    constructor(opts = {}) {
+      this.t = 0;
+      this.phase = opts.rejoin && MG.Net.active ? 'pick' : 'code'; // code | connecting | pick
+      this.code = '';
+      this.error = null;
+      this.cur = 0;
+      this.lobby = null;
+      this.inGame = false;
+      this.isReady = false;
+      // on-screen number pad for phones
+      this.keys = [];
+      for (let i = 0; i < 12; i++) {
+        const label = i < 9 ? String(i + 1) : ['⌫', '0', 'OK'][i - 9];
+        this.keys.push({ label, x: W / 2 - 105 + (i % 3) * 72, y: 232 + Math.floor(i / 3) * 60, w: 66, h: 52 });
+      }
+    }
+
+    enter() {
+      MG.Audio.playMusic('title');
+      MG.Net.onMessage = (m, from) => this.onNet(m, from);
+      if (this.phase === 'pick') this.sendPick(false);
+    }
+
+    onNet(m) {
+      if (!m) return;
+      if (m.t === 'hostLeft') {
+        if (m.rehost && this.phase === 'pick') { MG.Net.status = 'closed'; return; } // host reconnecting: rejoin
+        this.fail(m.reason || 'The host closed the game.');
+        return;
+      }
+      if (m.t === 'welcome') { this.inGame = !!m.inGame; this.phase = 'pick'; this.sendPick(false); }
+      else if (m.t === 'lobby') this.lobby = m;
+      else if (m.t === 'start') this.toGame(m.level);
+      else if (m.t === 'snap' && Array.isArray(m.pl) && m.pl.some((p) => p.id === MG.Net.id)) this.toGame(m.lv, m);
+    }
+
+    toGame(level, firstSnap) {
+      const scene = new MG.RemoteScene({ level: level || 0 });
+      MG.Engine.setScene(scene);
+      if (firstSnap) scene.onNet(firstSnap);
+    }
+
+    fail(msg) {
+      MG.Net.leave();
+      this.error = msg;
+      this.phase = 'code';
+      this.code = '';
+    }
+
+    sendPick(ready) {
+      this.isReady = ready;
+      MG.Net.myCid = MG.CHARACTERS[this.cur].id; // remembered for automatic rejoins
+      MG.Net.send({ t: 'pick', cid: MG.Net.myCid, ready }, 'host', true);
+    }
+
+    tryJoin() {
+      if (this.code.length !== 4) return;
+      this.phase = 'connecting';
+      this.error = null;
+      MG.Net.join(this.code).then(() => { /* wait for the host's welcome */ })
+        .catch((e) => { this.phase = 'code'; this.error = e.message; this.code = ''; });
+    }
+
+    typeDigit(d) { if (this.code.length < 4) { this.code += d; MG.Audio.select(); } }
+
+    update(dt) {
+      this.t += dt;
+      const typingBack = this.phase === 'code' && I.hit('Backspace') && this.code;
+      if (UI.backTapped() || (MG.Menu.back() && !typingBack)) {
+        MG.Net.leave();
+        MG.Engine.setScene(new MG.WifiScene());
+        return;
+      }
+      if (this.phase === 'code') {
+        for (let d = 0; d <= 9; d++) if (I.hit('Digit' + d) || I.hit('Numpad' + d)) this.typeDigit(String(d));
+        if (I.hit('Backspace')) this.code = this.code.slice(0, -1);
+        const p = I.pointer;
+        if (p.pressed) {
+          for (const k of this.keys) {
+            if (p.x < k.x || p.x > k.x + k.w || p.y < k.y || p.y > k.y + k.h) continue;
+            if (k.label === 'OK') this.tryJoin();
+            else if (k.label === '⌫') this.code = this.code.slice(0, -1);
+            else this.typeDigit(k.label);
+          }
+        }
+        if (I.anyHit(['Enter', 'NumpadEnter'])) this.tryJoin();
+      } else if (this.phase === 'pick') {
+        const n = MG.CHARACTERS.length;
+        const pick = (d) => { if (n < 2) return; this.cur = (this.cur + d + n) % n; MG.Audio.select(); if (this.isReady) this.sendPick(false); };
+        if (MG.Menu.left()) pick(-1);
+        if (MG.Menu.right()) pick(1);
+        if (MG.Menu.confirm()) { MG.Audio.confirm(); this.sendPick(!this.isReady); }
+        const p = I.pointer;
+        if (p.pressed && p.y >= 400 && p.y <= 448 && Math.abs(p.x - W / 2) < 200) { MG.Audio.confirm(); this.sendPick(!this.isReady); }
+        MG.Net.maintain(dt, () => this.sendPick(this.isReady));
+        this.lostT = MG.Net.lost ? (this.lostT || 0) + dt : 0;
+        if (this.lostT > 90) this.fail('Could not reconnect to the host.');
+      }
+    }
+
+    draw(ctx) {
+      bg(ctx, this.t);
+      UI.outlineText(ctx, 'JOIN A WI-FI GAME', W / 2, 50, 38, '#ffd23f', 'center');
+      if (this.phase === 'code' || this.phase === 'connecting') {
+        UI.text(ctx, 'Type the 4-digit join code shown on the host\'s screen:', W / 2, 108, 17, '#ffffff', 'center');
+        for (let i = 0; i < 4; i++) {
+          const x = W / 2 - 112 + i * 58;
+          UI.panel(ctx, x, 132, 50, 66);
+          UI.outlineText(ctx, this.code[i] || '', x + 25, 166, 34, '#00f5d4', 'center');
+        }
+        for (const k of this.keys) {
+          ctx.fillStyle = k.label === 'OK' ? '#ffd23f' : 'rgba(43,25,61,0.88)';
+          ctx.beginPath(); ctx.roundRect(k.x, k.y, k.w, k.h, 10); ctx.fill();
+          UI.text(ctx, k.label, k.x + k.w / 2, k.y + k.h / 2, 22, k.label === 'OK' ? '#2b193d' : '#ffffff', 'center');
+        }
+        if (this.phase === 'connecting') UI.text(ctx, 'Connecting...', W / 2, 486, 18, '#9bf6ff', 'center');
+        if (this.error) UI.outlineText(ctx, this.error, W / 2, 486, 16, '#ff4d6d', 'center');
+        UI.text(ctx, 'Enter = join    Esc = back', W / 2, H - 14, 13, '#dddddd', 'center');
+        UI.backButton(ctx);
+        return;
+      }
+      const me = MG.Net.id || 0;
+      UI.outlineText(ctx, `You are P${me + 1}`, W / 2, 94, 26, MG.PLAYER_COLORS[me % 4], 'center');
+      const def = MG.CHARACTERS[this.cur];
+      card(ctx, W / 2, 348, { cid: def.id, ready: this.isReady }, me, this.isReady ? 'READY!' : def.specialName, this.t);
+      ctx.fillStyle = this.isReady ? 'rgba(82,224,122,0.25)' : '#ffd23f';
+      ctx.beginPath(); ctx.roundRect(W / 2 - 200, 404, 400, 44, 12); ctx.fill();
+      UI.text(ctx, this.isReady ? 'READY! Waiting for the host... (tap to change)' : 'I\'m ready!  (Enter or tap)',
+        W / 2, 426, 17, this.isReady ? '#52e07a' : '#2b193d', 'center');
+      if (this.inGame) UI.text(ctx, 'A map is already being played: you\'ll drop in next to your team.', W / 2, 466, 14, '#cccccc', 'center');
+      if (this.lobby) UI.text(ctx, `Players: ${this.lobby.players.length}/4     ${this.lobby.place || ''}`, W / 2, 488, 15, '#ffffff', 'center');
+      if (MG.Net.lost) UI.outlineText(ctx, 'Connection lost - rejoining by itself...', W / 2, 510, 16, '#ff4d6d', 'center');
+      UI.text(ctx, 'Enter = ready    Esc = leave', W / 2, H - 10, 12, '#dddddd', 'center');
+      UI.backButton(ctx);
+    }
+  };
+})();

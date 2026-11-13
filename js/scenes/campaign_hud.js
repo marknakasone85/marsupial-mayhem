@@ -57,8 +57,17 @@
 
   MG.CampaignHUD = {
     draw(ctx, m) {
-      m.players.forEach((p, i) => playerPanel(ctx, 12 + i * 272, 10, p, m.t, m.coop));
-      UI.outlineText(ctx, 'SCORE ' + m.score, W - 16, 26, 20, '#ffd23f', 'right');
+      // up to 4 panels: smaller when there are more than 2 players
+      const k = m.players.length > 2 ? 0.86 : 1;
+      m.players.forEach((p, i) => {
+        ctx.save();
+        ctx.translate(8 + i * (m.players.length > 2 ? 232 : 272), m.net ? 24 : 10);
+        ctx.scale(k, k);
+        playerPanel(ctx, 0, 0, p, m.t, m.coop);
+        ctx.restore();
+      });
+      UI.outlineText(ctx, 'SCORE ' + m.score, W - 16, m.net ? 40 : 26, 20, '#ffd23f', 'right');
+      if (m.net) UI.netStrip(ctx, m.net);
       if (m.boss) {
         UI.outlineText(ctx, m.boss.name, W / 2 + (m.coop ? 140 : 0), 102, 18, '#ff4d6d', 'center');
         UI.bar(ctx, W / 2 - 170 + (m.coop ? 140 : 0), 114, 340, 14, m.boss.frac, '#ff4d6d');
@@ -98,6 +107,7 @@
       } else if (o.state === 'paused') {
         UI.fade(ctx, 0.55);
         UI.outlineText(ctx, 'PAUSED', W / 2, 142, 44, '#ffd23f', 'center');
+        if (o.guest) UI.text(ctx, 'The host paused the game.', W / 2, 180, 18, '#ffffff', 'center');
       } else if (o.state === 'dead') {
         UI.fade(ctx, Math.min(0.6, o.stateT * 0.5));
         UI.outlineText(ctx, o.coop ? 'EVERYONE IS KNOCKED OUT!' : 'KNOCKED OUT!', W / 2, 200, 46, '#ff4d6d', 'center');

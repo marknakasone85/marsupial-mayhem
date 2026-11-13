@@ -28,6 +28,11 @@ key('KeyD', true); frames(60); key('KeyD', false);
 check(!g0.opened && p.x < g0.x, 'a closed gate stops Boomer');
 check(sc.hudModel().gateLeft > 0, 'the gate hint says how many pests are left');
 check(sc.enemies.filter(function (e) { return e.zone === 0 && e.type === 'cat'; }).every(function (e) { return !e.hidden; }), 'near the gate, hiding cats come out');
+// a pest left far behind comes running to the gate
+var straggler = sc.enemies.find(function (e) { return e.zone === 0 && e.type === 'pig'; });
+sc.enemies.forEach(function (e) { if (e.zone === 0 && e !== straggler) e.alive = false; });
+straggler.x = g0.x - 900; straggler.homeX = straggler.x; frames(60 * 5);
+check(straggler.aggro && g0.x - straggler.x < 400, 'the last pest in front of a gate comes running, even from far behind');
 sc.enemies.forEach(function (e) { if (e.zone === 0) e.alive = false; }); frames(5);
 check(g0.opened && sc.checkpoint > g0.x, 'clear them and the gate opens: CHECKPOINT');
 
@@ -103,7 +108,7 @@ var a = sc.slots[0].f, b = sc.slots[1].f, ax = a.x, bx = b.x;
 key('ArrowRight', true); frames(30); key('ArrowRight', false);
 check(Math.abs(a.x - ax) < 2 && b.x > bx + 40, 'player 2 moves with the arrow keys only');
 check(sc.enemies[0].maxHp > MG.ENEMY_TYPES[sc.enemies[0].type].hp, 'pests are tougher with two players');
-check(!!b.colors && sc.hudModel().strips.length === 2, 'player 2 has a sandy coat and their own key strip');
+check(b.coat === 1 && sc.hudModel().strips.length === 2, 'player 2 has a sandy coat and their own key strip');
 b.invuln = 0; b.takeHit({ dmg: 999, kbx: 0, kby: 0, stun: 0.1 }, sc); frames(60 * 6);
 check(sc.slots[1].f.state !== 'ko' && sc.state === 'play', 'a knocked-out partner hops back in after 5 seconds');
 done('campaign');

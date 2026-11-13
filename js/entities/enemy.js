@@ -203,7 +203,7 @@
         this.facing = tdir;
         if (food && Math.abs(food.x - this.x) < 18 && Math.abs(food.y - this.y) < 40) world.eatPickup(food, this);
         this.hopT = (this.hopT || 0) - dt;
-        if (this.onGround && this.hopT <= 0 && (dist < 640 || food)) {
+        if (this.onGround && this.hopT <= 0 && (dist < 640 || food || this.aggro)) {
           this.vy = -U.rand(250, 360);
           this.vx = tdir * d.speed * U.rand(0.8, 1.2);
           this.onGround = false;
@@ -255,7 +255,7 @@
           }
         } else {
           this.facing = dir;
-          this.vx = dist < 520 ? dir * d.speed * 0.45 : 0;
+          this.vx = dist < 520 || this.aggro ? dir * d.speed * (dist < 520 ? 0.45 : 1.6) : 0;
           if (dist < 420 && Math.abs(player.y - this.y) < 80 && this.cool <= 0) {
             this.state = 'windup';
             this.stateT = 0;
@@ -353,7 +353,8 @@
 
     draw(ctx, world) {
       const d = this.d;
-      const vf = this.visualFlags();
+      // pose bits: from the host's snapshot on Wi-Fi guests, or worked out here
+      const vf = this.remoteFlags !== undefined ? this.remoteFlags : this.visualFlags();
       if (vf & 4) { MG.Art.catEyes(ctx, this.x, this.y - 30, this.t, this.facing); return; }
       if (this.alive) MG.Art.shadow(ctx, this.x, world.groundY, d.w * 0.55);
       ctx.save();

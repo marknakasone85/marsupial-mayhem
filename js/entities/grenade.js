@@ -115,12 +115,14 @@
       MG.Audio.boom();
     }
 
-    draw(ctx) {
-      if (this.dead) return;
-      const blink = this.fuse < 1.2 && Math.floor(this.t * 12) % 2 === 0;
-      MG.Art.grenade(ctx, this.x, this.y - 11, { r: 9, rot: this.spin, spark: true, blink, t: this.t });
+    draw(ctx) { if (!this.dead) MG.Grenade.drawState(ctx, this.x, this.y, this.spin, this.fuse, this.t); }
+
+    // Also used by Wi-Fi guests, who only know where each grenade is and how long its fuse has left.
+    static drawState(ctx, x, y, spin, fuse, t) {
+      const blink = fuse < 1.2 && Math.floor(t * 12) % 2 === 0;
+      MG.Art.grenade(ctx, x, y - 11, { r: 9, rot: spin, spark: true, blink, t });
       // countdown over it, so everyone knows when to kick
-      if (this.fuse < 3) MG.UI.outlineText(ctx, String(Math.ceil(this.fuse)), this.x, this.y - 38, 16, blink ? '#ff4d6d' : '#ffffff', 'center');
+      if (fuse < 3) MG.UI.outlineText(ctx, String(Math.max(1, Math.ceil(fuse))), x, y - 38, 16, blink ? '#ff4d6d' : '#ffffff', 'center');
     }
   };
 })();

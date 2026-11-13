@@ -14,11 +14,21 @@ A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possu
 
 ## Playing together on home Wi-Fi
 
-1. Double-click `share-on-network.command` in the game folder. A window opens and shows the address to use, like `http://<wifi-network-address>:8020`.
-2. On this computer, open `http://localhost:8020`.
-3. On phones, tablets and other computers on the same Wi-Fi, open the address the window shows.
+2 to 4 players, each on their own computer, phone or tablet, all on the same home Wi-Fi.
 
-Wi-Fi games for 2–4 players are coming soon; for now this shares the game so everyone at home can open it. Only the game files are shared, read-only, and sharing switches itself off after 3 hours. Use it only on your own home Wi-Fi, not on public Wi-Fi.
+1. On the computer with the game folder, double-click `share-on-network.command`. A window opens and shows the address for everyone else, like `http://<wifi-network-address>:8020`.
+   - The first time, macOS may ask whether Python can accept incoming network connections. Click **Allow**, or nobody else can connect.
+2. **The host** (on that same computer) opens `http://localhost:8020`, chooses **WI-FI**, then **HOST A GAME**. The screen shows a 4-digit **join code**.
+3. **Everyone else** opens the address from the window, chooses **WI-FI**, then **JOIN A GAME**, types the code and presses **I'm ready!**
+   - **Phones:** hold them sideways. Use Safari on an iPhone (Chrome on an iPhone first needs "Local Network" allowed in the iPhone's Settings).
+4. The host presses **START**. Friends can also join a game that has already started: they drop in next to the team.
+
+Good to know:
+- If a phone loses the Wi-Fi for a moment, it rejoins by itself as the same player.
+- Only one window can host. Hosting in a second window stops the first one (it says so).
+- The host's pause menu has **Back to Lobby** (same code, same players) and **End Wi-Fi Game**.
+- Only the game files are shared, read-only, and sharing switches itself off after 3 hours. Use it only on your own home Wi-Fi, not on public Wi-Fi.
+- The online page has no WI-FI button: Wi-Fi games need the game folder and `share-on-network.command`.
 
 ## Controls
 

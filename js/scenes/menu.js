@@ -74,21 +74,13 @@
         ] })) },
       ];
       // No WI-FI button on public web pages (GitHub Pages): they can't reach a home share.
-      if (!MG.Net.webOnly()) items.push({ label: 'WI-FI', act: () => this.say(this.wifiInfo()) });
+      if (!MG.Net.webOnly()) items.push({ label: 'WI-FI', act: () => MG.Engine.setScene(new MG.WifiScene()) });
       items.push(
         { label: 'CONTROLS', act: () => { this.page = 'controls'; this.pageT = 0; } },
         { label: () => 'BLOOD: ' + (MG.Settings.blood ? 'ON' : 'OFF'), act: () => MG.toggleBlood() },
         { label: () => 'SOUND: ' + (MG.Audio.muted ? 'OFF' : 'ON'), act: () => MG.Audio.toggleMute() },
       );
       this.menu = new MG.MenuList(items, W / 2, 226, { w: 270, h: 38, gap: 7, fontSize: 20 });
-    }
-
-    wifiInfo() {
-      if (MG.Net.available()) {
-        return ['Wi-Fi games for 2-4 players are coming soon.', 'This computer is sharing the game, so friends can already open it.'];
-      }
-      return ['Wi-Fi games for 2-4 players are coming soon.',
-        'To share the game at home, double-click', 'share-on-network.command in the game folder.'];
     }
 
     say(lines) { this.info = lines; this.infoT = 0; }

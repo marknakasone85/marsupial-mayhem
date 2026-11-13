@@ -10,7 +10,9 @@ Planning finished on 13 Nov 2026. Later that day the owner answered the open que
 
 **Milestone 0 (setup) was built on 13 Nov 2026:** the engine from Sloth Slap, a title screen, the share server and tests.
 
-**Milestone 1 (vertical slice) was built on 13 Nov 2026:** Boomer, the Outback map *Tournament Trail* (rabbits, cats, pigs, the mini-boss Big Buck), the kick grenade, the Gumnut Gatling, power-ups, gates, 2 players on one keyboard, and tests including a bot that plays the map. Still to do for Milestone 1: the owner plays it, and it's checked on a real phone (frames take about 1.5 ms on the Mac). Next is Milestone 2 (home Wi-Fi) in `docs/BUILD_PLAN.md`. `docs/README.md` lists the plan files.
+**Milestone 1 (vertical slice) was built on 13 Nov 2026:** Boomer, the Outback map *Tournament Trail* (rabbits, cats, pigs, the mini-boss Big Buck), the kick grenade, the Gumnut Gatling, power-ups, gates, 2 players on one keyboard, and tests including a bot that plays the map. Still to do for Milestone 1: the owner plays it, and it's checked on a real phone (frames take about 1.5 ms on the Mac).
+
+**Milestone 2 (home Wi-Fi) was built on 13 Nov 2026:** WI-FI menu, host lobby with join code, join screen with a number pad, friends' view drawn from snapshots, drop-in, reconnect as the same player, Back to Lobby. Tested with 3 players through the whole map, and live in the app's browser against the real share server. Still to do: the family plays it together at home on real phones. Next is Milestone 3 (the roster) in `docs/BUILD_PLAN.md`. `docs/README.md` lists the plan files.
 
 ## Rules the owner cares about
 
@@ -46,7 +48,8 @@ Copy and adapt Sloth Slap's `tools/share_server.py` and `share-on-network.comman
 - A press during a jab queues the next punch, and jabs push only a little (plus a small lunge), so jab-jab-hook combos connect.
 - Running into a block stops a charge or pounce dead, which sets up Boomer's Tail Counter.
 - Grenades only explode early on pests (not crates) and never hurt players: blasts just bounce them.
-- Hidden cats count toward a gate's pests, so they all come out when the players get near that gate.
+- Every pest still in front of a closed gate comes running when the players get near it (hidden cats come out too). A pig once idled just off the shared co-op screen and the gate never opened.
+- Wi-Fi: a friend whose button messages stop for 1.5 s lets go of every key (no ghost walking off), and a guest view replaces each player's state on every update (zero values are left out of snapshots, so old values must not linger).
 
 ## Content guardrails
 
@@ -76,16 +79,19 @@ Script order lives in `index.html`: plain `<script>` tags, no modules. Everythin
 | Fighter `MG.Fighter` (jab combo, tail kick, Tail Counter, Boomer Bound, grenade pin and punt, gatling, power-ups, `renderState`/`drawState`) and `MG.Projectile` | `js/entities/fighter.js` |
 | The kick grenade `MG.Grenade` (fuse, bounces, kicks, blast that never hurts players) | `js/entities/grenade.js` |
 | Pests `MG.Enemy` (behaviours: swarmer, ambusher, charger, boss), `MG.Crate`, `MG.Pickup` | `js/entities/enemy.js` |
-| Wi-Fi client `MG.Net` (header `X-Mayhem`) and the effect/sound recorder `MG.Sync` (scene snapshots come in Milestone 2) | `js/net/*.js` |
+| Wi-Fi client `MG.Net` (header `X-Mayhem`; `rejoin()` sends the old token so the relay gives back the same player number) and `MG.Sync`: records effects and sounds for guests, `snapshot(scene)` (the campaign, ~1-2 KB, zero values left out), `sendInput` (held left/right/down/shoot/jump + presses in `MG.PRESS_KEYS`) | `js/net/*.js` |
 | Drawing helpers, controls page, key strip, `MG.MenuList` | `js/scenes/ui.js` |
 | Title screen `MG.MenuScene` (PLAY, 2 PLAYERS, WI-FI, CONTROLS, BLOOD, SOUND) | `js/scenes/menu.js` |
-| Campaign `MG.CampaignScene` (the world interface, camera, gates by zone, boss arena, pause, win/lose) and its HUD `MG.CampaignHUD` | `js/scenes/campaign.js`, `campaign_hud.js` |
+| Campaign `MG.CampaignScene` (the world interface, camera, gates by zone, boss arena, pause, win/lose; with `net: true` it hosts: `onNet`, `netInput`, drop-in, snapshots ~30/s, Back to Lobby), `MG.drawCampaignWorld` (shared by host and guests) and the HUD `MG.CampaignHUD` | `js/scenes/campaign.js`, `campaign_hud.js` |
+| Wi-Fi screens: `MG.WifiScene` (HOST / JOIN), `MG.LobbyScene` (host: join code, player cards, START), `MG.JoinScene` (code pad, I'm ready) | `js/scenes/lobby.js` |
+| Friends' view `MG.RemoteScene`: draws snapshots, smooths movement, sends button presses, rejoins by itself | `js/scenes/remote.js` |
 | Home-network share and relay (port 8020) | `tools/share_server.py`, `share-on-network.command` |
 
 ## Testing
 
 - **Automated:** `tools/run-tests.sh` (a few seconds). It syntax-checks every game file, runs `tools/tests/test_*.js` in macOS's built-in JavaScriptCore with a fake browser (`harness.js`), and checks the share server's safety rules (`test_server.py`). Add checks with `check(ok, 'what')` and add new test names to the `for t in ...` list.
-  Tests: `boot` (title screen, settings, Wi-Fi rules), `boomer` (every move, the grenade, the gatling, power-ups, each pest), `campaign` (map, gates, checkpoints, Big Buck, win/lose, blood, pause, touch, 2 players), `solo` (a bot plays the map 3 times and must finish most runs).
+  Tests: `boot` (title screen, settings, Wi-Fi rules), `boomer` (every move, the grenade, the gatling, power-ups, each pest), `campaign` (map, gates, checkpoints, Big Buck, win/lose, blood, pause, touch, 2 players), `solo` (a bot plays the map 3 times and must finish most runs), `coop` (3 Wi-Fi players through every map with every snapshot drawn by a guest view, update sizes, lobby, drop-in, leave, reconnect, the friend's side, the WI-FI menu), and `test_server.py` (the share server's file and address rules, plus a live run of the relay: join code, lockout, tokens, size cap, one host, rejoin as the same player, full at 4).
+- **Live Wi-Fi test in the app's browser:** start `python3 tools/share_server.py --local --port 8790 --hours 1` in a Terminal tab (this computer only, so it never clashes with the family's port 8020), open `http://localhost:8790` (host) and `http://127.0.0.1:8790`, `http://mayhem.localhost:8790` (friends: separate addresses keep their saves apart), call `MG.Engine.startHostTicker()` in each tab (hidden tabs don't animate), and close the Terminal tab afterwards.
 - **Visual:** `.claude/launch.json` has `marsupial-mayhem` (`share_server.py --local` on port 8790, this computer only). The app's preview tool reads `launch.json` from the folder the session **started** in (moving a session to this folder later didn't change that), so start Claude sessions in this folder. A session started in another game's folder must never add this game to that folder's `launch.json`. Without the preview, headless Chrome can screenshot the double-clicked page: load the game scripts in a scratch page, drive `MG.Engine.frame()` yourself, then keep redrawing the frozen frame (a window resize clears the canvas).
 - A hidden preview pane doesn't animate: drive scenes with `MG.Engine.frame(t)` or the host ticker.
 - Tests change saves: back up `localStorage` keys starting `marsupialmayhem.` before testing in a browser, and put them back afterwards.

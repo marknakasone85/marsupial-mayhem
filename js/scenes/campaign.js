@@ -1,21 +1,26 @@
-// Campaign: a side-scrolling brawl through a map to the finish line. 1 player or 2 on one keyboard.
-// (Wi-Fi co-op comes in Milestone 2; the slots/controls design follows Sloth Slap's so it slots in.)
+// Campaign: a side-scrolling brawl through a map to the finish line.
+// 1 player, 2 on one keyboard, or 2-4 on home Wi-Fi (this computer hosts and runs the real game;
+// friends' devices draw the snapshots it sends and send back their button presses).
 (function () {
   const U = MG.U;
   const UI = MG.UI;
   const W = MG.W;
   const RESPAWN_TIME = 5;
+  const SNAP_RATE = 1 / 30;   // Wi-Fi updates per second sent to friends
 
   MG.CampaignScene = class {
     // opts: { level, charId }                          one player
-    //       { level, players: [{ id, cid, local }] }    local = 'SOLO' | 'P1' | 'P2'
+    //       { level, players: [{ id, cid, local }] }    local = 'SOLO' | 'P1' | 'P2', or null for a Wi-Fi player
+    //       net: true                                    this computer hosts a Wi-Fi game
     constructor(opts) {
       this.opts = opts;
       this.levelIndex = opts.level || 0;
       this.L = MG.LEVELS[this.levelIndex];
+      this.net = !!opts.net;
       this.groundY = MG.GROUND_Y;
       this.gravity = this.L.gravity || 1;
       this.fx = new MG.FX();
+      if (this.net) { MG.Sync.wrapFX(this.fx); MG.Sync.installAudioHook(); }
       this.platforms = this.L.platforms || [];
       this.t = 0;
       this.camX = 0;
@@ -26,6 +31,7 @@
       this.showControls = false;
       this.showStrip = MG.Save.get('keyStrip', true);
       this.uid = 0;
+      this.syncT = 0;
 
       this.slots = [];
       const players = opts.players || [{ id: 0, cid: opts.charId || 'boomer', local: 'SOLO' }];
@@ -47,14 +53,19 @@
       this.bossAwake = false;
       this.checkpoint = 0;
       this.placeHelpers();
-      // more players = tougher pests, so co-op stays a challenge
-      const n = players.length;
-      if (n > 1) {
-        for (const e of this.enemies) {
-          const k = e.isBoss ? 1 + 0.5 * (n - 1) : 1 + 0.35 * (n - 1);
-          e.hp = e.maxHp = Math.round(e.maxHp * k);
-        }
+      this.scaleForPlayers(players.length);
+    }
+
+    // More players = tougher pests, so co-op stays a challenge.
+    scaleForPlayers(n) {
+      for (const e of this.enemies) {
+        const base = MG.ENEMY_TYPES[e.type].hp;
+        const k = n <= 1 ? 1 : e.isBoss ? 1 + 0.5 * (n - 1) : 1 + 0.35 * (n - 1);
+        const frac = e.hp / e.maxHp;
+        e.maxHp = Math.round(base * k);
+        e.hp = e.maxHp * frac;
       }
+      this.scaledFor = n;
     }
 
     // ---------------- players ----------------
@@ -72,9 +83,13 @@
       const list = alive.length ? alive : this.fighters;
       return list.reduce((a, b) => (Math.abs(b.x - x) < Math.abs(a.x - x) ? b : a));
     }
+    currentPlayers() { return this.slots.map((s) => ({ id: s.id, cid: s.cid, local: s.local })); }
 
     addSlot(pl, x) {
-      const slot = { id: pl.id, cid: pl.cid, def: MG.charById(pl.cid), local: pl.local || null, respawnT: 0, waiting: false };
+      const slot = {
+        id: pl.id, cid: pl.cid, def: MG.charById(pl.cid), local: pl.local || null,
+        respawnT: 0, waiting: false, held: {}, presses: {}, inSeq: 0,
+      };
       this.slots.push(slot);
       this.spawnFighter(slot, x);
       return slot;
@@ -82,7 +97,8 @@
 
     spawnFighter(slot, x, keep) {
       const def = slot.def;
-      const f = new MG.Fighter(def, x, { team: 'player', mercy: 0.8, colors: slot.id === 1 ? def.p2colors : null });
+      const coat = def.coats ? slot.id % def.coats.length : 0;
+      const f = new MG.Fighter(def, x, { team: 'player', mercy: 0.8, coat });
       if (keep) { f.grenades = keep.grenades; f.weapon = keep.weapon; }
       f.tagColor = MG.PLAYER_COLORS[slot.id % 4];
       slot.f = f;
@@ -91,7 +107,26 @@
       return f;
     }
 
-    controlsFor(slot) { return MG.readControls(MG.Controls[slot.local || 'SOLO']); }
+    controlsFor(slot) {
+      if (slot.local) return MG.readControls(MG.Controls[slot.local]);
+      // a friend's messages stopped (connection trouble): let go of every key instead of walking on
+      if (this.t - (slot.lastIn === undefined ? this.t : slot.lastIn) > 1.5) slot.held = {};
+      const c = Object.assign({ left: false, right: false, down: false, shoot: false, jump: false }, slot.held, slot.presses);
+      slot.presses = {};
+      return c;
+    }
+
+    // A Wi-Fi player's buttons: held keys from the newest message, and every press counts.
+    netInput(id, m) {
+      const slot = this.slots.find((s) => s.id === id);
+      if (!slot || !m) return;
+      slot.lastIn = this.t;
+      if (m.n > slot.inSeq) {
+        slot.inSeq = m.n;
+        slot.held = { left: !!m.l, right: !!m.r, down: !!m.d, shoot: !!m.s, jump: !!m.j };
+      }
+      for (const k of Array.isArray(m.p) ? m.p : []) if (MG.PRESS_KEYS.includes(k)) slot.presses[k] = true;
+    }
 
     addEnemy(type, x, y) {
       const e = new MG.Enemy(type, x, y);
@@ -113,7 +148,45 @@
       });
     }
 
-    enter() { MG.Audio.playMusic(this.L.music); }
+    enter() {
+      MG.Audio.playMusic(this.bossAwake ? 'boss' : this.L.music);
+      if (this.net) MG.Net.onMessage = (m, from) => this.onNet(m, from);
+    }
+
+    // The Wi-Fi connection came back with the same code: friends rejoin and drop in again.
+    onRehosted() {
+      this.slots = this.slots.filter((s) => s.local);
+      this.fx.text(this.leader().x, 200, `Wi-Fi is back! Friends rejoin by themselves (code ${MG.Net.code})`, '#9bf6ff', 20);
+    }
+
+    // ---------------- Wi-Fi messages (host side) ----------------
+    onNet(m, from) {
+      if (!m) return;
+      if (from === 'server') {
+        if (m.t === 'joined') {
+          MG.Net.send({ t: 'welcome', inGame: true, mode: 'campaign', level: this.levelIndex }, m.id, true);
+          this.fx.text(this.leader().x, 200, `P${m.id + 1} is joining...`, MG.PLAYER_COLORS[m.id % 4], 22);
+        } else if (m.t === 'left') {
+          const slot = this.slots.find((s) => s.id === m.id);
+          if (slot) {
+            this.slots = this.slots.filter((s) => s !== slot);
+            this.fx.text(slot.f.x, slot.f.y - 140, `P${m.id + 1} left the game`, '#cccccc', 22);
+          }
+        }
+        return;
+      }
+      if (m.t === 'in') this.netInput(from, m);
+      else if (m.t === 'pick' && m.ready && typeof from === 'number' && !this.slots.some((s) => s.id === from) &&
+        this.slots.length < 4 && MG.CHARACTERS.some((c) => c.id === m.cid)) {
+        // drop-in: appear next to the team
+        const lead = this.leader();
+        const slot = this.addSlot({ id: from, cid: m.cid, local: null }, lead.x - 50);
+        slot.f.invuln = 2;
+        if (this.slots.length > this.scaledFor) this.scaleForPlayers(this.slots.length);
+        this.fx.text(slot.f.x, slot.f.y - 150, `P${from + 1} JOINED!`, MG.PLAYER_COLORS[from % 4], 28);
+        MG.Audio.powerUp();
+      }
+    }
 
     // ---------------- world interface used by fighters, enemies and grenades ----------------
     limitsFor(x) {
@@ -155,13 +228,7 @@
       }
       return best;
     }
-    floorBelow(x, y) {
-      let best = this.groundY;
-      for (const p of this.platforms) {
-        if (x > p.x - 10 && x < p.x + p.w + 10 && p.y >= y - 1 && p.y < best) best = p.y;
-      }
-      return best;
-    }
+    floorBelow(x, y) { return MG.floorBelow(this.platforms, this.groundY, x, y); }
     onHit(attacker, target, hit, result) {
       if (result === 'hit' && !target.isProp && this.fighters.includes(attacker)) this.score += 10;
     }
@@ -209,7 +276,21 @@
       this.t += dt;
       this.stateT += dt;
       this.fx.update(dt);
-      this.step(dt);
+      if (this.net) MG.Sync.capturing = true;
+      try {
+        this.step(dt);
+      } finally {
+        if (this.net) MG.Sync.capturing = false;
+      }
+      const realDt = MG.Engine.unscaled(dt); // Wi-Fi keeps real pace during slow motion
+      if (this.net) MG.Net.maintain(realDt, () => this.onRehosted());
+      if (this.net && MG.Engine.scene === this) {
+        this.syncT += realDt;
+        if (this.syncT >= SNAP_RATE) {
+          this.syncT = 0;
+          MG.Net.send(MG.Sync.snapshot(this));
+        }
+      }
     }
 
     step(dt) {
@@ -237,7 +318,7 @@
       this.updateRevives(dt);
 
       for (const e of this.enemies) {
-        if (e.alive && (e.x < this.camX - 300 || e.x > this.camX + W + 300)) continue;
+        if (e.alive && !e.aggro && (e.x < this.camX - 300 || e.x > this.camX + W + 300)) continue;
         if (e === this.boss && !this.bossAwake) continue;
         e.update(dt, this, this.nearestFighter(e.x));
       }
@@ -291,7 +372,8 @@
         const items = [];
         if (this.checkpoint) items.push({ label: 'Continue from Checkpoint', act: () => this.respawn() });
         items.push({ label: 'Restart Map', act: () => this.restart() });
-        items.push({ label: 'Main Menu', act: () => this.quit() });
+        if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
+        items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
         this.menu = new MG.MenuList(items, W / 2, 262, { w: 340, h: 42, gap: 8 });
       }
     }
@@ -308,7 +390,12 @@
           this.fx.text(g.x, this.groundY - 280, 'GATE OPEN! CHECKPOINT!', '#9ef01a', 28);
           MG.Audio.gong();
         } else if (Math.abs(lead.x - g.x) < 320) {
-          for (const e of this.enemies) if (e.alive && e.zone === i && e.hidden) e.wake(this);
+          // the last pests in front of a closed gate come running (no one gets stuck at a gate)
+          for (const e of this.enemies) {
+            if (!e.alive || e.zone !== i) continue;
+            e.aggro = true;
+            if (e.hidden) e.wake(this);
+          }
         }
       });
     }
@@ -360,11 +447,11 @@
       } else if (pk.type === 'gatling') {
         f.giveWeapon('gatling', 100);
         MG.Audio.powerUp();
-        say('GUMNUT GATLING! (hold R)', '#ffb703', 22);
+        say('GUMNUT GATLING! (hold shoot)', '#ffb703', 22);
       } else if (pk.type === 'gumnuts') {
         f.giveWeapon('gatling', 30);
         MG.Audio.ammo();
-        say(f.weapon && f.weapon.ammo > 30 ? '+30 GUMNUTS' : 'GUMNUT GATLING! (hold R)', '#ffb703');
+        say(f.weapon && f.weapon.ammo > 30 ? '+30 GUMNUTS' : 'GUMNUT GATLING! (hold shoot)', '#ffb703');
       }
     }
 
@@ -386,22 +473,25 @@
       const items = [];
       if (this.levelIndex + 1 < MG.LEVELS.length) items.push({ label: 'Next Map', act: () => this.goLevel(this.levelIndex + 1) });
       items.push({ label: 'Play Again', act: () => this.restart() });
-      items.push({ label: 'Main Menu', act: () => this.quit() });
+      if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
+      items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
       this.menu = new MG.MenuList(items, W / 2, 290, { w: 320, h: 42, gap: 8 });
     }
 
     pause() {
       this.state = 'paused';
       MG.Audio.select();
-      this.menu = new MG.MenuList([
+      const items = [
         { label: 'Resume', act: () => this.resume() },
         { label: 'Controls', act: () => { this.showControls = true; } },
         { label: () => MG.onscreenLabel(this), act: () => MG.cycleOnscreen(this) },
         { label: () => 'Blood: ' + (MG.Settings.blood ? 'ON' : 'OFF (confetti)'), act: () => MG.toggleBlood() },
         { label: 'Restart Map', act: () => this.restart() },
         { label: () => 'Sound: ' + (MG.Audio.muted ? 'OFF' : 'ON'), act: () => MG.Audio.toggleMute() },
-        { label: 'Quit to Menu', act: () => this.quit() },
-      ], W / 2, 180, { w: 340, h: 38, gap: 7 });
+      ];
+      if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
+      items.push({ label: this.net ? 'End Wi-Fi Game' : 'Quit to Menu', act: () => this.quit() });
+      this.menu = new MG.MenuList(items, W / 2, this.net ? 168 : 180, { w: 340, h: 36, gap: 6 });
     }
     resume() { this.state = 'play'; this.menu = null; }
 
@@ -423,15 +513,24 @@
       this.fx.text(lead.x, lead.y - 160, 'BACK ON YOUR FEET!', '#ffd23f', 28);
     }
     goLevel(i) {
-      const players = this.slots.map((s) => ({ id: s.id, cid: s.cid, local: s.local }));
-      MG.Engine.setScene(new MG.CampaignScene({ level: i, players }));
+      MG.Engine.setScene(new MG.CampaignScene({ level: i, net: this.net, players: this.currentPlayers() }));
     }
     restart() { this.goLevel(this.levelIndex); }
-    quit() { MG.Engine.setScene(new MG.MenuScene()); }
+    backToLobby() {
+      MG.Net.send({ t: 'toLobby' }, 'all', true);
+      MG.Engine.setScene(new MG.LobbyScene({
+        resume: true, level: Math.min(this.levelIndex + (this.state === 'won' ? 1 : 0), MG.LEVELS.length - 1),
+        players: this.slots.map((s) => ({ id: s.id, cid: s.cid, ready: true })),
+      }));
+    }
+    quit() {
+      if (this.net) MG.Net.leave();
+      MG.Engine.setScene(new MG.MenuScene());
+    }
 
     // touch buttons: only while actually playing
     wantsTouch() { return this.state === 'play' && !this.menu && !this.showControls; }
-    touchPlayer() { return this.slots[0].f; }
+    touchPlayer() { const s = this.slots.find((x) => x.local); return s ? s.f : null; }
 
     // ---------------- draw ----------------
     hudModel() {
@@ -439,16 +538,18 @@
       const players = this.slots.map((s) => {
         const f = s.f;
         return {
-          tag: `P${s.id + 1}`, color: MG.PLAYER_COLORS[s.id % 4], name: s.def.name, colors: f.colors,
+          tag: `P${s.id + 1}`, color: MG.PLAYER_COLORS[s.id % 4], name: s.def.name,
+          colors: f.coat && s.def.coats ? s.def.coats[f.coat] : null,
           hp: f.hp, mhp: f.maxHp, meter: f.meter, canSpecial: f.canSpecial, ammo: f.ammo, grenades: f.grenades,
           powers: Object.keys(f.powers).map((k) => [k, f.powers[k]]), respawnT: s.respawnT, ko: f.state === 'ko',
         };
       });
       const strips = [];
       if (this.showStrip && this.state === 'play' && !MG.Touch.enabled) {
-        if (this.slots.length === 1) strips.push({ fighter: this.slots[0].f, opts: {} });
+        const locals = this.slots.filter((s) => s.local);
+        if (locals.length === 1) strips.push({ fighter: locals[0].f, opts: this.net ? { tag: 'YOU (P1)', tagColor: MG.PLAYER_COLORS[0] } : {} });
         else {
-          this.slots.forEach((s, i) => strips.push({
+          locals.forEach((s, i) => strips.push({
             fighter: s.f,
             opts: {
               layout: s.local === 'P2' ? 'p2' : 'p1', compact: true, x: i === 0 ? 16 : W - 16,
@@ -461,6 +562,7 @@
       const g = nextGate >= 0 ? this.gates[nextGate] : null;
       return {
         t: this.t, coop: this.coop, players, score: this.score, mapName: this.L.name,
+        net: this.net ? MG.Net.hudInfo() : null,
         progress: lead.x / this.goalX,
         boss: this.bossAwake && this.boss.alive ? { name: this.boss.d.name, frac: this.boss.hp / this.boss.maxHp } : null,
         gateLeft: g && g.x - lead.x < 260 && g.x > lead.x ? this.pestsLeft(nextGate) : 0,
@@ -469,44 +571,15 @@
     }
 
     draw(ctx) {
-      const sh = this.fx.offset();
-      ctx.save();
-      this.fx.camera(ctx, this.camX);
-      MG.Art.background(ctx, this.camX, this.t, this.groundY);
-
-      ctx.save();
-      ctx.translate(-Math.round(this.camX) + sh.x, sh.y);
-      const vis = (x, m = 200) => x > this.camX - m && x < this.camX + W + m;
-      for (const d of this.L.decor || []) {
-        if (!vis(d.x)) continue;
-        if (d.type === 'mound') MG.Art.termiteMound(ctx, d.x, this.groundY, d.h);
-        else if (d.type === 'sign') MG.Art.signpost(ctx, d.x, this.groundY, d.text);
-      }
-      for (let x = Math.floor(this.camX / 170) * 170; x < this.camX + W + 170; x += 170) {
-        const r = Math.sin(x * 3.7) * 0.5 + 0.5;
-        MG.Art.spinifex(ctx, x + r * 90, this.groundY + 4 + r * 30, 0.8 + r * 0.6);
-      }
-      for (const p of this.platforms) if (vis(p.x, p.w + 100)) MG.Art.platform(ctx, p, this.groundY);
-      for (const gr of this.L.grass || []) if (vis(gr.x, gr.w + 100)) MG.Art.grass(ctx, gr.x, gr.w, this.groundY, this.t, false);
-      this.fx.drawDecals(ctx);
-      if (!this.boss || !this.boss.alive || vis(this.goalX)) MG.Art.finish(ctx, this.goalX + 60, this.groundY, this.t);
-      this.gates.forEach((g, i) => { if (vis(g.x)) MG.Art.gate(ctx, g.x, this.groundY, { open: g.lift, t: this.t, left: this.pestsLeft(i) }); });
-      for (const c of this.crates) if (vis(c.x)) c.draw(ctx);
-      for (const pk of this.pickups) if (vis(pk.x)) pk.draw(ctx);
-      for (const e of this.enemies) if (vis(e.x) || !e.alive) e.draw(ctx, this);
-      const order = this.slots.slice().sort((a, b) => (b.f.state === 'ko') - (a.f.state === 'ko'));
-      for (const s of order) {
-        s.f.tag = this.coop ? `P${s.id + 1}` : null;
-        s.f.draw(ctx, this);
-      }
-      for (const g of this.grenades) g.draw(ctx);
-      for (const pr of this.projectiles) pr.draw(ctx);
-      for (const gr of this.L.grass || []) if (vis(gr.x, gr.w + 100)) MG.Art.grass(ctx, gr.x - 6, gr.w + 12, this.groundY + 4, this.t, true);
-      this.fx.draw(ctx);
-      ctx.restore();
-      ctx.restore();
-      this.fx.drawFinisher(ctx, this.camX);
-
+      for (const s of this.slots) s.f.tag = this.coop ? `P${s.id + 1}` : null;
+      MG.drawCampaignWorld(ctx, {
+        L: this.L, t: this.t, camX: this.camX, groundY: this.groundY, fx: this.fx, platforms: this.platforms,
+        gates: this.gates.map((g, i) => ({ x: g.x, lift: g.lift, left: this.pestsLeft(i) })),
+        crates: this.crates, pickups: this.pickups, enemies: this.enemies,
+        players: this.slots.map((s) => s.f.renderState()),
+        grenades: this.grenades, projectiles: this.projectiles,
+        goalOpen: !this.boss || !this.boss.alive, world: this,
+      });
       MG.CampaignHUD.draw(ctx, this.hudModel());
       MG.CampaignHUD.overlays(ctx, {
         state: this.state, stateT: this.stateT, t: this.t, L: this.L, score: this.score,
@@ -514,5 +587,56 @@
       });
       if (this.menu && !this.showControls) this.menu.draw(ctx);
     }
+  };
+
+  // The top surface under (x, y): the ground, or a platform.
+  MG.floorBelow = function (platforms, groundY, x, y) {
+    let best = groundY;
+    for (const p of platforms) {
+      if (x > p.x - 10 && x < p.x + p.w + 10 && p.y >= y - 1 && p.y < best) best = p.y;
+    }
+    return best;
+  };
+
+  // Draws the map and everything on it. Shared by the host (the real game) and Wi-Fi guests
+  // (who draw from snapshots), so everyone sees the same thing.
+  //  v: { L, t, camX, groundY, fx, platforms, gates: [{x, lift, left}], crates, pickups, enemies,
+  //       players: [fighter renderState], grenades: [{ draw }], projectiles: [{ draw }], goalOpen, world }
+  MG.drawCampaignWorld = function (ctx, v) {
+    const W = MG.W;
+    const sh = v.fx.offset();
+    ctx.save();
+    v.fx.camera(ctx, v.camX);
+    MG.Art.background(ctx, v.camX, v.t, v.groundY);
+    ctx.save();
+    ctx.translate(-Math.round(v.camX) + sh.x, sh.y);
+    const vis = (x, m = 200) => x > v.camX - m && x < v.camX + W + m;
+    for (const d of v.L.decor || []) {
+      if (!vis(d.x)) continue;
+      if (d.type === 'mound') MG.Art.termiteMound(ctx, d.x, v.groundY, d.h);
+      else if (d.type === 'sign') MG.Art.signpost(ctx, d.x, v.groundY, d.text);
+    }
+    for (let x = Math.floor(v.camX / 170) * 170; x < v.camX + W + 170; x += 170) {
+      const r = Math.sin(x * 3.7) * 0.5 + 0.5;
+      MG.Art.spinifex(ctx, x + r * 90, v.groundY + 4 + r * 30, 0.8 + r * 0.6);
+    }
+    for (const p of v.platforms) if (vis(p.x, p.w + 100)) MG.Art.platform(ctx, p, v.groundY);
+    for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) MG.Art.grass(ctx, gr.x, gr.w, v.groundY, v.t, false);
+    v.fx.drawDecals(ctx);
+    const goalX = v.L.length - 160;
+    if (v.goalOpen || vis(goalX)) MG.Art.finish(ctx, goalX + 60, v.groundY, v.t);
+    for (const g of v.gates) if (vis(g.x)) MG.Art.gate(ctx, g.x, v.groundY, { open: g.lift, t: v.t, left: g.left });
+    for (const c of v.crates) if (vis(c.x)) c.draw(ctx);
+    for (const pk of v.pickups) if (vis(pk.x)) pk.draw(ctx);
+    for (const e of v.enemies) if (vis(e.x) || !e.alive) e.draw(ctx, v.world);
+    const order = v.players.slice().sort((a, b) => (b.st === 'ko') - (a.st === 'ko'));
+    for (const s of order) MG.Fighter.drawState(ctx, s, v.world);
+    for (const g of v.grenades) g.draw(ctx);
+    for (const pr of v.projectiles) pr.draw(ctx);
+    for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) MG.Art.grass(ctx, gr.x - 6, gr.w + 12, v.groundY + 4, v.t, true);
+    v.fx.draw(ctx);
+    ctx.restore();
+    ctx.restore();
+    v.fx.drawFinisher(ctx, v.camX);
   };
 })();

@@ -45,7 +45,7 @@
       this.facing = opts.facing || 1;
       this.team = opts.team || 'player';
       this.mercy = opts.mercy || 0;      // invulnerable for a moment after being hit
-      this.colors = opts.colors || null; // e.g. player 2's sandy coat
+      this.coat = opts.coat || 0;        // 0 = normal, 1-3 = player 2-4's coat
       this.hp = def.hp;
       this.maxHp = def.hp;
       this.meter = 0;
@@ -484,7 +484,8 @@
         hold: m && m.kind === 'pin' && !m.fired ? 1 : 0,
         hide: this.invuln > 0.1 && Math.floor(this.t * 20) % 2 === 0 ? 1 : 0,
         ps: r2(this.powers.shield || 0), su: this.powers.super ? 1 : 0, tea: this.powers.tea ? 1 : 0,
-        vx: Math.round(this.vx), st: this.state, tag: this.tag || 0, tc: this.tagColor || 0, p2: this.colors ? 1 : 0,
+        vx: Math.round(this.vx), st: this.state, tag: this.tag || 0, tc: this.tagColor || 0, coat: this.coat || 0,
+        mk: m ? m.kind : 0, og: this.onGround ? 1 : 0, fi: this.firing ? 1 : 0,
       };
     }
 
@@ -496,6 +497,7 @@
       const h = 120 * k, w = 50 * k;
       const floor = world.floorBelow ? world.floorBelow(s.x, s.y) : world.groundY;
       MG.Art.shadow(ctx, s.x, floor, 36 * k * Math.max(0.4, 1 - (floor - s.y) / 400));
+      s = Object.assign({ t: 0, walk: 0, vx: 0, f: 1 }, s); // Wi-Fi updates leave out zeros
       if (s.tag && s.pose !== 'ko') {
         const ty = s.y - 158 * k + Math.sin(s.t * 4) * 3;
         ctx.fillStyle = s.tc;
@@ -524,7 +526,7 @@
         x: s.x, y: s.y, facing: s.f, scale: def.scale, t: s.t, pose: s.pose, walk: s.walk,
         jab: s.jab, jabArm: s.ja, kick: s.kick, crouch: s.cr, mouth: s.mo || undefined, flash: !!s.fl,
         gun: !!s.gun, muzzle: !!s.mz, spin: s.sp, holding: s.hold ? 'grenade' : null,
-        colors: s.p2 ? def.p2colors : null,
+        colors: s.coat && def.coats ? def.coats[s.coat] : null,
       });
       if (s.ps && (s.ps > 2 || Math.floor(s.t * 8) % 2 === 0)) {
         const r = h * 0.62 + Math.sin(s.t * 6) * 3;

@@ -59,8 +59,10 @@ check(localStorage.getItem('marsupialmayhem.probe') === '7' && MG.Save.get('prob
 // Wi-Fi: double-clicked page shows the WI-FI button with sharing instructions
 check(!!menuItem(m.menu, 'WI-FI'), 'double-clicked page: WI-FI button is there');
 menuItem(m.menu, 'WI-FI').act(); frames(10);
-check(/share-on-network\.command/.test(m.info.join(' ')), 'WI-FI explains share-on-network.command');
-tap('Space'); frames(2);
+check(sceneName() === 'Wifi', 'WI-FI opens the Wi-Fi menu');
+menuItem(scene().menu, 'HOST A GAME').act(); frames(2);
+check(sceneName() === 'Wifi' && /share-on-network\.command/.test(scene().info.join(' ')), 'double-clicked page: HOST explains share-on-network.command');
+MG.Engine.setScene(m); frames(2);
 // public web pages (GitHub Pages) have no WI-FI button; home addresses do
 function wifiAt(host) { location.protocol = 'http:'; location.hostname = host; return MG.Net.available(); }
 check(!wifiAt('marknakasone85.github.io') && MG.Net.webOnly(), 'GitHub Pages: Wi-Fi is off');
@@ -72,5 +74,5 @@ location.hostname = ''; location.protocol = 'file:';
 // a host window that another window replaced stops and says why
 MG.Net.role = 'host'; MG.Net.status = 'connected'; MG.Net.token = 't';
 MG.Net.giveUp(); frames(2);
-check(sceneName() === 'Menu' && /stopped/.test(scene().info.join(' ')) && MG.Net.role === null, 'a replaced host window stops and explains');
+check(sceneName() === 'Lobby' && /stopped/.test(scene().error) && MG.Net.role === null, 'a replaced host window stops and explains');
 done('boot');

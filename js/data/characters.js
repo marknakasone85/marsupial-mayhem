@@ -12,8 +12,8 @@ MG.CHARACTERS = [
     special: 'bound', specialName: 'BOOMER BOUND',
     trait: 'Tail Counter: block a hit and he kicks back by himself.',
     fact: 'The largest living marsupial. Males box, leaning back on the tail to kick with both feet.',
-    // a second Boomer (2 players on one keyboard) gets a sandy coat so you can tell them apart
-    p2colors: { fur: '#d08a3c', dark: '#9a5a22' },
+    // when several players are Boomer, players 2-4 get their own coats so you can tell them apart
+    coats: [null, { fur: '#d08a3c', dark: '#9a5a22' }, { fur: '#8e8fa6', dark: '#5f6078' }, { fur: '#7a4a32', dark: '#4f2c1c' }],
   },
 ];
 

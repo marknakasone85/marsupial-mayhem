@@ -27,7 +27,7 @@ This is where "better than Sloth Slap" gets decided. Polish it before adding mor
 - Synthesised sounds and one music track for the Outback.
 - **Done when:** it feels great to play for 5 minutes, runs at 60 fps on a phone, the tests cover it, and the owner has played it.
 
-## Milestone 2: home Wi-Fi play
+## Milestone 2: home Wi-Fi play (built 13 Nov 2026, waiting for the family to play it at home)
 
 Early on purpose: everything after this is built and tested to work on Wi-Fi.
 - `share-on-network.command` in this folder starts the share on port **8020**. The host opens `http://localhost:8020`, friends open `http://<wifi-network-address>:8020` and enter the 4-digit code.

@@ -13,6 +13,7 @@ Security choices:
   * Files are read-only: nothing anyone sends is ever written to disk.
   * Co-op relay (/net/...):
       - only the person sitting at THIS computer can host a game (localhost only)
+      - a player who reconnects with their old secret token keeps their player number
       - joining needs the 4-digit code shown on the host's screen; after too many
         wrong codes a device is locked out for a minute
       - every request needs a secret per-player token; messages are small,
@@ -309,6 +310,17 @@ class GameOnlyHandler(http.server.SimpleHTTPRequestHandler):
                 FAILS[ip] = fails
                 return self.json_reply(403, {"error": "That code is not right. Check the host's screen."})
             FAILS.pop(ip, None)
+            # A player whose connection dropped proves who they were with their old secret token
+            # and gets their own player number back (instead of a second copy of themselves).
+            old = ROOM.by_token(data.get("token"))
+            if old is not None and old is not ROOM.host and ROOM.guests.get(old.id) is old:
+                g = Client(old.id, ip)
+                old.gone = True
+                old.cond.notify_all()
+                ROOM.guests[g.id] = g
+                print(f"  Player {g.id + 1} reconnected.")
+                sys.stdout.flush()
+                return self.json_reply(200, {"id": g.id, "token": g.token, "rejoined": True})
             free = [i for i in range(1, MAX_PLAYERS) if i not in ROOM.guests]
             if not free:
                 return self.json_reply(409, {"error": "The game is full (4 players)."})
@@ -425,7 +437,7 @@ def main():
 
     ip = None if args.local else lan_ip()
     ADDRESS = f"http://{ip}:{args.port}" if ip else f"http://localhost:{args.port}"
-    print("\n  Marsupial Mayhem is now shared on your home network!\n")
+    print("\n  Marsupial Mayhem is now shared " + ("on THIS computer only (test mode)." if args.local else "on your home network!") + "\n")
     if ip:
         print("  On another computer or tablet on the same Wi-Fi, open this in a web browser:\n")
         print(f"      {ADDRESS}\n")

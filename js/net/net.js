@@ -100,9 +100,10 @@
       this.open();
     },
 
-    // Player: join again with the remembered code (gets a fresh connection).
+    // Player: join again with the remembered code (gets a fresh connection). The old token lets the
+    // relay give us our own player number back, so we don't turn into a new player.
     async rejoin() {
-      const d = await this.api('/net/join', { code: this.code });
+      const d = await this.api('/net/join', { code: this.code, token: this.token });
       Object.assign(this, { id: d.id, token: d.token });
       this.open();
     },
