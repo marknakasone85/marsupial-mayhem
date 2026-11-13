@@ -7,7 +7,7 @@
   const AUDIO_METHODS = ['tone', 'noise', 'wobble', 'hit', 'bigHit', 'whiff', 'jump', 'land', 'hurt', 'block',
     'pickup', 'heal', 'gong', 'crate', 'special', 'ko', 'win', 'shoot', 'emptyClick', 'ammo', 'powerUp',
     'funnyDeath', 'playMusic', 'finisher', 'jab', 'kick', 'hop', 'pin', 'punt', 'boom', 'gatling', 'munch',
-    'thump', 'hiss', 'snort', 'screech', 'splash', 'bellow'];
+    'thump', 'hiss', 'snort', 'screech', 'splash', 'bellow', 'weapon', 'coin', 'kaching'];
   const MAX_EVENTS = 300;
   const r1 = (v) => Math.round(v * 10) / 10;
   const r2 = (v) => Math.round(v * 100) / 100;
@@ -29,8 +29,10 @@
       if (p.wall) a.push(1); else if (p.kind === 'tongue') a.push(0, Math.round(p.x0));
       return a;
     },
-    PROJ_CODE: { gumnut: 'g', dust: 'd', cube: 'c', stink: 's', wave: 'w', wallaby: 'y', bin: 'b', tongue: 't' },
-    PROJ_KIND: { g: 'gumnut', d: 'dust', c: 'cube', s: 'stink', w: 'wave', y: 'wallaby', b: 'bin', t: 'tongue' },
+    PROJ_CODE: { gumnut: 'g', dust: 'd', cube: 'c', stink: 's', wave: 'w', wallaby: 'y', bin: 'b', tongue: 't',
+      pebble: 'p', snag: 'n', cricket: 'k', flame: 'f', dropbear: 'r', maul: 'm', magpie: 'q' },
+    PROJ_KIND: { g: 'gumnut', d: 'dust', c: 'cube', s: 'stink', w: 'wave', y: 'wallaby', b: 'bin', t: 'tongue',
+      p: 'pebble', n: 'snag', k: 'cricket', f: 'flame', r: 'dropbear', m: 'maul', q: 'magpie' },
     capturing: false,
     buffer: { fx: [], au: [] },
     seq: 0,
@@ -98,7 +100,7 @@
       const b = this.takeBuffer();
       const powers = (p) => Object.keys(p).map((k) => [k, r2(p[k])]);
       return {
-        t: 'snap', n: ++this.seq, lv: scene.levelIndex, st: scene.state, stT: r2(scene.stateT), tm: r2(scene.t),
+        t: 'snap', n: ++this.seq, gid: scene.gid, lv: scene.levelIndex, st: scene.state, stT: r2(scene.stateT), tm: r2(scene.t),
         cam: r1(scene.camX), sc: scene.score, hb: scene.hpBonus || 0, nb: scene.newBest ? 1 : 0, jg: scene.joeyGrew && scene.joeyGrew.length ? scene.joeyGrew : 0,
         bo: scene.boss ? [Math.max(0, Math.round(scene.boss.hp)), scene.boss.maxHp, scene.bossAwake ? 1 : 0, scene.boss.alive ? 1 : 0] : 0,
         pl: scene.slots.map((sl) => {
@@ -108,6 +110,7 @@
             hp: Math.max(0, Math.round(f.hp)), mhp: f.maxHp, me: Math.round(f.meter), cs: f.canSpecial ? 1 : 0,
             am: f.ammo, gr: f.grenades, pw: powers(f.powers), rt: r1(sl.respawnT),
             jr: f.joeyReady ? 1 : 0, jc: f.joey ? r2(MG.U.clamp(f.joey.cool / 8, 0, 1)) : 0,
+            wpn: f.weapon ? f.weapon.id : 0, amx: f.weapon ? f.weapon.max : 0, co: sl.earned || 0, cn: scene.coinsOf(sl),
           }));
         }),
         en: scene.enemies.map((e) => [e.uid, e.type, r1(e.x), r1(e.y), e.facing, e.flash > 0 ? 1 : 0, e.alive ? 1 : 0,
@@ -117,6 +120,7 @@
         pk: scene.pickups.map((p) => [p.type, r1(p.x), r1(p.y)]),
         pr: scene.projectiles.map(S.projState),
         gn: scene.grenades.map((g) => [r1(g.x), r1(g.y), r2(g.spin), r2(g.fuse), r2(g.t)]),
+        cs: scene.coins.slice(0, 30).map((c) => [Math.round(c.x), Math.round(c.y), c.v, c.lying && !c.target ? 1 : 0]),
         fx: b.fx, au: b.au,
       };
     },

@@ -17,16 +17,25 @@
     if (coop) UI.text(ctx, p.tag, x + 236, y + 15, 14, p.color, 'right');
     UI.bar(ctx, x + 64, y + 27, 184, 12, p.hp / p.mhp, '#ff4d6d');
     UI.text(ctx, Math.ceil(Math.max(0, p.hp)) + '', x + 244, y + 33, 10, '#ffffff', 'right');
+    // armor: a blue bar that takes the hits before health does
+    if (p.armorMax > 0) UI.bar(ctx, x + 64, y + 40, 184, 4, p.armor / p.armorMax, '#4ea8de');
+    // coins (each player's own wallet)
+    if (p.coins !== undefined && p.coins !== null) {
+      const cx = coop ? x + 212 : x + 246;
+      UI.text(ctx, String(p.coins), cx, y + 15, 12, '#ffd23f', 'right');
+      ctx.font = `bold 12px ${UI.FONT || 'sans-serif'}`;
+      MG.Art.coinIcon(ctx, cx - ctx.measureText(String(p.coins)).width - 9, y + 15, 6);
+    }
     UI.bar(ctx, x + 64, y + 46, 184, 6, p.meter / MG.SPECIAL_COST, p.canSpecial ? '#00f5d4' : '#4cc9f0');
     // grenades, weapon ammo, power-ups
     let ix = x + 64;
     MG.Art.grenade(ctx, ix + 6, y + 67, { r: 6, pin: true });
     UI.text(ctx, 'x' + p.grenades, ix + 16, y + 67, 13, p.grenades ? '#9ef01a' : '#888888');
     ix += 44;
-    if (p.ammo > 0) {
-      MG.Art.gatling(ctx, ix + 8, y + 68, { spin: t * 0 });
-      UI.text(ctx, String(p.ammo), ix + 54, y + 67, 13, '#ffb703');
-      ix += 80;
+    if (p.weapon) {
+      MG.Art.weaponIcon(ctx, p.weapon, ix + 16, y + 67, 0.62);
+      UI.text(ctx, p.ammo > 0 ? String(p.ammo) : '...', ix + 38, y + 67, 13, p.ammo > 0 ? '#ffb703' : '#888888');
+      ix += 70;
     }
     for (const [type, left] of p.powers) {
       const c = MG.Art.POWER_COLORS[type];
@@ -124,7 +133,9 @@
         UI.outlineText(ctx, 'STAGE CLEAR!', W / 2, 150, 54, '#ffd23f', 'center');
         UI.outlineText(ctx, 'Health bonus +' + o.hpBonus + '     Score ' + o.score, W / 2, 206, 22, '#ffffff', 'center');
         if (o.newBest) UI.outlineText(ctx, 'NEW BEST SCORE!', W / 2, 240, 22, '#9ef01a', 'center');
-        (o.joeyGrew || []).slice(0, 2).forEach((txt, i) => UI.outlineText(ctx, txt, W / 2, 268 + i * 22, 17, '#f6b3c4', 'center'));
+        const grew = (o.joeyGrew || []).slice(0, 2);
+        grew.forEach((txt, i) => UI.outlineText(ctx, txt, W / 2, 268 + i * 22, 17, '#f6b3c4', 'center'));
+        if (o.coinLine) UI.outlineText(ctx, o.coinLine, W / 2, 268 + grew.length * 22, 17, '#ffd23f', 'center');
       }
     },
   };

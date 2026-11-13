@@ -32,6 +32,7 @@
       this.pickups = [];
       this.proj = [];
       this.nades = [];
+      this.coins = [];
       this.fx = new MG.FX();
       this.camX = this.camTarget = 0;
       MG.Audio.playMusic(this.L.music);
@@ -53,6 +54,7 @@
         return;
       }
       if (m.t === 'toLobby') { MG.Engine.setScene(new MG.JoinScene({ rejoin: true })); return; }
+      if (m.t === 'shop') { const shop = new MG.ShopScene({ guest: true }); MG.Engine.setScene(shop); shop.onNet(m); return; }
       if (m.t === 'snap' && m.k === 'duel') { // the host switched to a battle
         const scene = new MG.RemoteDuelScene();
         MG.Engine.setScene(scene);
@@ -67,6 +69,8 @@
       this.snapAt = performance.now();
       const mine = (m.pl || []).find((p) => p.id === MG.Net.id);
       if (mine) MG.Net.myCid = mine.cid;
+      // coins we picked up in the host's game go into our own wallet (counted once)
+      if (mine && mine.co) MG.Gear.netEarn(m.gid, mine.id, mine.co);
 
       // players glide toward their newest spot (jumps of more than 220 px snap straight there)
       const seen = new Set();
@@ -98,6 +102,7 @@
         return p;
       });
       this.nades = (m.gn || []).map(([x, y, spin, fuse, t]) => ({ draw: (ctx) => MG.Grenade.drawState(ctx, x, y, spin, fuse, t) }));
+      this.coins = (m.cs || []).map(([x, y, v, lying]) => ({ x, draw: (ctx) => MG.Art.coin(ctx, x, y + (lying ? Math.sin(this.t * 3 + x) * 3 : 0), this.t + x * 0.01, v) }));
       this.camTarget = m.cam;
       MG.Sync.replay(this.fx, m);
     }
@@ -131,8 +136,11 @@
       }
       // lost the connection? rejoin by ourselves with the same code and character
       MG.Net.maintain(dt, () => {
-        if (MG.Net.myCid) MG.Net.send({ t: 'pick', cid: MG.Net.myCid, ready: true }, 'host', true);
+        if (MG.Net.myCid) MG.Net.send(Object.assign({ t: 'pick', cid: MG.Net.myCid, ready: true }, MG.Gear.mine()), 'host', true);
       });
+      // tell the host our gear and wallet now and then (it shows our coins and uses our gear)
+      this.gearT = (this.gearT || 0) - dt;
+      if (this.gearT <= 0 && MG.Net.active) { this.gearT = 2; MG.Net.send(Object.assign({ t: 'gear' }, MG.Gear.mine()), 'host', true); }
       this.lostT = MG.Net.lost ? (this.lostT || 0) + dt : 0;
       if (this.lostT > 90) { this.end('Could not reconnect to the host.'); return; }
 
@@ -183,7 +191,7 @@
       MG.drawCampaignWorld(ctx, {
         L: this.L, t: this.t, camX: this.camX, groundY: this.groundY, fx: this.fx, platforms: this.platforms,
         gates: this.gates, crates: this.crates, pickups: this.pickups, enemies: [...this.enemies.values()],
-        players: Object.values(this.players), grenades: this.nades, projectiles: proj,
+        players: Object.values(this.players), grenades: this.nades, projectiles: proj, coins: this.coins,
         goalOpen: !(s.bo && s.bo[3]), world: this,
       });
 
@@ -213,6 +221,8 @@
             hp: p.hp, mhp: p.mhp, meter: p.me || 0, canSpecial: !!p.cs, ammo: p.am || 0, grenades: p.gr || 0,
             powers: Array.isArray(p.pw) ? p.pw : [], respawnT: p.rt || 0, ko: p.st === 'ko',
             joeyLevel: Array.isArray(p.jy) ? p.jy[3] : 0, joeyCool: p.jc || 0, joeyReady: !!p.jr, pouch: p.pu || null,
+            weapon: p.wpn || null, ammoMax: p.amx || 0, armor: p.ar || 0, armorMax: p.arm || 0,
+            coins: p.id === MG.Net.id ? MG.Gear.coins('p1') : p.cn || 0,
           };
         }),
         strips,

@@ -43,7 +43,7 @@
         UI.text(ctx, 'x' + s.grenades, r ? ix - 10 : ix + 10, y, 12, '#9ef01a', r ? 'right' : 'left');
         ix += r ? -50 : 50;
       }
-      if (s.ammo > 0) UI.text(ctx, 'GATLING ' + s.ammo, ix, y, 12, '#ffb703', r ? 'right' : 'left');
+      if (s.weapon && MG.WEAPONS[s.weapon]) UI.text(ctx, MG.WEAPONS[s.weapon].short + ' ' + s.ammo, ix, y, 12, '#ffb703', r ? 'right' : 'left');
     },
 
     classic(ctx, m) {
@@ -53,6 +53,7 @@
         const x = flip ? W - 30 - bw : 30;
         const frac = s.hp / s.mhp;
         UI.bar(ctx, x, 22, bw, 22, frac, frac > 0.3 ? '#52e07a' : '#ff4d6d', flip, s.ghost);
+        if (s.armorMax > 0) UI.bar(ctx, x, 46, bw, 4, s.armor / s.armorMax, '#4ea8de', flip);
         UI.outlineText(ctx, `${s.tag}  ${s.name}`, flip ? x + bw : x, 62, 18, s.color, flip ? 'right' : 'left');
         const mx = flip ? x + bw - 200 : x;
         UI.bar(ctx, mx, 78, 200, 8, s.meter / MG.SPECIAL_COST, s.canSpecial ? (Math.floor(m.t * 6) % 2 ? '#00f5d4' : '#ffffff') : '#00b4d8', flip);
@@ -79,6 +80,7 @@
         } else {
           const frac = s.hp / s.mhp;
           UI.bar(ctx, x + 12, 38, 170, 11, frac, frac > 0.3 ? '#52e07a' : '#ff4d6d', false, s.ghost);
+          if (s.armorMax > 0) UI.bar(ctx, x + 12, 50, 170, 3, s.armor / s.armorMax, '#4ea8de');
           UI.text(ctx, `${Math.ceil(s.hp)}`, x + 190, 44, 12, '#ffffff');
           UI.bar(ctx, x + 12, 56, 170, 6, s.meter / MG.SPECIAL_COST, s.canSpecial ? (Math.floor(m.t * 6) % 2 ? '#00f5d4' : '#ffffff') : '#00b4d8');
           this.extras(ctx, s, x + 2, 76, 'left');
@@ -363,7 +365,8 @@
 
     supplyDrop() {
       const r = Math.random();
-      const type = r < 0.28 ? 'heart' : r < 0.52 ? 'grenades' : r < 0.67 ? 'gatling' : U.choice(MG.POWER_TYPES);
+      // a weapon to borrow (any of them, fair for everyone), armor, or the usual
+      const type = r < 0.25 ? 'heart' : r < 0.45 ? 'grenades' : r < 0.63 ? 'w:' + U.choice(MG.WEAPON_IDS) : r < 0.73 ? 'armor' : U.choice(MG.POWER_TYPES);
       const x = U.rand(120, W - 120);
       this.addPickup(type, x, -30);
       this.fx.text(x, 140, 'SUPPLY DROP!', '#ffd23f', 20);
@@ -380,6 +383,12 @@
       if (pk.type === 'heart') { f.heal(30); MG.Audio.heal(); say('+30 HP', '#ff4d6d'); }
       else if (pk.type === 'grenades') { f.giveGrenades(2); MG.Audio.ammo(); say('+2 GRENADES', '#9ef01a'); }
       else if (pk.type === 'gatling') { f.giveWeapon('gatling', 50); MG.Audio.powerUp(); say('GUMNUT GATLING!', '#ffb703'); }
+      else if (pk.type === 'armor') { f.giveArmor(MG.ARMOR_PICKUP); MG.Audio.block(); say('+' + MG.ARMOR_PICKUP + ' ARMOR', '#9bd0ff'); }
+      else if (MG.pickupWeapon(pk.type)) {
+        const id = MG.pickupWeapon(pk.type);
+        f.giveWeapon(id, Math.ceil(MG.WEAPONS[id].pickupAmmo / 2)); // half a map's worth: duels are short
+        MG.Audio.powerUp(); say(MG.WEAPONS[id].name + '!', '#ffb703');
+      }
       else if (MG.POWER_TYPES.includes(pk.type)) { f.powerUp(pk.type, 8); MG.Audio.powerUp(); say(MG.POWER_NAMES[pk.type], MG.Art.POWER_COLORS[pk.type]); }
     }
 
@@ -487,6 +496,7 @@
           tag: this.tagOf(s), color: this.colorOf(s), name: s.def.name, hp: Math.max(0, s.f.hp), mhp: s.f.maxHp, ghost: s.ghost,
           meter: s.f.meter, canSpecial: s.f.canSpecial, ammo: s.f.ammo, grenades: s.f.grenades, wins: s.wins, ko: s.f.state === 'ko',
           joeyReady: s.f.joeyReady, pouch: s.f.pouch,
+          weapon: s.f.weapon ? s.f.weapon.id : null, armor: s.f.armor, armorMax: s.f.armorMax,
         })),
       };
     }
@@ -547,7 +557,7 @@
       pl: scene.slots.map((s) => this.compact(Object.assign(s.f.renderState(), {
         id: s.id, tag: scene.tagOf(s), tc: scene.colorOf(s), hp: Math.max(0, Math.round(s.f.hp)), mhp: s.f.maxHp,
         gh: r2(s.ghost), me: Math.round(s.f.meter), cs: s.f.canSpecial ? 1 : 0, am: s.f.ammo, gr: s.f.grenades, jr: s.f.joeyReady ? 1 : 0,
-        wins: s.wins, cpu: s.cpu ? 1 : 0,
+        wins: s.wins, cpu: s.cpu ? 1 : 0, wpn: s.f.weapon ? s.f.weapon.id : 0,
       }))),
       pr: scene.projectiles.map(this.projState),
       gn: scene.grenades.map((g) => [r1(g.x), r1(g.y), r2(g.spin), r2(g.fuse), r2(g.t)]),

@@ -146,7 +146,7 @@
         sides: s.pl.map((p) => ({
           tag: p.tag, color: p.tc, name: MG.charById(p.cid).name, hp: p.hp, mhp: p.mhp, ghost: p.gh === undefined ? 0 : p.gh,
           meter: p.me || 0, canSpecial: !!p.cs, ammo: p.am || 0, grenades: p.gr || 0, wins: p.wins || 0, ko: p.st === 'ko',
-          joeyReady: !!p.jr, pouch: p.pu || null,
+          joeyReady: !!p.jr, pouch: p.pu || null, weapon: p.wpn || null, armor: p.ar || 0, armorMax: p.arm || 0,
         })),
       });
       MG.DuelHUD.banner(ctx, s.bn || null, s.ba);

@@ -52,6 +52,13 @@
 - Tournament Duel versus mode alongside the campaign.
 - Start from Sloth Slap's engine. Weapons, grenades, armor and the shop follow Zombie Survival. Both are the owner's own code.
 
+## Chosen while building Milestone 5 (13 Nov 2026; the owner can change any of these)
+
+- **Weapon names and prices** (placeholders): Shanghai Slingshot, Snag Shooter, Gumnut Gatling, Cricket-Ball Bowler, Eucalyptus Flamethrower, Drop-Bear Launcher, Magpie Swooper; Bark Vest, Billycan Plating, Corrugated-Iron Suit; Bigger Heart, Grenade Belt. Prices are in `js/data/weapons.js`.
+- **One weapon carried at a time**, chosen in the shop, refilling by itself. No weapon-switch button.
+- **Coins and gear belong to the player, not the character**, and are kept between games (as in Zombie Survival). No selling back yet.
+- **No boomerang weapon:** boomerangs are Aboriginal tools, so it's left out to stay well clear of the guardrail about Aboriginal culture.
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.
@@ -59,3 +66,4 @@
 3. **Trade mark:** registering Marsupial Mayhem is the owner's own step, ideally before release. A trade mark lawyer can advise.
 4. ~~The pouch for male characters~~: answered 13 Nov 2026, their joeys ride on their back.
 5. **Names from Milestone 1 (placeholders):** the mini-boss Big Buck, the Gumnut Gatling, and the power-ups Gumleaf Shield, Billy Tea Rush and Super Wallop.
+6. **Milestone 5 choices** (above): weapon names and prices, one weapon at a time, and whether to add selling back.

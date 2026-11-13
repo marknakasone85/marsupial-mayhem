@@ -1,6 +1,7 @@
 // Campaign maps. Never delete or replace a map: new ones are appended.
 // Each map: world, name, theme, music, length, platforms, grass (cat hiding spots), enemies, crates,
-// pickups, gates (checkpoints that open once every pest before them is gone), boss, decor.
+// pickups, gates (checkpoints that open once every pest before them is gone), boss, decor,
+// coins (lying around: { x, y, v }; y is the coin's middle, v 1 or 5).
 // Hearts after each gate and before the boss, and two power-ups, are placed automatically.
 // A map's length must be at least boss.x + 580 (the boss arena starts at boss.x - 380).
 MG.LEVELS = [
@@ -37,8 +38,13 @@ MG.LEVELS = [
       { x: 2360, loot: 'grenades', label: 'GRIN ISLE' },
       { x: 3250, loot: 'heart' },
       { x: 3780, loot: 'grenades' },
+      { x: 2050, loot: 'armor' },
     ],
-    pickups: [{ type: 'gatling', x: 2550, y: 262 }],
+    pickups: [{ type: 'gatling', x: 2550, y: 262 }, { type: 'w:snag', x: 1120, y: 362 }],
+    coins: [
+      { x: 1030, y: 340 }, { x: 1060, y: 340 }, { x: 2290, y: 330 }, { x: 2320, y: 330 }, { x: 2350, y: 330 },
+      { x: 2520, y: 236, v: 5 }, { x: 2760, y: 340 }, { x: 2790, y: 340 }, { x: 3960, y: 440 }, { x: 3990, y: 440 },
+    ],
     gates: [{ x: 1900 }, { x: 3330 }],
     boss: { type: 'bigBuck', x: 4200 },
     decor: [

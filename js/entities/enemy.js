@@ -108,7 +108,7 @@
         this.vx = (hit.dir || 1) * U.rand(500, 700);
         this.vy = -U.rand(600, 800);
         world.fx.text(this.x, this.y - this.d.h - 20, '+' + this.d.score, '#ffd23f', 24);
-        if (world.onEnemyKilled) world.onEnemyKilled(this);
+        if (world.onEnemyKilled) world.onEnemyKilled(this, hit);
       }
       return 'hit';
     }
@@ -420,6 +420,7 @@
         world.fx.burst(this.x, this.y - 22, '#c68642', 16, 300);
         world.fx.text(this.x, this.y - 60, 'CRUNCH!', '#ffd23f', 26);
         if (this.loot !== 'none') world.addPickup(this.loot, this.x, this.y - 20);
+        if (world.dropCoins) world.dropCoins(this.x, this.y - 30, MG.COINS.crate + Math.floor(Math.random() * 3), hit);
       }
       return 'hit';
     }
@@ -428,8 +429,15 @@
   };
 
   // ---------- Pickups ----------
-  // heart (+40 HP), power-ups (shield, tea, super), grenades (+2), gatling (weapon), gumnuts (ammo)
+  // heart (+40 HP), power-ups (shield, tea, super), grenades (+2), gatling (weapon), gumnuts (ammo),
+  // 'w:<weapon id>' (a weapon to borrow for the map), armor (a bark patch: +20 armor)
   MG.EDIBLE = { heart: 1, shield: 1, tea: 1, super: 1 }; // what rabbits will eat
+  // 'w:snag' -> 'snag' (only real weapons), else null
+  MG.pickupWeapon = (type) => {
+    if (typeof type !== 'string' || type.slice(0, 2) !== 'w:') return null;
+    const id = type.slice(2);
+    return Object.prototype.hasOwnProperty.call(MG.WEAPONS, id) ? id : null;
+  };
   MG.Pickup = class {
     constructor(type, x, y) {
       this.type = type; this.x = x; this.y = y; this.vy = 0; this.t = Math.random() * 5; this.taken = false;
@@ -451,6 +459,8 @@
       else if (MG.POWER_TYPES.includes(this.type)) A.powerOrb(ctx, this.type, this.x, this.y, this.t);
       else if (this.type === 'grenades') A.grenadePack(ctx, this.x, this.y, this.t);
       else if (this.type === 'gatling') A.gatlingPickup(ctx, this.x, this.y, this.t);
+      else if (this.type === 'armor') A.armorPickup(ctx, this.x, this.y, this.t);
+      else if (MG.pickupWeapon(this.type)) A.weaponPickup(ctx, MG.pickupWeapon(this.type), this.x, this.y, this.t);
       else if (this.type === 'gumnuts') A.gumnutSack(ctx, this.x, this.y, this.t);
       else if (this.type === 'scrap') A.scrap(ctx, this.x, this.y, this.t);
     }

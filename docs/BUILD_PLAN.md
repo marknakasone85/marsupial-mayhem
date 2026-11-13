@@ -54,7 +54,7 @@ Details agreed with the owner on 13 Nov 2026 (`DESIGN.md`, "The signature mechan
 - New controls in the key strip, Pause > Controls, touch buttons and gamepad; JOEY/POUCH presses and joey state over Wi-Fi.
 - **Done when:** it's in campaign, duels and Wi-Fi, it's tested, and the owner likes it.
 
-## Milestone 5: weapons, shop and upgrades
+## Milestone 5: weapons, shop and upgrades (built 13 Nov 2026, waiting for the owner to try it)
 
 - The weapons (a mix of real-style weapons with marsupial twists, plus themed specials), throwing weapons, weapon upgrades and special weapons (`DESIGN.md`).
 - Coins from enemies and crates, the platypus's shop between levels, and health and armor to build up. Weapon, health and armor pickups in maps.

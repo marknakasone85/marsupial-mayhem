@@ -82,7 +82,12 @@
       this.counterT = 0;      // Tail Counter: kicks back this many seconds after a block
       this.counterCool = 0;
       this.powers = {};       // power-up name -> seconds left
-      this.weapon = null;     // { id: 'gatling', ammo, max }
+      this.weapon = null;     // the weapon in your paws: { id, level, ammo, max, own }
+      this.ownWeapon = null;  // the one you bought (refills by itself); one found in a map is borrowed
+      this.sinceShot = 9;
+      this.armor = 0;         // armor takes the hits before health does (MG.Gear.apply)
+      this.armorMax = 0;
+      this.armorId = null;
       this.grenades = opts.grenades !== undefined ? opts.grenades : MG.START_GRENADES;
       this.fireT = 0;
       this.muzzleT = 0;
@@ -98,7 +103,7 @@
     has(ability) { return (this.def.abilities || []).includes(ability); }
     get box() { return { x: this.x - this.w / 2, y: this.y - this.h, w: this.w, h: this.h }; }
     get canSpecial() { return this.meter >= SPECIAL_COST; }
-    get ammo() { return this.weapon ? this.weapon.ammo : 0; }
+    get ammo() { return this.weapon ? Math.floor(this.weapon.ammo) : 0; }
     get joeyReady() { return !!this.joey && this.joey.ready; }
     get joeyOut() { return !!this.joey && this.joey.state !== 'home'; }
 
@@ -123,9 +128,21 @@
 
     powerUp(type, secs) { this.powers[type] = secs || MG.POWER_TIME; }
     heal(n) { this.hp = Math.min(this.maxHp, this.hp + n); }
+    // A weapon from the shop: refills by itself once you stop shooting.
+    equip(id, level) {
+      const max = MG.weaponMag(id, level);
+      this.ownWeapon = { id, level: level || 1, ammo: max, max, own: true };
+      if (!this.weapon || this.weapon.own) this.weapon = this.ownWeapon;
+    }
+    // A weapon found in a map: `ammo` shots, no refill. Then your own weapon comes back.
     giveWeapon(id, ammo) {
-      if (this.weapon && this.weapon.id === id) this.weapon.ammo = Math.min(this.weapon.max, this.weapon.ammo + ammo);
-      else this.weapon = { id, ammo, max: Math.max(100, ammo) };
+      if (this.weapon && !this.weapon.own && this.weapon.id === id) this.weapon.ammo = Math.min(this.weapon.max, this.weapon.ammo + ammo);
+      else this.weapon = { id, level: 1, ammo, max: Math.max(MG.WEAPONS[id].pickupAmmo, ammo), own: false };
+    }
+    // Armor found in a map (a bark patch).
+    giveArmor(n) {
+      this.armorMax = Math.max(this.armorMax, 30);
+      this.armor = Math.min(this.armorMax, this.armor + n);
     }
     giveGrenades(n) { this.grenades = Math.min(MG.MAX_GRENADES, this.grenades + n); }
 
@@ -146,6 +163,10 @@
       this.fireT -= dt;
       this.muzzleT -= dt;
       this.hintT -= dt;
+      this.sinceShot += dt;
+      // a weapon you own refills by itself once you stop shooting for a moment
+      const ow = this.ownWeapon;
+      if (ow && ow.ammo < ow.max && this.sinceShot > 0.6) ow.ammo = Math.min(ow.max, ow.ammo + ow.max / (MG.WEAPONS[ow.id].reload * MG.WEAPON_LEVELS[ow.level].reload) * dt);
       this.firing = false;
       for (const k of Object.keys(this.powers)) {
         this.powers[k] -= dt;
@@ -330,29 +351,32 @@
     }
 
     tryFire(world, pressed) {
-      if (!this.weapon) {
+      const w = this.weapon;
+      if (!w) {
         if (pressed) {
           MG.Audio.emptyClick();
-          if (this.hintT <= 0) { this.say(world, 'No weapon yet! Look for one', '#cccccc', 15); this.hintT = 1.5; }
+          if (this.hintT <= 0) { this.say(world, 'No weapon yet! Find one, or buy one at the shop', '#cccccc', 15); this.hintT = 1.5; }
         }
         return;
       }
       this.firing = true;
+      if (w.ammo < 1) {
+        if (pressed) { MG.Audio.emptyClick(); if (this.hintT <= 0) { this.say(world, 'RELOADING...', '#cccccc', 15); this.hintT = 1.2; } }
+        return;
+      }
       if (this.fireT > 0) return;
-      this.fireT = 0.06;
-      const by = this.y - this.h * 0.36;
-      const sup = this.powers.super ? 2 : 1;
-      world.spawn(new MG.Projectile('gumnut', this.x + this.facing * 20, by + U.rand(-3, 3),
-        this.facing * 950, U.rand(-30, 30), this.team,
-        { dmg: 3.5 * sup, stun: 0.12, kbx: 130, kby: -60, props: true, life: 0.7, gravity: 220 }));
-      this.weapon.ammo--;
+      const def = MG.WEAPONS[w.id];
+      this.fireT = def.rate;
+      this.sinceShot = 0;
+      def.fire(this, world, MG.WEAPON_LEVELS[w.level || 1].dmg * (this.powers.super ? 2 : 1));
+      w.ammo -= 1;
       this.muzzleT = 0.05;
-      this.spin += 0.34;
-      this.vx -= this.facing * 18;
-      MG.Audio.gatling();
-      if (this.weapon.ammo <= 0) {
-        this.weapon = null;
-        this.say(world, 'OUT OF GUMNUTS!', '#ffb703', 18);
+      if (def.spins) this.spin += 0.34;
+      MG.Audio.weapon(def.sound);
+      if (w.ammo < 1 && !w.own) {
+        // a borrowed weapon is used up: back to your own
+        this.weapon = this.ownWeapon;
+        this.say(world, 'OUT OF ' + def.short + '!', '#ffb703', 18);
       }
     }
 
@@ -480,6 +504,15 @@
           return 'blocked';
         }
       }
+      if (this.armor > 0 && !hit.poison && hit.dmg > 0) {
+        // armor takes the hit before health does
+        const a = Math.min(this.armor, hit.dmg);
+        this.armor -= a;
+        hit.dmg -= a;
+        world.fx.burst(this.x, this.y - this.h * 0.55, '#9bd0ff', 5, 160);
+        if (this.armor <= 0) { this.say(world, 'ARMOR BROKEN!', '#9bd0ff', 16); MG.Audio.block(); }
+        else if (Math.random() < 0.35) this.say(world, 'CLANK!', '#9bd0ff', 15);
+      }
       if (hit.armour) {
         // super armour: it hurts, but it doesn't stop him
         this.hp -= hit.dmg;
@@ -564,7 +597,8 @@
         kick: r2(kick), cr: r2(crouch),
         mo: this.state === 'attack' ? 'open' : this.state === 'hurt' ? 'ouch' : 0,
         fl: this.flash > 0 ? 1 : 0,
-        gun: this.weapon && ['idle', 'block'].includes(this.state) ? 1 : 0, mz: this.muzzleT > 0 ? 1 : 0, sp: r2(this.spin),
+        gun: this.weapon && ['idle', 'block'].includes(this.state) ? this.weapon.id : 0, mz: this.muzzleT > 0 ? 1 : 0, sp: r2(this.spin),
+        ar: this.armor > 0 ? Math.ceil(this.armor) : 0, arm: this.armorMax, ai: this.armor > 0 ? this.armorId || 'patch' : 0,
         hold: m && m.kind === 'pin' && !m.fired ? 1 : 0,
         hide: this.invuln > 0.1 && !this.burrowed && !(m && m.kind === 'special') && Math.floor(this.t * 20) % 2 === 0 ? 1 : 0,
         ps: r2(this.powers.shield || 0), su: this.powers.super ? 1 : 0, tea: this.powers.tea || this.sprintT > 0 ? 1 : 0,
@@ -620,7 +654,7 @@
       const bigAmt = sp.big !== undefined ? sp.big : s.kick;
       const common = {
         x: s.x, y: s.y, facing: s.f, scale: def.scale, t: s.t, pose: s.np ? 'block' : s.pose, walk: s.walk,
-        mouth: s.mo || sp.mouth || undefined, flash: !!s.fl, gun: !!s.gun, muzzle: !!s.mz, spin: s.sp,
+        mouth: s.mo || sp.mouth || undefined, flash: !!s.fl, gun: s.gun === 1 ? 'gatling' : s.gun || null, muzzle: !!s.mz, spin: s.sp,
         holding: s.hold ? 'grenade' : sp.holding || null, crouch: s.cr || 0, colors: coat,
       };
       if (def.art === 'kangaroo') {
@@ -639,6 +673,7 @@
         }));
       }
       // the joey: in the pouch, on the back, or out hopping about
+      if (s.ai && s.pose !== 'ko') MG.Art.armorOn(ctx, def, s);
       if (Array.isArray(s.jy)) MG.Art.joey(ctx, def, s, s.jy);
       if (s.ps && (s.ps > 2 || Math.floor(s.t * 8) % 2 === 0)) {
         const r = h * 0.62 + Math.sin(s.t * 6) * 3;
@@ -658,8 +693,14 @@
   //   ground (rolls along the ground), still (doesn't move), radius + tick (an area that hits
   //   again every tick seconds), bounce + friction (bounces, then rolls), wall (becomes a little
   //   wall for that many seconds once it stops), pull (yanks what it hits toward that fighter),
-  //   grab (pulls pickups too), poison, scare (pests run away)
-  const PROJ_WORD = { gumnut: 'POK!', dust: 'WHUMP!', cube: 'PLOP!', wave: 'SPLOOSH!', wallaby: 'STAMPEDE!', bin: 'CLANG!', tongue: 'SLURP!', stink: 'COUGH!' };
+  //   grab (pulls pickups too), poison, scare (pests run away),
+  //   pierce: true (goes through everything) or a number (goes through that many),
+  //   burst: hit options for an area left behind where it lands or hits (burst.kind = its look),
+  //   home: steers toward the nearest pest, fly: doesn't stop at the ground
+  const PROJ_WORD = {
+    gumnut: 'POK!', dust: 'WHUMP!', cube: 'PLOP!', wave: 'SPLOOSH!', wallaby: 'STAMPEDE!', bin: 'CLANG!', tongue: 'SLURP!', stink: 'COUGH!',
+    pebble: 'PING!', snag: 'SIZZLE!', cricket: 'HOWZAT!', flame: 'TOASTY!', dropbear: 'DROP BEAR!', maul: 'MAUL!', magpie: 'SWOOP!',
+  };
   MG.Projectile = class {
     constructor(kind, x, y, vx, vy, team, hit) {
       this.kind = kind;
@@ -674,6 +715,19 @@
       this.hitAt = new Map();
       this.wall = false;
       this.x0 = x; this.y0 = y;
+      this.pierced = 0;
+    }
+    // drop bears: leave a mauling area behind
+    die(world) {
+      this.dead = true;
+      const b = this.hit.burst;
+      if (b && !this.burst) {
+        this.burst = true;
+        world.spawn(new MG.Projectile(b.kind || 'maul', this.x, Math.min(this.y, world.groundY), 0, 0, this.team, Object.assign({ props: this.hit.props }, b)));
+        world.fx.text(this.x, this.y - 70, PROJ_WORD[b.kind] || 'BOOM!', '#ffffff', 26);
+        world.fx.burst(this.x, this.y - 20, '#8d99ae', 14, 260);
+        MG.Audio.thump();
+      }
     }
     get box() {
       if (this.wall || this.kind === 'cube') return { x: this.x - 13, y: this.y - 26, w: 26, h: 26 };
@@ -688,11 +742,12 @@
       this.t += dt;
       this.life -= dt;
       if (this.life <= 0) {
-        this.dead = true;
+        this.die(world);
         if (this.kind === 'bin') { world.fx.burst(this.x, this.y - 20, '#52b788', 14, 260); world.fx.text(this.x, this.y - 60, 'RUBBISH!', '#ffffff', 20); }
         return;
       }
       if (this.wall) return;   // a settled cube is just a little wall now
+      if (this.hit.home) this.steer(dt, world);
       if (!this.hit.still) {
         this.vy += this.gravity * (world.gravity || 1) * dt;
         this.x += this.vx * dt;
@@ -707,11 +762,12 @@
           this.vx *= Math.pow(0.02, dt * (this.hit.friction || 1));
           if (this.hit.wall && Math.abs(this.vx) < 30 && this.vy === 0) { this.wall = true; this.life = this.hit.wall; return; }
         }
-      } else if (!this.hit.ground && !this.hit.still && this.y >= world.groundY - 4) {
-        this.dead = true;
+      } else if (!this.hit.ground && !this.hit.still && !this.hit.fly && this.y >= world.groundY - 4) {
+        this.y = world.groundY - 4;
         world.fx.burst(this.x, world.groundY - 4, '#8a5a2b', 4, 120);
+        this.die(world);
         return;
-      }
+      } else if (this.hit.fly && this.y > world.groundY - 12) { this.y = world.groundY - 12; this.vy = Math.min(this.vy, 0); }
       // the tongue grabs pickups on the way
       if (this.hit.grab && world.grabPickup && world.grabPickup(this.box, this.hit.pull)) { this.dead = true; return; }
       for (const target of world.targets(this.team)) {
@@ -731,7 +787,7 @@
         const h = this.hit;
         const res = target.takeHit({
           dmg: h.dmg, kbx: (h.kbx || 0) * dir, kby: h.kby || 0, stun: h.stun || 0.3, big: !!h.big, from: this, dir,
-          poison: !!h.poison, scare: h.scare || 0,
+          poison: !!h.poison, scare: h.scare || 0, fire: !!h.fire,
         }, world);
         if (res === 'miss') continue;
         if (h.pull) {
@@ -740,13 +796,42 @@
           if (target.vy !== undefined) target.vy = -220;
         }
         if (!h.tick || Math.random() < 0.15) {
-          world.fx.burst(this.x, this.y, h.poison ? '#9ef01a' : '#ffd23f', this.kind === 'gumnut' ? 5 : 10);
-          if (this.kind !== 'gumnut' || Math.random() < 0.3) world.fx.text(target.x, b.y - 10, PROJ_WORD[this.kind] || 'BONK!', '#ffffff', this.kind === 'gumnut' ? 16 : 22);
+          // rapid-fire shots (gumnuts, flames) only say their word now and then
+          const small = this.kind === 'gumnut' || this.kind === 'flame';
+          world.fx.burst(this.x, this.y, h.poison ? '#9ef01a' : h.fire ? '#ff9f1c' : '#ffd23f', small ? 4 : 10);
+          if (!small || Math.random() < (this.kind === 'flame' ? 0.05 : 0.3)) world.fx.text(target.x, b.y - 10, PROJ_WORD[this.kind] || 'BONK!', '#ffffff', small ? 16 : 22);
         }
-        if (h.pierce || h.tick) continue;
-        this.dead = true;
+        if (h.tick || h.pierce === true) continue;
+        if (typeof h.pierce === 'number' && ++this.pierced < h.pierce) { if (h.home) this.target = null; continue; }
+        this.die(world);
         break;
       }
+    }
+
+    // magpies: swoop at the nearest pest it hasn't pecked yet
+    steer(dt, world) {
+      if (this.t < 0.18) return; // flies up out of the paws first
+      if (!this.target || !this.target.alive || this.hitList.has(this.target)) {
+        this.target = null;
+        let bd = 520;
+        for (const e of world.targets(this.team)) {
+          if (!e.alive || e.isProp || e.hidden || this.hitList.has(e)) continue;
+          const d = Math.hypot(e.x - this.x, e.y - this.y);
+          if (d < bd) { bd = d; this.target = e; }
+        }
+      }
+      const sp = Math.max(380, Math.hypot(this.vx, this.vy));
+      let ax = Math.sign(this.vx || 1), ay = 0;
+      if (this.target) {
+        const b = this.target.box;
+        const dx = this.target.x - this.x, dy = b.y + b.h * 0.5 - this.y, d = Math.hypot(dx, dy) || 1;
+        ax = dx / d; ay = dy / d;
+      }
+      const turn = Math.min(1, dt * 5);
+      const cx = this.vx / sp, cy = this.vy / sp;
+      const nx = cx + (ax - cx) * turn, ny = cy + (ay - cy) * turn, n = Math.hypot(nx, ny) || 1;
+      const speed = Math.min(620, sp + dt * 200);
+      this.vx = (nx / n) * speed; this.vy = (ny / n) * speed;
     }
 
     draw(ctx) { MG.Art.projectile(ctx, this.kind, this.x, this.y, this.t, Math.sign(this.vx) || 1, this); }

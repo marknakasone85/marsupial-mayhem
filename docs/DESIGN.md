@@ -91,6 +91,19 @@ Fighting uses all of these:
 
 The owner's zombie survival game already has weapons, grenades, armor, coins and a shop: see `TECH_PLAN.md`.
 
+### As built in Milestone 5 (13 Nov 2026)
+
+Details below were chosen in the build to fit a brawler; the owner can change any of them.
+- **One weapon at a time** on SHOOT (no extra switch button: there are already 11 buttons). You pick it in the shop. Bought weapons **refill by themselves** (a full load over a few seconds once you stop shooting), so shooting helps but the marsupials' own moves stay the main way to fight.
+- **The 7 weapons** (`js/data/weapons.js`): Shanghai Slingshot 40, Snag Shooter 80, Gumnut Gatling 140, Cricket-Ball Bowler 200 (goes through 3 pests), Eucalyptus Flamethrower 300 (short range, hits crowds), and the two special weapons: Drop-Bear Launcher 420 (lands and mauls an area) and Magpie Swooper 600 (homes in on pests). **Upgrades:** levels 2 and 3 (half the price, then the full price again) for more damage and more shots; level 3 also refills faster.
+- **Weapons found in maps** are borrowed: limited shots, no refill, then your own weapon comes back. The Tournament Trail has a Snag Shooter early on and the Gumnut Gatling up on the high stand.
+- **Armor:** Bark Vest 60 (25 armor), Billycan Plating 180 (60), Corrugated-Iron Suit 380 (110). A blue bar under health that takes hits first (not poison), repaired every map and checkpoint, and a plate drawn on the fighter's chest. Bark patches in maps and duels: +20 (up to at least 30).
+- **Upgrades for good:** Bigger Heart (+20 health per level, 100/220/400) and Grenade Belt (+1 starting grenade per level, 70/150).
+- **Coins:** rabbit 2, cat 5, pig 8, Big Buck 40, crate 3-5, plus coins lying on platforms. They fly to whoever knocked the pest out (Zombie Survival's black-hole swirl), or to anyone close by. A full run of the first map earns about 130.
+- **Wallets:** per player, not per character: `p1` (this device's player, also on Wi-Fi) and `p2` (the second player on this keyboard). Saved in the browser.
+- **The shop:** SHOP on the title screen, and **Shop** after a map (win, or knocked out). 2 players on one keyboard shop on one screen with their own cursors. **Wi-Fi: Shop Together** after a map: everyone shops on their own device with their own coins, sees everybody's wallets and presses I'M READY; the host presses START. Friends' gear goes to the host with their character pick, and the coins they pick up in the host's game are added to their own wallet.
+- **Duels:** shop gear is ignored. Supply drops now also bring a weapon to borrow (any of the 7) or armor.
+
 ## Characters
 
 There are 12 playable characters and 2 secret ones, with 4 each of Fast, Power and Balanced. Full move sets are in `ROSTER.md`.

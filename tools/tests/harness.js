@@ -58,7 +58,7 @@ function sceneName() {
   return s instanceof MG.MenuScene ? 'Menu' : s instanceof MG.CampaignScene ? 'Campaign' : s instanceof MG.WifiScene ? 'Wifi'
     : s instanceof MG.LobbyScene ? 'Lobby' : s instanceof MG.JoinScene ? 'Join' : s instanceof MG.RemoteScene ? 'Remote'
     : s instanceof MG.SelectScene ? 'Select' : s instanceof MG.DuelMenuScene ? 'DuelMenu' : s instanceof MG.DuelScene ? 'Duel'
-    : s instanceof MG.RemoteDuelScene ? 'RemoteDuel' : '?';
+    : s instanceof MG.RemoteDuelScene ? 'RemoteDuel' : s instanceof MG.ShopScene ? 'Shop' : '?';
 }
 function label(item) { return typeof item.label === 'function' ? item.label() : item.label; }
 function menuItem(menu, text) { return menu.items.find(function (i) { return label(i) === text; }); }

@@ -147,6 +147,7 @@
         this.broadcast();
         return;
       }
+      if (m.t === 'pick' || m.t === 'gear') MG.Gear.note(from, m); // their bought gear comes along
       if (m.t === 'pick') {
         const p = this.players.find((q) => q.id === from && (q.cpu === undefined || q.cpu === null));
         if (p && MG.CHARACTERS.some((c) => c.id === m.cid)) {
@@ -333,6 +334,7 @@
       if (m.t === 'welcome') { this.inGame = !!m.inGame; this.mode = m.mode || this.mode; this.phase = 'pick'; this.sendPick(false); }
       else if (m.t === 'lobby') { this.lobby = m; this.mode = m.mode; }
       else if (m.t === 'start') this.toGame(m.mode, m.level);
+      else if (m.t === 'shop' && this.phase === 'pick' && this.isReady) { const shop = new MG.ShopScene({ guest: true }); MG.Engine.setScene(shop); shop.onNet(m); }
       else if (m.t === 'snap' && Array.isArray(m.pl) && m.pl.some((p) => p.id === MG.Net.id)) this.toGame(m.k === 'duel' ? 'battle' : 'campaign', m.lv, m);
     }
 
@@ -352,7 +354,7 @@
     sendPick(ready) {
       this.isReady = ready;
       MG.Net.myCid = MG.CHARACTERS[this.cur].id; // remembered for automatic rejoins
-      MG.Net.send({ t: 'pick', cid: MG.Net.myCid, ready }, 'host', true);
+      MG.Net.send(Object.assign({ t: 'pick', cid: MG.Net.myCid, ready }, MG.Gear.mine()), 'host', true);
     }
 
     tryJoin() {

@@ -4,7 +4,7 @@
 
 A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possums and friends battle it out in the Great Pouch Tournament, until uninvited pests crash the party.
 
-**Early days:** 12 marsupials and the first map are playable. Pick your marsupial, then box, kick, bite and grenade-punt your way along the Tournament Trail past rabbits, feral cats and feral pigs to a showdown with Big Buck. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Or settle who's the champion in a **Tournament Duel**. More maps are on the way.
+**Early days:** 12 marsupials and the first map are playable. Pick your marsupial, then box, kick, bite and grenade-punt your way along the Tournament Trail past rabbits, feral cats and feral pigs to a showdown with Big Buck. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Pests drop coins: spend them at the platypus's shop on silly weapons, armor and upgrades. Or settle who's the champion in a **Tournament Duel**. More maps are on the way.
 
 ## The marsupials
 
@@ -24,6 +24,27 @@ A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possu
 | **Dead Fred** (Virginia opossum) | Balanced | Play Dead, then a surprise chomp | Immune to poison |
 
 Two secret marsupials are still locked. Every move comes from something the real animal does, and the select screen shows a true fact about each one.
+
+## Coins, weapons and the platypus's shop
+
+Knocked-out pests and smashed crates drop **coins**, and they fly straight to whoever did it. Some lie around the map too. Spend them at **the platypus's shop** (SHOP on the title screen, or after a map). The platypus can't enter the tournament (egg-layers can't!), so it sells to those who can. Your coins and gear are saved in your browser, and everyone has their own: player 2 on the same keyboard, and every friend on Wi-Fi.
+
+| Weapon | Coins | What it does |
+|---|---|---|
+| Shanghai Slingshot | 40 | steady pebble shots that knock pests back |
+| Snag Shooter | 80 | barbecue sausages that bounce along and bowl pests over |
+| Gumnut Gatling | 140 | hold SHOOT for a storm of gumnuts |
+| Cricket-Ball Bowler | 200 | a rock-hard ball that goes through three pests |
+| Eucalyptus Flamethrower | 300 | short range, roasts a whole crowd |
+| Drop-Bear Launcher | 420 | lobs a drop bear (a made-up Aussie legend) that mauls everything nearby |
+| Magpie Swooper | 600 | a magpie that swoops the nearest pests by itself |
+
+- You carry the weapon you chose in the shop. It refills by itself when you stop shooting for a moment. **Upgrade** it twice (half its price, then its full price again) for more damage and more shots.
+- Weapons found in a map are yours to borrow until they're used up; then your own comes back.
+- **Armor** takes the hits before your health does and is mended every map and checkpoint: Bark Vest (60 coins, 25 armor), Billycan Plating (180, 60) and Corrugated-Iron Suit (380, 110). Bark patches found in maps add a little.
+- **Bigger Heart** (100, 220, 400 coins): +20 health each time, for every marsupial. **Grenade Belt** (70, 150): an extra grenade at the start of every map.
+- In the shop: move with the arrows (or A D W S), buy or use with F or Enter, and go down to PLAY. Two players on one keyboard: P1 uses A D W S and F, P2 the arrows and the comma key. On phones, tap an item and then the button under your coins.
+- **Duels stay fair:** shop gear doesn't come into the ring. Supply drops there bring weapons to borrow and armor for whoever grabs them.
 
 ## Ways to play
 
@@ -81,7 +102,7 @@ Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot), ' (grena
 
 The game collects no personal information. It has no accounts, ads, analytics or tracking, and it loads nothing from other websites.
 - Settings and progress are saved only in your own web browser (local storage) and never leave your device.
-- Wi-Fi games stay on your home network. Button presses and game updates go between the players' devices through the host computer, are kept in memory only, and are gone when sharing stops.
+- Wi-Fi games stay on your home network. Button presses, game updates and each player's gear and coin count go between the players' devices through the host computer, are kept in memory only, and are gone when sharing stops. Coins you pick up in a friend's game are saved on your own device.
 - The online version is hosted by GitHub Pages. Like any website host, GitHub sees ordinary visit information (such as IP addresses); see GitHub's privacy statement. The game itself adds nothing to that.
 
 ## Content

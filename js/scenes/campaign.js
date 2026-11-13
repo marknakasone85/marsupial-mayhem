@@ -32,6 +32,8 @@
       this.showStrip = MG.Save.get('keyStrip', true);
       this.uid = 0;
       this.syncT = 0;
+      this.gid = Math.random().toString(36).slice(2, 10); // this game, for Wi-Fi friends' coin totals
+      this.coins = (this.L.coins || []).map((c) => new MG.Coin(c.x, c.y, c.v || 1, null, true));
 
       this.slots = [];
       const players = opts.players || [{ id: 0, cid: opts.charId || 'boomer', local: 'SOLO' }];
@@ -96,12 +98,23 @@
       return slot;
     }
 
+    // Whose wallet: this keyboard's players are 'p1' and 'p2'; Wi-Fi friends keep their own.
+    pidOf(slot) { return slot.local === 'P2' ? 'p2' : slot.local ? 'p1' : null; }
+    loadoutFor(slot) {
+      const pid = this.pidOf(slot);
+      if (pid) return MG.Gear.loadout(pid);
+      const g = MG.Gear.friends[slot.id];
+      return g ? g.lo : null;
+    }
+
     spawnFighter(slot, x, keep) {
       const def = slot.def;
       const coat = def.coats ? slot.id % def.coats.length : 0;
       const f = new MG.Fighter(def, x, { team: 'player', mercy: 0.8, coat, joeyLevel: MG.joeyLevel(slot.cid) });
+      MG.Gear.apply(f, this.loadoutFor(slot)); // bought weapon, armor, bigger heart, grenade belt
       if (keep) {
-        f.grenades = keep.grenades; f.weapon = keep.weapon; f.pouch = keep.pouch;
+        f.grenades = keep.grenades; f.pouch = keep.pouch;
+        if (keep.weapon && !keep.weapon.own) f.weapon = keep.weapon; // a borrowed weapon stays until it's used up
         if (keep.joey && f.joey) f.joey.rescueUsed = keep.joey.rescueUsed; // the rescue is once per map
       }
       f.tagColor = MG.PLAYER_COLORS[slot.id % 4];
@@ -179,6 +192,7 @@
         }
         return;
       }
+      if (m.t === 'gear' || m.t === 'pick') MG.Gear.note(from, m);
       if (m.t === 'in') this.netInput(from, m);
       else if (m.t === 'pick' && m.ready && typeof from === 'number' && !this.slots.some((s) => s.id === from) &&
         this.slots.length < 4 && MG.CHARACTERS.some((c) => c.id === m.cid)) {
@@ -252,8 +266,9 @@
     onHit(attacker, target, hit, result) {
       if (result === 'hit' && !target.isProp && this.fighters.includes(attacker)) this.score += 10;
     }
-    onEnemyKilled(e) {
+    onEnemyKilled(e, hit) {
       this.score += e.d.score;
+      this.dropCoins(e.x, e.y - e.d.h * 0.6, MG.COINS[e.type] || 2, hit);
       // Chompers eats almost anything a pest leaves behind (bones included)
       if (!e.isBoss && this.fighters.some((f) => f.has('scavenger')) && Math.random() < 0.5) this.addPickup('scrap', e.x, this.groundY);
       if (e === this.boss) {
@@ -266,6 +281,34 @@
         // the rest of the warren scatters
         for (const r of this.enemies) if (r.alive && r !== e) r.takeHit({ dmg: 999, kbx: 400, kby: -500, big: true, dir: r.x > e.x ? 1 : -1 }, this);
       }
+    }
+    // Coins fly to whoever knocked the pest out (or broke the crate).
+    dropCoins(x, y, total, hit) {
+      const by = MG.killerOf(hit);
+      const owner = by && this.fighters.includes(by) ? by : null;
+      let left = Math.round(total);
+      let n = 0;
+      while (left > 0 && n < 12) {
+        const v = left >= 10 && n < 10 ? 5 : 1;
+        this.coins.push(new MG.Coin(x + MG.U.rand(-10, 10), y, n >= 11 ? left : v, owner));
+        left -= n >= 11 ? left : v;
+        n++;
+      }
+    }
+    gainCoins(f, v) {
+      const slot = this.slots.find((s) => s.f === f);
+      if (!slot) return;
+      slot.earned = (slot.earned || 0) + v;
+      const pid = this.pidOf(slot);
+      if (pid) MG.Gear.addCoins(pid, v);
+      MG.Audio.coin();
+      if (v >= 5 || Math.random() < 0.3) this.fx.text(f.x + MG.U.rand(-20, 20), f.y - f.h - 26, '+' + v, '#ffd23f', 14);
+    }
+    coinsOf(slot) {
+      const pid = this.pidOf(slot);
+      if (pid) return MG.Gear.coins(pid);
+      const g = MG.Gear.friends[slot.id];
+      return g ? g.coins : slot.earned || 0;
     }
     addPickup(type, x, y) { this.pickups.push(new MG.Pickup(type, x, y !== undefined ? y : this.groundY)); }
     // Rabbits eat power-ups and hearts they find (the pest they are!).
@@ -359,6 +402,8 @@
         if (f) this.collect(pk, f);
       }
       this.pickups = this.pickups.filter((pk) => !pk.taken);
+      for (const c of this.coins) c.update(dt, this);
+      this.coins = this.coins.filter((c) => !c.taken);
 
       this.updateGates(dt);
 
@@ -394,6 +439,7 @@
         const items = [];
         if (this.checkpoint) items.push({ label: 'Continue from Checkpoint', act: () => this.respawn() });
         items.push({ label: 'Restart Map', act: () => this.restart() });
+        items.push({ label: this.net ? 'Shop Together' : 'Shop, then try again', act: () => this.openShop() });
         if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
         items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
         this.menu = new MG.MenuList(items, W / 2, 262, { w: 340, h: 42, gap: 8 });
@@ -482,9 +528,20 @@
         MG.Audio.powerUp();
         say('GUMNUT GATLING! (hold shoot)', '#ffb703', 22);
       } else if (pk.type === 'gumnuts') {
-        f.giveWeapon('gatling', 30);
+        const had = f.weapon && f.weapon.id === 'gatling';
+        if (had) f.weapon.ammo = Math.min(f.weapon.max, f.weapon.ammo + 30);
+        else f.giveWeapon('gatling', 30);
         MG.Audio.ammo();
-        say(f.weapon && f.weapon.ammo > 30 ? '+30 GUMNUTS' : 'GUMNUT GATLING! (hold shoot)', '#ffb703');
+        say(had ? '+30 GUMNUTS' : 'GUMNUT GATLING! (hold shoot)', '#ffb703');
+      } else if (pk.type === 'armor') {
+        f.giveArmor(MG.ARMOR_PICKUP);
+        MG.Audio.block();
+        say('+' + MG.ARMOR_PICKUP + ' ARMOR', '#9bd0ff');
+      } else if (MG.pickupWeapon(pk.type)) {
+        const id = MG.pickupWeapon(pk.type);
+        f.giveWeapon(id, MG.WEAPONS[id].pickupAmmo);
+        MG.Audio.powerUp();
+        say(MG.WEAPONS[id].name + '! (hold shoot)', '#ffb703', 20);
       }
     }
 
@@ -509,12 +566,25 @@
         MG.Save.set('best', best);
         this.newBest = true;
       }
+      // coins everyone picked up on this map
+      this.coinLine = this.slots.map((s) => (this.coop ? `P${s.id + 1} ` : '') + '+' + (s.earned || 0)).join('   ') + ' coins';
       const items = [];
       if (this.levelIndex + 1 < MG.LEVELS.length) items.push({ label: 'Next Map', act: () => this.goLevel(this.levelIndex + 1) });
+      items.push({ label: this.net ? 'Shop Together' : 'Shop', act: () => this.openShop() });
       items.push({ label: 'Play Again', act: () => this.restart() });
       if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
       items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
-      this.menu = new MG.MenuList(items, W / 2, 316, { w: 320, h: 40, gap: 7 });
+      this.menu = new MG.MenuList(items, W / 2, 330, { w: 320, h: 34, gap: 6, fontSize: 19 });
+    }
+
+    // The platypus's shop. Afterwards: the next map (or this one again), same players.
+    openShop() {
+      const level = this.state === 'won' && this.levelIndex + 1 < MG.LEVELS.length ? this.levelIndex + 1 : this.levelIndex;
+      const players = this.currentPlayers();
+      MG.Engine.setScene(new MG.ShopScene({
+        net: this.net, level, players, gid: this.gid,
+        earned: this.slots.map((s) => [s.id, s.earned || 0]),
+      }));
     }
 
     pause() {
@@ -581,6 +651,7 @@
           joeyLevel: f.joey ? f.joey.level : 0, joeyCool: f.joey ? MG.U.clamp(f.joey.cool / 8, 0, 1) : 0, joeyReady: f.joeyReady, pouch: f.pouch,
           colors: f.coat ? MG.coatFor(s.def, f.coat) : null,
           hp: f.hp, mhp: f.maxHp, meter: f.meter, canSpecial: f.canSpecial, ammo: f.ammo, grenades: f.grenades,
+          weapon: f.weapon ? f.weapon.id : null, ammoMax: f.weapon ? f.weapon.max : 0, armor: f.armor, armorMax: f.armorMax, coins: this.coinsOf(s),
           powers: Object.keys(f.powers).map((k) => [k, f.powers[k]]), respawnT: s.respawnT, ko: f.state === 'ko',
         };
       });
@@ -617,13 +688,13 @@
         gates: this.gates.map((g, i) => ({ x: g.x, lift: g.lift, left: this.pestsLeft(i) })),
         crates: this.crates, pickups: this.pickups, enemies: this.enemies,
         players: this.slots.map((s) => s.f.renderState()),
-        grenades: this.grenades, projectiles: this.projectiles,
+        grenades: this.grenades, projectiles: this.projectiles, coins: this.coins,
         goalOpen: !this.boss || !this.boss.alive, world: this,
       });
       MG.CampaignHUD.draw(ctx, this.hudModel());
       MG.CampaignHUD.overlays(ctx, {
         state: this.state, stateT: this.stateT, t: this.t, L: this.L, score: this.score,
-        hpBonus: this.hpBonus, newBest: this.newBest, coop: this.coop, showControls: this.showControls, joeyGrew: this.joeyGrew,
+        hpBonus: this.hpBonus, newBest: this.newBest, coop: this.coop, showControls: this.showControls, joeyGrew: this.joeyGrew, coinLine: this.coinLine,
       });
       if (this.menu && !this.showControls) this.menu.draw(ctx);
     }
@@ -673,6 +744,7 @@
     for (const s of order) MG.Fighter.drawState(ctx, s, v.world);
     for (const g of v.grenades) g.draw(ctx);
     for (const pr of v.projectiles) pr.draw(ctx);
+    for (const c of v.coins || []) if (vis(c.x, 60)) c.draw(ctx);
     for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) MG.Art.grass(ctx, gr.x - 6, gr.w + 12, v.groundY + 4, v.t, true);
     v.fx.draw(ctx);
     ctx.restore();

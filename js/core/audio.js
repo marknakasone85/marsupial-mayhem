@@ -173,6 +173,15 @@
       this.tone(70, 0.6, 'sine', 0.5, 28);
     },
     gatling() { this.noise(0.05, 0.45, 1700, 0.9); this.tone(240, 0.04, 'square', 0.06, 120); },
+    // Milestone 5: one sound per weapon (MG.WEAPONS[id].sound), coins and the shop
+    weapon(name) { if (typeof this[name] === 'function' && ['twang', 'plop', 'gatling', 'thwack', 'whoosh', 'squawk'].includes(name)) this[name](); },
+    twang() { this.tone(900, 0.12, 'triangle', 0.2, 300); this.noise(0.04, 0.3, 3000, 1); },
+    plop() { this.tone(180, 0.12, 'sine', 0.3, 420); this.noise(0.06, 0.3, 900, 1); },
+    thwack() { this.noise(0.06, 0.8, 2200, 1.2); this.tone(140, 0.08, 'square', 0.15, 70); },
+    whoosh() { this.noise(0.09, 0.18, 700 + Math.random() * 300, 0.6); },
+    squawk() { this.wobble(1100, 0.22, 'sawtooth', 0.1, 24, 160, 1500); },
+    coin() { this.tone(1320, 0.05, 'square', 0.07); this.tone(1980, 0.08, 'square', 0.07, null, 0.05); },
+    kaching() { [880, 1320, 1760].forEach((f, i) => this.tone(f, 0.09, 'square', 0.1, null, i * 0.06)); this.noise(0.15, 0.3, 6000, 1, 0.18); },
     munch() { [0, 0.09, 0.18].forEach((d) => this.noise(0.06, 0.5, 2000, 1.5, d)); },
     thump() { this.tone(80, 0.18, 'sine', 0.5, 45); this.noise(0.1, 0.5, 300, 1); },
     hiss() { this.noise(0.35, 0.35, 5200, 0.8); },

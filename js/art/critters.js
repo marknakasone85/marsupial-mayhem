@@ -453,7 +453,7 @@
       ctx.save();
       ctx.translate(p.x - 4, p.y - 2);
       ctx.rotate(-lean);
-      A.gatling(ctx, 0, 0, { muzzle: o.muzzle, spin: o.spin });
+      A.heldWeapon(ctx, o.gun, { muzzle: o.muzzle, spin: o.spin });
       ctx.restore();
     }
     arm(false);

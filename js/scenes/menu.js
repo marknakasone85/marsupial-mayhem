@@ -71,6 +71,7 @@
         { label: 'PLAY', act: () => MG.Engine.setScene(new MG.SelectScene({ mode: 'campaign' })) },
         { label: '2 PLAYERS', act: () => MG.Engine.setScene(new MG.SelectScene({ mode: 'coop' })) },
         { label: 'TOURNAMENT DUEL', act: () => MG.Engine.setScene(new MG.DuelMenuScene()) },
+        { label: 'SHOP', act: () => MG.Engine.setScene(new MG.ShopScene({ fromMenu: true })) },
       ];
       // No WI-FI button on public web pages (GitHub Pages): they can't reach a home share.
       if (!MG.Net.webOnly()) items.push({ label: 'WI-FI', act: () => MG.Engine.setScene(new MG.WifiScene()) });
@@ -79,7 +80,7 @@
         { label: () => 'BLOOD: ' + (MG.Settings.blood ? 'ON' : 'OFF'), act: () => MG.toggleBlood() },
         { label: () => 'SOUND: ' + (MG.Audio.muted ? 'OFF' : 'ON'), act: () => MG.Audio.toggleMute() },
       );
-      this.menu = new MG.MenuList(items, W / 2, 222, { w: 290, h: 34, gap: 6, fontSize: 19 });
+      this.menu = new MG.MenuList(items, W / 2, 222, { w: 290, h: 30, gap: 5, fontSize: 18 });
     }
 
     say(lines) { this.info = lines; this.infoT = 0; }
