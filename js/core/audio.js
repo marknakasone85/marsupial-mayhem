@@ -177,6 +177,9 @@
     thump() { this.tone(80, 0.18, 'sine', 0.5, 45); this.noise(0.1, 0.5, 300, 1); },
     hiss() { this.noise(0.35, 0.35, 5200, 0.8); },
     snort() { this.wobble(120, 0.3, 'sawtooth', 0.14, 30, 30, 80); },
+    screech() { this.wobble(1400, 0.6, 'sawtooth', 0.12, 30, 300, 900); this.noise(0.5, 0.4, 3500, 1); },
+    splash() { this.noise(0.45, 0.8, 900, 0.5); this.noise(0.3, 0.4, 2600, 1, 0.1); },
+    bellow() { this.wobble(70, 0.9, 'sawtooth', 0.3, 18, 12, 55); this.noise(0.6, 0.4, 200, 0.6); },
 
     // Funny "you got me!" noises, one style per kind of enemy.
     funnyDeath(style) {

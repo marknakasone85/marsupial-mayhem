@@ -202,6 +202,13 @@
     arm(true);
     A.oval(ctx, 7, -36 - breathe * 0.5, 23, 38, 0.05, c.fur, c.line, 2.5);
     A.oval(ctx, 14, -32, 11, 26, 0.1, c.belly);
+    // red-necked wallaby: rusty-red neck and shoulders
+    if (c.neck && !o.flash) A.oval(ctx, 12, -62, 13, 11, 0.3, c.neck);
+    if (o.scarf) {
+      ctx.fillStyle = o.scarf; ctx.strokeStyle = c.line; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.ellipse(14, -64, 13, 5, 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4, -64); ctx.lineTo(-6 - Math.sin(t * 8) * 3, -54); ctx.lineTo(0, -56); ctx.fill();
+    }
     ctx.restore();
 
     leg(0, c.fur);
@@ -214,6 +221,7 @@
     ctx.translate(14, -68);
     ctx.rotate(-lean * 0.7 + (pose === 'hurt' ? -0.2 : 0));
     const twitch = Math.sin(t * 1.3) > 0.97 ? 0.25 : 0;
+    if (c.neck && !o.flash) A.oval(ctx, -2, 2, 9, 9, 0, c.neck);
     for (const [ex, ey, er] of [[-7, -36, -0.4 - twitch], [0, -38, -0.12]]) {
       A.oval(ctx, ex, ey, 6, 16, er, c.fur, c.line, 2.2);
       A.oval(ctx, ex + 1, ey + 2, 2.8, 10, er, c.ear);

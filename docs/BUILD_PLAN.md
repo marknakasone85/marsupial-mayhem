@@ -37,7 +37,7 @@ Early on purpose: everything after this is built and tested to work on Wi-Fi.
 - **Done when:** the tests cover 3 Wi-Fi players, the owner's family has played it together at home, and the GitHub page still works.
 - **From here on,** every milestone adds its Wi-Fi tests and keeps them passing.
 
-## Milestone 3: the roster
+## Milestone 3: the roster (built 13 Nov 2026, waiting for the owner to try the characters)
 
 - All 12 playable characters with their moves and traits (`ROSTER.md`), built as reusable ability modules: glide, burrow, swim, climb, play dead, tongue grab, super armour, double jump.
 - A select screen with 12 tiles plus 2 locked "?" tiles, showing stat bars, the build tag (Fast, Power or Balanced) and a one-line fact.

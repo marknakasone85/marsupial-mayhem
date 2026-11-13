@@ -23,18 +23,21 @@
     }
   }
 
-  A.background = function (ctx, camX, t, groundY) {
+  // sky: 'day' (default) or 'sunset'
+  A.background = function (ctx, camX, t, groundY, skyKind) {
+    const sunset = skyKind === 'sunset';
     const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-    sky.addColorStop(0, '#3d8fd6');
-    sky.addColorStop(0.65, '#8fcfee');
-    sky.addColorStop(1, '#f6dcae');
+    sky.addColorStop(0, sunset ? '#2b1a4a' : '#3d8fd6');
+    sky.addColorStop(0.65, sunset ? '#e0794a' : '#8fcfee');
+    sky.addColorStop(1, sunset ? '#ffc15e' : '#f6dcae');
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, groundY);
     // sun and a few lazy clouds
-    ctx.fillStyle = 'rgba(255,240,180,0.5)';
-    ctx.beginPath(); ctx.arc(780, 90, 58, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#fff3c4';
-    ctx.beginPath(); ctx.arc(780, 90, 38, 0, Math.PI * 2); ctx.fill();
+    const sunY = sunset ? groundY - 60 : 90;
+    ctx.fillStyle = sunset ? 'rgba(255,214,102,0.4)' : 'rgba(255,240,180,0.5)';
+    ctx.beginPath(); ctx.arc(780, sunY, sunset ? 90 : 58, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = sunset ? '#ffd166' : '#fff3c4';
+    ctx.beginPath(); ctx.arc(780, sunY, sunset ? 62 : 38, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     for (let i = 0; i < 4; i++) {
       const cx = ((i * 330 - camX * 0.06 - t * 6) % (W + 300) + W + 300) % (W + 300) - 150;
@@ -281,6 +284,17 @@
     A.gatling(ctx, x - 12, by, { spin: t });
   };
 
+  // a leftover scrap (a bone with a bit of meat) only Chompers eats
+  A.scrap = function (ctx, x, y, t) {
+    const by = y - 8 + Math.sin(t * 4) * 2;
+    ctx.save(); ctx.translate(x, by); ctx.rotate(-0.3);
+    ctx.fillStyle = '#f5ecd7'; ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.roundRect(-11, -2.5, 22, 5, 2); ctx.fill(); ctx.stroke();
+    for (const sx of [-11, 11]) { ctx.beginPath(); ctx.arc(sx, -3, 3.4, 0, Math.PI * 2); ctx.arc(sx, 3, 3.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    A.oval(ctx, 0, 0, 6, 4, 0, '#c1503a');
+    ctx.restore();
+  };
+
   A.gumnutSack = function (ctx, x, y, t) {
     const by = y + Math.sin(t * 3) * 2;
     A.oval(ctx, x, by - 14, 13, 14, 0, '#d8c08a', LINE, 2);
@@ -290,7 +304,62 @@
   };
 
   // ---------------------------------------------------------------- projectiles
-  A.projectile = function (ctx, kind, x, y, t, dir) {
+  A.projectile = function (ctx, kind, x, y, t, dir, p) {
+    if (kind === 'cube') {
+      // wombat cube poo (cartoon!): a little brown block; once it stops it's a wall
+      ctx.save(); ctx.translate(x, y - 13); if (!(p && p.wall)) ctx.rotate(t * 8 * dir);
+      ctx.fillStyle = '#6b4a2e'; ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.roundRect(-13, -13, 26, 26, 5); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(-9, -9, 8, 5);
+      ctx.restore();
+      return;
+    }
+    if (kind === 'stink') {
+      const r = (p && p.hit && p.hit.radius) || 130;
+      ctx.save();
+      for (let i = 0; i < 9; i++) {
+        const a = i * 0.7 + t * 0.8, d = r * (0.25 + 0.5 * ((i * 37) % 10) / 10);
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = i % 2 ? '#9ef01a' : '#b5c96a';
+        ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.5, r * 0.32 + Math.sin(t * 3 + i) * 6, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 0.8; ctx.strokeStyle = '#6a7d1a'; ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) { const sx = x - 30 + i * 30, sy = y - 20 - ((t * 40 + i * 20) % 50); ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(sx + 8, sy - 8, sx, sy - 16); ctx.stroke(); }
+      ctx.restore();
+      return;
+    }
+    if (kind === 'wave') {
+      ctx.fillStyle = 'rgba(76,201,240,0.85)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(x - dir * 34, y); ctx.quadraticCurveTo(x - dir * 10, y - 70, x + dir * 22, y - 44);
+      ctx.quadraticCurveTo(x + dir * 4, y - 40, x + dir * 10, y - 22); ctx.lineTo(x + dir * 30, y); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(x + dir * (14 + i * 4), y - 48 + Math.sin(t * 20 + i) * 4, 2.5, 0, Math.PI * 2); ctx.fill(); }
+      return;
+    }
+    if (kind === 'wallaby') {
+      const def = MG.charById('benny');
+      const air = Math.abs(Math.sin(t * 10));
+      A.shadow(ctx, x, y, 20);
+      A.kangaroo(ctx, { x, y: y - air * 30, facing: dir, scale: 0.55, t, pose: 'jump', colors: Object.assign({}, def.colors, { neck: null }) });
+      return;
+    }
+    if (kind === 'bin') {
+      // a green wheelie bin, tumbling
+      ctx.save(); ctx.translate(x, y - 24); ctx.rotate(p && p.vy === 0 ? Math.sin(t * 20) * 0.1 : t * 9 * dir);
+      ctx.fillStyle = '#2d6a4f'; ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-16, -22); ctx.lineTo(16, -22); ctx.lineTo(13, 22); ctx.lineTo(-13, 22); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffd23f'; ctx.fillRect(-18, -26, 36, 6); ctx.strokeRect(-18, -26, 36, 6);
+      ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(-10, 22, 5, 0, Math.PI * 2); ctx.arc(10, 22, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      return;
+    }
+    if (kind === 'tongue') {
+      const x0 = p ? p.x0 : x - dir * 60;
+      ctx.strokeStyle = '#e86a8a'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x, y + Math.sin(t * 40) * 1.5); ctx.stroke();
+      A.oval(ctx, x, y, 5, 4, 0, '#ff8fab');
+      return;
+    }
     if (kind === 'gumnut') {
       A.oval(ctx, x, y, 5.5, 4.5, 0, '#8a5a2b', LINE, 1.5);
       ctx.fillStyle = '#5a3418';

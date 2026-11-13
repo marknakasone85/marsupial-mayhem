@@ -107,7 +107,7 @@
       const kind = player.move ? player.move.kind : null;
       const active = {
         attack: kind === 'jab', big: kind === 'kick',
-        special: kind === 'bound',
+        special: kind === 'special',
         shoot: !!player.firing,
         grenade: kind === 'pin' || kind === 'punt',
         block: player.state === 'block', jump: !player.onGround && player.state !== 'ko',

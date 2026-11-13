@@ -20,9 +20,15 @@ check(!m.page, 'a key press closes the controls page');
 
 // PLAY starts Boomer's first map, 2 PLAYERS starts it for two on one keyboard
 menuItem(m.menu, 'PLAY').act(); frames(10);
-check(sceneName() === 'Campaign' && scene().slots.length === 1 && scene().player.def.id === 'boomer', 'PLAY starts the first map with Boomer');
+check(sceneName() === 'Select' && scene().mode === 'campaign', 'PLAY opens the character select');
+tap('Enter'); frames(10);
+check(sceneName() === 'Campaign' && scene().slots.length === 1 && scene().player.def.id === 'boomer', '...Enter picks Boomer and starts the first map');
 menuItem(new MG.MenuScene().menu, '2 PLAYERS').act(); frames(10);
-check(sceneName() === 'Campaign' && scene().slots.map(function (s) { return s.local; }).join() === 'P1,P2', '2 PLAYERS starts it for two on one keyboard');
+tap('KeyD'); tap('KeyF'); tap('ArrowLeft'); tap('Comma'); frames(5);
+check(sceneName() === 'Campaign' && scene().slots.map(function (s) { return s.local + ':' + s.cid; }).join() === 'P1:stinker,P2:paddles',
+  '2 PLAYERS: each player picks (P1 Stinker, P2 Paddles) and the map starts');
+menuItem(new MG.MenuScene().menu, 'TOURNAMENT DUEL').act(); frames(2);
+check(sceneName() === 'DuelMenu', 'TOURNAMENT DUEL opens the duel menu');
 MG.Engine.setScene(m); frames(2);
 
 // settings: blood ON by default and saved, sound on/off saved
@@ -60,7 +66,7 @@ check(localStorage.getItem('marsupialmayhem.probe') === '7' && MG.Save.get('prob
 check(!!menuItem(m.menu, 'WI-FI'), 'double-clicked page: WI-FI button is there');
 menuItem(m.menu, 'WI-FI').act(); frames(10);
 check(sceneName() === 'Wifi', 'WI-FI opens the Wi-Fi menu');
-menuItem(scene().menu, 'HOST A GAME').act(); frames(2);
+menuItem(scene().menu, 'HOST CO-OP GAME').act(); frames(2);
 check(sceneName() === 'Wifi' && /share-on-network\.command/.test(scene().info.join(' ')), 'double-clicked page: HOST explains share-on-network.command');
 MG.Engine.setScene(m); frames(2);
 // public web pages (GitHub Pages) have no WI-FI button; home addresses do

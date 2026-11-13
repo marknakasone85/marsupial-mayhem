@@ -68,10 +68,9 @@
       this.info = opts.notice ? [opts.notice] : null; // a message panel (lines of text)
       this.notice = opts.notice || null;
       const items = [
-        { label: 'PLAY', act: () => MG.Engine.setScene(new MG.CampaignScene({ charId: 'boomer', level: 0 })) },
-        { label: '2 PLAYERS', act: () => MG.Engine.setScene(new MG.CampaignScene({ level: 0, players: [
-          { id: 0, cid: 'boomer', local: 'P1' }, { id: 1, cid: 'boomer', local: 'P2' },
-        ] })) },
+        { label: 'PLAY', act: () => MG.Engine.setScene(new MG.SelectScene({ mode: 'campaign' })) },
+        { label: '2 PLAYERS', act: () => MG.Engine.setScene(new MG.SelectScene({ mode: 'coop' })) },
+        { label: 'TOURNAMENT DUEL', act: () => MG.Engine.setScene(new MG.DuelMenuScene()) },
       ];
       // No WI-FI button on public web pages (GitHub Pages): they can't reach a home share.
       if (!MG.Net.webOnly()) items.push({ label: 'WI-FI', act: () => MG.Engine.setScene(new MG.WifiScene()) });
@@ -80,7 +79,7 @@
         { label: () => 'BLOOD: ' + (MG.Settings.blood ? 'ON' : 'OFF'), act: () => MG.toggleBlood() },
         { label: () => 'SOUND: ' + (MG.Audio.muted ? 'OFF' : 'ON'), act: () => MG.Audio.toggleMute() },
       );
-      this.menu = new MG.MenuList(items, W / 2, 226, { w: 270, h: 38, gap: 7, fontSize: 20 });
+      this.menu = new MG.MenuList(items, W / 2, 222, { w: 290, h: 34, gap: 6, fontSize: 19 });
     }
 
     say(lines) { this.info = lines; this.infoT = 0; }

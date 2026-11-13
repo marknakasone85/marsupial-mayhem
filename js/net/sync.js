@@ -7,7 +7,7 @@
   const AUDIO_METHODS = ['tone', 'noise', 'wobble', 'hit', 'bigHit', 'whiff', 'jump', 'land', 'hurt', 'block',
     'pickup', 'heal', 'gong', 'crate', 'special', 'ko', 'win', 'shoot', 'emptyClick', 'ammo', 'powerUp',
     'funnyDeath', 'playMusic', 'finisher', 'jab', 'kick', 'hop', 'pin', 'punt', 'boom', 'gatling', 'munch',
-    'thump', 'hiss', 'snort'];
+    'thump', 'hiss', 'snort', 'screech', 'splash', 'bellow'];
   const MAX_EVENTS = 300;
   const r1 = (v) => Math.round(v * 10) / 10;
   const r2 = (v) => Math.round(v * 100) / 100;
@@ -22,9 +22,15 @@
   let depth = 0; // only record the outermost call (e.g. hitText calls text internally)
 
   const S = (MG.Sync = {
+    compact,
     // short names for things sent many times a second
-    PROJ_CODE: { gumnut: 'g', dust: 'd' },
-    PROJ_KIND: { g: 'gumnut', d: 'dust' },
+    projState(p) {
+      const a = [S.PROJ_CODE[p.kind] || p.kind, Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy)];
+      if (p.wall) a.push(1); else if (p.kind === 'tongue') a.push(0, Math.round(p.x0));
+      return a;
+    },
+    PROJ_CODE: { gumnut: 'g', dust: 'd', cube: 'c', stink: 's', wave: 'w', wallaby: 'y', bin: 'b', tongue: 't' },
+    PROJ_KIND: { g: 'gumnut', d: 'dust', c: 'cube', s: 'stink', w: 'wave', y: 'wallaby', b: 'bin', t: 'tongue' },
     capturing: false,
     buffer: { fx: [], au: [] },
     seq: 0,
@@ -108,7 +114,7 @@
         cr: scene.crates.map((c) => [c.alive ? 1 : 0, r2(c.wobble), c.flash > 0 ? 1 : 0]),
         ga: scene.gates.map((g, i) => [g.opened ? 1 : 0, r2(g.lift), scene.pestsLeft(i)]),
         pk: scene.pickups.map((p) => [p.type, r1(p.x), r1(p.y)]),
-        pr: scene.projectiles.map((p) => [S.PROJ_CODE[p.kind] || p.kind, Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy)]),
+        pr: scene.projectiles.map(S.projState),
         gn: scene.grenades.map((g) => [r1(g.x), r1(g.y), r2(g.spin), r2(g.fuse), r2(g.t)]),
         fx: b.fx, au: b.au,
       };

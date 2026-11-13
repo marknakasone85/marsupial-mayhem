@@ -79,9 +79,10 @@
       return list.reduce((a, b) => (b.x > a.x ? b : a));
     }
     nearestFighter(x) {
-      const alive = this.aliveFighters();
-      const list = alive.length ? alive : this.fighters;
-      return list.reduce((a, b) => (Math.abs(b.x - x) < Math.abs(a.x - x) ? b : a));
+      // pests ignore anyone playing dead (Dead Fred)
+      const alive = this.aliveFighters().filter((f) => !f.playingDead && !f.burrowed);
+      if (!alive.length) return this.decoy || (this.decoy = { x: -99999, y: this.groundY, h: 1, state: 'ko', box: { x: -99999, y: 0, w: 0, h: 0 }, takeHit: () => 'miss' });
+      return alive.reduce((a, b) => (Math.abs(b.x - x) < Math.abs(a.x - x) ? b : a));
     }
     currentPlayers() { return this.slots.map((s) => ({ id: s.id, cid: s.cid, local: s.local })); }
 
@@ -219,6 +220,22 @@
     }
     spawn(p) { this.projectiles.push(p); }
     spawnGrenade(g) { this.grenades.push(g); }
+    walls() { return this.projectiles.filter((p) => p.wall); }
+    view() { return { min: this.camX, max: this.camX + W }; }
+    get radar() { return this.fighters.some((f) => f.has('earRadar') && f.state !== 'ko'); }
+    faceTarget(f) {
+      let best = null, bd = 400;
+      for (const e of this.enemies) if (e.alive && !e.hidden && Math.abs(e.x - f.x) < bd) { bd = Math.abs(e.x - f.x); best = e.x; }
+      return best;
+    }
+    // Stripes' tongue grabs a pickup and brings it straight to him.
+    grabPickup(box, f) {
+      const pk = this.pickups.find((p) => !p.taken && U.overlap(box, p.box) && (p.type !== 'scrap' || f.has('scavenger')));
+      if (!pk || !f) return false;
+      this.collect(pk, f);
+      this.fx.text(f.x, f.y - f.h - 30, 'SLURP!', '#ff8fab', 22);
+      return true;
+    }
     grenadeNear(f) {
       let best = null, bd = 70;
       for (const g of this.grenades) {
@@ -234,6 +251,8 @@
     }
     onEnemyKilled(e) {
       this.score += e.d.score;
+      // Chompers eats almost anything a pest leaves behind (bones included)
+      if (!e.isBoss && this.fighters.some((f) => f.has('scavenger')) && Math.random() < 0.5) this.addPickup('scrap', e.x, this.groundY);
       if (e === this.boss) {
         this.fx.text(e.x, e.y - 220, e.d.defeatText || `${e.d.name} DEFEATED!`, '#ffd23f', 36);
         this.fx.shake(20);
@@ -333,7 +352,7 @@
       for (const pk of this.pickups) {
         pk.update(dt, this);
         if (pk.taken) continue;
-        const f = alive.find((a) => U.overlap(pk.box, a.box));
+        const f = alive.find((a) => U.overlap(pk.box, a.box) && (pk.type !== 'scrap' || a.has('scavenger')));
         if (f) this.collect(pk, f);
       }
       this.pickups = this.pickups.filter((pk) => !pk.taken);
@@ -431,6 +450,13 @@
     collect(pk, f) {
       pk.taken = true;
       const say = (text, color, size = 22) => this.fx.text(pk.x, pk.y - 50, text, color, size);
+      if (f.has('snackSpeed')) { f.powerUp('snack', 4); this.fx.text(f.x, f.y - f.h - 40, 'TERMITE SNACK! (speed)', '#ffb703', 16); }
+      if (pk.type === 'scrap') {
+        f.heal(10);
+        MG.Audio.munch();
+        say('CRUNCH! Bones and all +10', '#ffd23f', 18);
+        return;
+      }
       if (pk.type === 'heart') {
         f.heal(40);
         MG.Audio.heal();
@@ -538,8 +564,8 @@
       const players = this.slots.map((s) => {
         const f = s.f;
         return {
-          tag: `P${s.id + 1}`, color: MG.PLAYER_COLORS[s.id % 4], name: s.def.name,
-          colors: f.coat && s.def.coats ? s.def.coats[f.coat] : null,
+          tag: `P${s.id + 1}`, color: MG.PLAYER_COLORS[s.id % 4], name: s.def.name, cid: s.cid,
+          colors: f.coat ? MG.coatFor(s.def, f.coat) : null,
           hp: f.hp, mhp: f.maxHp, meter: f.meter, canSpecial: f.canSpecial, ammo: f.ammo, grenades: f.grenades,
           powers: Object.keys(f.powers).map((k) => [k, f.powers[k]]), respawnT: s.respawnT, ko: f.state === 'ko',
         };

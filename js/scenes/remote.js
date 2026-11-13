@@ -53,6 +53,12 @@
         return;
       }
       if (m.t === 'toLobby') { MG.Engine.setScene(new MG.JoinScene({ rejoin: true })); return; }
+      if (m.t === 'snap' && m.k === 'duel') { // the host switched to a battle
+        const scene = new MG.RemoteDuelScene();
+        MG.Engine.setScene(scene);
+        scene.onNet(m);
+        return;
+      }
       if (m.t !== 'snap' || !(m.n > this.lastSeq)) return;
       this.lastSeq = m.n;
       if (m.lv !== this.levelIndex) this.setLevel(m.lv);
@@ -85,7 +91,12 @@
       (m.cr || []).forEach(([alive, wobble, fl], i) => { const c = this.crates[i]; if (c) Object.assign(c, { alive: !!alive, wobble, flash: fl ? 0.08 : 0 }); });
       (m.ga || []).forEach(([, lift, left], i) => { const g = this.gates[i]; if (g) Object.assign(g, { lift, left }); });
       this.pickups = (m.pk || []).map(([type, x, y]) => new MG.Pickup(type, x, y));
-      this.proj = (m.pr || []).map(([kind, x, y, vx, vy]) => new MG.Projectile(has(MG.Sync.PROJ_KIND, kind) ? MG.Sync.PROJ_KIND[kind] : kind, x, y, vx, vy, 'host', {}));
+      this.proj = (m.pr || []).map(([kind, x, y, vx, vy, wall, x0]) => {
+        const p = new MG.Projectile(has(MG.Sync.PROJ_KIND, kind) ? MG.Sync.PROJ_KIND[kind] : kind, x, y, vx, vy, 'host', {});
+        if (wall) { p.wall = true; p.vx = 0; p.vy = 0; }
+        if (x0 !== undefined) p.x0 = x0;
+        return p;
+      });
       this.nades = (m.gn || []).map(([x, y, spin, fuse, t]) => ({ draw: (ctx) => MG.Grenade.drawState(ctx, x, y, spin, fuse, t) }));
       this.camTarget = m.cam;
       MG.Sync.replay(this.fx, m);
@@ -196,8 +207,8 @@
         players: s.pl.map((p) => {
           const def = MG.charById(p.cid);
           return {
-            tag: `P${p.id + 1}`, color: MG.PLAYER_COLORS[p.id % 4], name: def.name,
-            colors: p.coat && def.coats ? def.coats[p.coat] : null,
+            tag: `P${p.id + 1}`, color: MG.PLAYER_COLORS[p.id % 4], name: def.name, cid: p.cid,
+            colors: p.coat ? MG.coatFor(def, p.coat) : null,
             hp: p.hp, mhp: p.mhp, meter: p.me || 0, canSpecial: !!p.cs, ammo: p.am || 0, grenades: p.gr || 0,
             powers: Array.isArray(p.pw) ? p.pw : [], respawnT: p.rt || 0, ko: p.st === 'ko',
           };

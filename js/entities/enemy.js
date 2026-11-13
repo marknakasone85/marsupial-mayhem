@@ -68,6 +68,13 @@
     takeHit(hit, world) {
       if (!this.alive) return 'miss';
       if (this.hidden) this.wake(world);
+      if (hit.scare && !this.isBoss) { this.fleeT = hit.scare; this.fleeFrom = hit.from ? hit.from.x : this.x; }
+      if (hit.poison && this.hp - hit.dmg > 0) {
+        // a cough, not a knockdown (so they can still run away)
+        this.hp -= hit.dmg;
+        this.flash = 0.1;
+        return 'hit';
+      }
       this.hp -= hit.dmg;
       this.flash = 0.1;
       const w = this.d.weight || 1;
@@ -147,6 +154,12 @@
       if (this.onGround && !was) this.onLand(world);
       const b = world.enemyBounds ? world.enemyBounds(this) : null;
       if (b) this.x = U.clamp(this.x, b.min, b.max);
+      for (const w of world.walls ? world.walls() : []) {
+        if (!this.alive || !U.overlap(this.box, w.box)) continue;
+        if (this.isBoss) { w.life = 0; world.fx.burst(w.x, w.y - 13, '#6b4a2e', 10, 220); continue; }
+        this.x = this.x < w.x ? w.box.x - this.d.w / 2 : w.box.x + w.box.w + this.d.w / 2;
+        this.vx = 0;
+      }
     }
 
     onLand(world) {
@@ -193,6 +206,15 @@
     think(dt, world, player, dx, dist) {
       const d = this.d;
       const dir = Math.sign(dx) || 1;
+      // coughing in a stink cloud: run away from it
+      if (this.fleeT > 0) {
+        this.fleeT -= dt;
+        const away = this.x >= this.fleeFrom ? 1 : -1;
+        this.facing = away;
+        this.vx = away * d.speed * 1.2;
+        if (Math.random() < dt * 2) world.fx.text(this.x, this.y - d.h - 10, 'COUGH!', '#9ef01a', 16);
+        return;
+      }
 
       if (d.behavior === 'swarmer') {
         // small quick hops toward the player, or toward a power-up to eat
@@ -255,7 +277,8 @@
           }
         } else {
           this.facing = dir;
-          this.vx = dist < 520 || this.aggro ? dir * d.speed * (dist < 520 ? 0.45 : 1.6) : 0;
+          // called to a gate: trot over fast until close; otherwise amble toward the player
+          this.vx = this.aggro && dist > 300 ? dir * d.speed * 1.6 : dist < 520 ? dir * d.speed * 0.45 : 0;
           if (dist < 420 && Math.abs(player.y - this.y) < 80 && this.cool <= 0) {
             this.state = 'windup';
             this.stateT = 0;
@@ -355,7 +378,11 @@
       const d = this.d;
       // pose bits: from the host's snapshot on Wi-Fi guests, or worked out here
       const vf = this.remoteFlags !== undefined ? this.remoteFlags : this.visualFlags();
-      if (vf & 4) { MG.Art.catEyes(ctx, this.x, this.y - 30, this.t, this.facing); return; }
+      if (vf & 4) {
+        if (world.radar) { ctx.save(); ctx.globalAlpha = 0.35; MG.Art[d.art](ctx, this.x, this.y, { t: this.t, facing: this.facing, crouch: true }); ctx.restore(); }
+        MG.Art.catEyes(ctx, this.x, this.y - 30, this.t, this.facing);
+        return;
+      }
       if (this.alive) MG.Art.shadow(ctx, this.x, world.groundY, d.w * 0.55);
       ctx.save();
       if (!this.alive) {
@@ -424,6 +451,7 @@
       else if (this.type === 'grenades') A.grenadePack(ctx, this.x, this.y, this.t);
       else if (this.type === 'gatling') A.gatlingPickup(ctx, this.x, this.y, this.t);
       else if (this.type === 'gumnuts') A.gumnutSack(ctx, this.x, this.y, this.t);
+      else if (this.type === 'scrap') A.scrap(ctx, this.x, this.y, this.t);
     }
   };
 })();

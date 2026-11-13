@@ -65,7 +65,7 @@ check(pig.hp < pig.maxHp, 'the counter kick hurts the pig');
 // ---- Boomer Bound: needs a full bar, leaps high, lands with a ground pound
 sc = arena(300); p = sc.player; p.facing = 1;
 p.meter = 40; press('KeyH', 5);
-check(!p.move || p.move.kind !== 'bound', 'no special without a full blue bar');
+check(!p.move || p.move.kind !== 'special', 'no special without a full blue bar');
 var rs = [dummy(sc, 'rabbit', 690), dummy(sc, 'rabbit', 760), dummy(sc, 'rabbit', 920)];
 p.meter = 100; key('KeyH', true); frames(1); key('KeyH', false);
 var spent = p.meter < 10;

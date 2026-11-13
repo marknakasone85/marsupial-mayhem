@@ -4,7 +4,32 @@
 
 A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possums and friends battle it out in the Great Pouch Tournament, until uninvited pests crash the party.
 
-**Early days:** the first map is playable. Boomer the red kangaroo boxes, tail-kicks and grenade-punts his way along the Tournament Trail, past rabbits, feral cats and feral pigs, to a showdown with Big Buck. Press PLAY on the title screen, or 2 PLAYERS for two on one keyboard. More marsupials and maps are on the way.
+**Early days:** 12 marsupials and the first map are playable. Pick your marsupial, then box, kick, bite and grenade-punt your way along the Tournament Trail past rabbits, feral cats and feral pigs to a showdown with Big Buck. Or settle who's the champion in a **Tournament Duel**. More maps are on the way.
+
+## The marsupials
+
+| | Build | Special | Trait |
+|---|---|---|---|
+| **Boomer** (red kangaroo) | Power | Boomer Bound: a giant leap and ground pound | Tail Counter: block, and he kicks back by himself |
+| **Stinker** (western grey kangaroo) | Power | Stink Cloud | Gets tougher the longer a fight goes on |
+| **Tank** (common wombat) | Power | Cube Barrage: cubes that become little walls | Super armour; double-tap to sprint |
+| **Chompers** (Tasmanian devil) | Power | Devil Screech, then a bite combo | Eats scraps to heal; his crunch breaks blocks |
+| **Zip** (sugar glider) | Fast | Dive Bomb | Glide: hold jump while falling |
+| **Stripes** (numbat) | Fast | Tongue Grab: pulls pests and pickups in | Every pickup is a speedy termite snack |
+| **Earl** (greater bilby) | Fast | Burrow Dash: tunnel under and pop up | Ear Radar; extra damage to rabbits |
+| **Paddles** (water opossum) | Fast | Splash Wave | A strong swimmer |
+| **Benny** (red-necked wallaby) | Balanced | Thump Alarm: a wallaby stampede | Double jump |
+| **Drowsy** (koala) | Balanced | Bellow | Power Nap to heal; climbs posts |
+| **Bins** (brushtail possum) | Balanced | Bin Fling | Wall cling and wall jump |
+| **Dead Fred** (Virginia opossum) | Balanced | Play Dead, then a surprise chomp | Immune to poison |
+
+Two secret marsupials are still locked. Every move comes from something the real animal does, and the select screen shows a true fact about each one.
+
+## Ways to play
+
+- **PLAY:** pick a marsupial and play the map. **2 PLAYERS:** two players on one keyboard, each picking their own.
+- **TOURNAMENT DUEL:** you against the CPU (JOEY, CHAMPION or LEGEND) or 2 players on one keyboard. First to win 2 rounds. Fair fights: everyone starts equal, and grenades, the gatling and power-ups only come from supply drops.
+- **WI-FI:** co-op on the map, or a battle for 2-4 players with CPU fighters to fill the gaps (see below).
 
 ## Play it
 
@@ -18,10 +43,10 @@ A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possu
 
 1. On the computer with the game folder, double-click `share-on-network.command`. A window opens and shows the address for everyone else, like `http://<wifi-network-address>:8020`.
    - The first time, macOS may ask whether Python can accept incoming network connections. Click **Allow**, or nobody else can connect.
-2. **The host** (on that same computer) opens `http://localhost:8020`, chooses **WI-FI**, then **HOST A GAME**. The screen shows a 4-digit **join code**.
-3. **Everyone else** opens the address from the window, chooses **WI-FI**, then **JOIN A GAME**, types the code and presses **I'm ready!**
+2. **The host** (on that same computer) opens `http://localhost:8020`, chooses **WI-FI**, then **HOST CO-OP GAME** or **HOST BATTLE**. The screen shows a 4-digit **join code**. The host changes their marsupial with the up/down arrows; in a battle, **C** adds a CPU fighter and **X** removes one.
+3. **Everyone else** opens the address from the window, chooses **WI-FI**, then **JOIN A GAME**, types the code, picks a marsupial (left/right) and presses **I'm ready!**
    - **Phones:** hold them sideways. Use Safari on an iPhone (Chrome on an iPhone first needs "Local Network" allowed in the iPhone's Settings).
-4. The host presses **START**. Friends can also join a game that has already started: they drop in next to the team.
+4. The host presses **START**. Friends can also join a game that has already started: in co-op they drop in next to the team, in a battle they jump in at the next round.
 
 Good to know:
 - If a phone loses the Wi-Fi for a moment, it rejoins by itself as the same player.
@@ -46,7 +71,7 @@ Good to know:
 
 Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot) and ' (grenade) work too. On phones and tablets, touch buttons appear during play (BOOM is the grenade). The title screen's CONTROLS button and the pause menu show this table too.
 
-**Tips:** press attack three times for a jab-jab-hook. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then kick it with attack (short), big attack (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
+**Tips:** some marsupials (Boomer, Chompers, Bins, Dead Fred) chain their attack: press it three times for a combo. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then kick it with attack (short), big attack (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
 
 ## Privacy
 

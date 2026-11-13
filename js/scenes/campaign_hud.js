@@ -4,14 +4,7 @@
   const W = MG.W, H = MG.H;
 
   function portrait(ctx, cx, cy, p, t) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, 24, 0, Math.PI * 2);
-    ctx.fillStyle = '#f6dcae';
-    ctx.fill();
-    ctx.clip();
-    MG.Art.kangaroo(ctx, { x: cx - 6, y: cy + 54, facing: 1, scale: 0.46, t, pose: p.ko ? 'hurt' : 'idle', colors: p.colors });
-    ctx.restore();
+    MG.Art.portrait(ctx, MG.charById(p.cid), cx, cy, 24, t, p.colors, p.ko);
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(cx, cy, 24, 0, Math.PI * 2); ctx.stroke();

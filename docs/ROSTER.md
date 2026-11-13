@@ -4,6 +4,21 @@ There are 12 playable characters (4 Fast, 4 Power, 4 Balanced) and 2 secret ones
 
 Every move is built on a **true** fact about the animal. Facts were checked during planning. Don't add new "facts" without checking them.
 
+## How the traits work in the game (built in Milestone 3)
+
+Where the plan left room, these are the choices made (the owner can change any of them):
+- **Tank's sprint burst:** double-tap a direction for a 0.65 s wombat sprint that bowls pests over.
+- **Tank's Cube Barrage:** three cubes that bounce, then sit as little walls for 6 seconds. Pests can't pass them; a boss smashes through.
+- **Chompers:** knocked-out pests sometimes leave a scrap (a bone) that only he eats, for +10 HP. His big crunch breaks a block.
+- **Stinker:** takes up to 30% less damage the longer a fight lasts. His Stink Cloud makes pests cough (damage over time) and run away.
+- **Stripes:** every pickup is a Termite Snack (4 s of speed). Tongue Grab also slurps up pickups.
+- **Earl:** Ear Radar shows hiding cats as faint shapes; 1.5x damage to rabbits.
+- **Paddles:** the swimmer trait is ready for the water maps (Cane Fields & Coast).
+- **Drowsy:** Power Nap after holding block still for 1 s heals 7 HP a second, but hits while asleep do double. He climbs the posts of the wooden stands.
+- **Bins:** clings to walls, map edges and closed gates in the air, then wall-jumps.
+- **Dead Fred:** Play Dead lasts 1.6 s (nothing can hurt him, pests and CPUs ignore him), then a surprise chomp.
+- **Zip's Dive Bomb** aims at the nearest pest or opponent.
+
 ## Stat starting points
 
 These use Sloth Slap's stat model; tune them by playtesting.
