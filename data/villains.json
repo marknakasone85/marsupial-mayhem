@@ -1,0 +1,19 @@
+{
+  "source": "Marsupial Roster Planner sheet, 'Villains & guests' tab, snapshot 2026-11-13",
+  "note": "Planning data, not a game file. Boss names are placeholders (see docs/VILLAINS.md).",
+  "villains_and_guests": [
+    {"animal": "Quokka (the twist)", "role": "Secret main villain", "fact": "Looks like the happiest animal on Earth and lives on its own island (Rottnest).", "idea": "Smiling island rulers secretly behind the invasion: they shipped in the toads, rabbits and foxes. Final world is their island (in-game: Grin Isle); final boss, the Grand Grinner."},
+    {"animal": "Cane toad", "role": "Villain (invasive)", "fact": "Brought to Australia in 1935 to eat cane beetles; poisonous, and has spread across the north.", "idea": "World boss: the Cane Toad King. Poison clouds; the quolls must avoid them."},
+    {"animal": "European rabbit", "role": "Villain (invasive)", "fact": "Two dozen rabbits released in 1859 grew into plagues that stripped the land bare.", "idea": "Swarms that eat your power-ups; the bilby's arch-rivals."},
+    {"animal": "Red fox", "role": "Villain (invasive)", "fact": "Brought over for hunting in the 1800s; preys on small marsupials.", "idea": "Fast hunter enemies; fox mini-boss."},
+    {"animal": "Feral cat", "role": "Villain (invasive)", "fact": "One of the biggest threats to small native mammals.", "idea": "Stealthy ambushers that hide in long grass."},
+    {"animal": "Feral pig", "role": "Villain (invasive)", "fact": "Digs up wetlands and forests.", "idea": "Charging tank enemy."},
+    {"animal": "Platypus", "role": "Guest (not a marsupial)", "fact": "A monotreme: lays eggs, and males have venomous ankle spurs.", "idea": "Neutral mentor or shopkeeper; running gag that it isn't allowed in the tournament."},
+    {"animal": "Short-beaked echidna", "role": "Guest (not a marsupial)", "fact": "A spiny, egg-laying monotreme.", "idea": "Rolls into a spiky ball as a hazard or ally."},
+    {"animal": "Emu", "role": "Neutral", "fact": "Famously \"won\" the 1932 Emu War against soldiers with machine guns.", "idea": "Comic stampede hazard."},
+    {"animal": "Cassowary", "role": "Hazard", "fact": "Has a dagger-like claw on each foot and a powerful kick.", "idea": "Rainforest hazard to dodge."},
+    {"animal": "Saltwater crocodile", "role": "Hazard", "fact": "The largest living reptile.", "idea": "River-crossing hazard."},
+    {"animal": "Dingo", "role": "Neutral (handle with care)", "fact": "Arrived thousands of years ago; culturally important to many Aboriginal peoples.", "idea": "Neutral wanderer rather than a villain."},
+    {"animal": "Kookaburra", "role": "Neutral", "fact": "Its call sounds like loud laughter.", "idea": "Laughs at you when you get knocked out."}
+  ]
+}

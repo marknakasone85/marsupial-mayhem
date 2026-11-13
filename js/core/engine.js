@@ -1,0 +1,150 @@
+// Core engine: canvas scaling, game loop, scene switching, small utilities.
+// Started from the owner's Sloth Slap engine (same design), renamed SS -> MG.
+window.MG = window.MG || {};
+
+(function () {
+  const W = 960;
+  const H = 540;
+  MG.W = W;
+  MG.H = H;
+
+  // ---------- Utilities ----------
+  MG.U = {
+    clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
+    lerp: (a, b, t) => a + (b - a) * t,
+    rand: (a, b) => a + Math.random() * (b - a),
+    randInt: (a, b) => Math.floor(a + Math.random() * (b - a + 1)),
+    choice: (arr) => arr[Math.floor(Math.random() * arr.length)],
+    overlap: (a, b) =>
+      a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y,
+    easeOutBack: (t) => {
+      const c1 = 1.70158, c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    },
+  };
+
+  // ---------- Save data (localStorage, never required) ----------
+  MG.Save = {
+    get(key, fallback) {
+      try {
+        const raw = localStorage.getItem('marsupialmayhem.' + key);
+        return raw === null ? fallback : JSON.parse(raw);
+      } catch (e) {
+        return fallback;
+      }
+    },
+    set(key, value) {
+      try {
+        localStorage.setItem('marsupialmayhem.' + key, JSON.stringify(value));
+      } catch (e) { /* storage unavailable: ignore */ }
+    },
+  };
+
+  // ---------- Engine ----------
+  const E = (MG.Engine = {
+    canvas: null,
+    ctx: null,
+    scene: null,
+    pixel: 1,
+    time: 0,
+    hitstop: 0,
+    slowT: 0, // seconds of slow motion left (real time)
+    slowScale: 1,
+    last: 0,
+    lastFrameAt: 0, // when a frame last ran (the Wi-Fi host ticker steps in if frames stop or never start)
+
+    init() {
+      this.canvas = document.getElementById('game');
+      this.ctx = this.canvas.getContext('2d');
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+      MG.Input.init(this.canvas);
+      requestAnimationFrame((t) => this.loop(t));
+    },
+
+    // Browsers slow down or stop animating tabs that are hidden, covered or in the background.
+    // While this computer HOSTS a Wi-Fi game, a tiny worker timer stands by and runs the game
+    // whenever normal frames stop arriving, so it never freezes for the other players.
+    startHostTicker() {
+      if (this.worker) return;
+      try {
+        const src = 'setInterval(function () { postMessage(0); }, 16);';
+        this.worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+        this.worker.onmessage = () => {
+          const now = performance.now();
+          if (now - this.lastFrameAt > 40) this.frame(now);
+        };
+      } catch (e) { this.worker = null; }
+    },
+    stopHostTicker() {
+      if (this.worker) { this.worker.terminate(); this.worker = null; }
+    },
+
+    resize() {
+      const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+      const dpr = window.devicePixelRatio || 1;
+      this.cssScale = s;
+      this.canvas.style.width = Math.floor(W * s) + 'px';
+      this.canvas.style.height = Math.floor(H * s) + 'px';
+      this.canvas.width = Math.round(W * s * dpr);
+      this.canvas.height = Math.round(H * s * dpr);
+      this.pixel = (s * dpr);
+    },
+
+    setScene(scene) {
+      if (this.scene && this.scene.exit) this.scene.exit();
+      this.scene = scene;
+      this.slowT = 0;
+      if (scene.enter) scene.enter();
+    },
+
+    // Freeze gameplay briefly on big hits for comic impact.
+    freeze(seconds) {
+      this.hitstop = Math.max(this.hitstop, seconds);
+    },
+
+    // Slow motion for knockout finishers: the game runs at `scale` speed for `seconds` of real time.
+    slowmo(seconds, scale) {
+      this.slowT = Math.max(this.slowT, seconds);
+      this.slowScale = scale;
+    },
+    // Turns a slowed-down dt back into real time (for things that must keep real pace, like Wi-Fi snapshots).
+    unscaled(dt) {
+      return this.slowT > 0 ? dt / this.slowScale : dt;
+    },
+
+    loop(ts) {
+      this.frame(ts);
+      requestAnimationFrame((t) => this.loop(t));
+    },
+
+    frame(ts) {
+      this.lastFrameAt = performance.now();
+      const dt = Math.min(0.05, (ts - (this.last || ts)) / 1000);
+      this.last = ts;
+      this.time += dt;
+      MG.Input.poll();
+
+      const frozen = this.hitstop > 0;
+      if (frozen) this.hitstop -= dt;
+      let step = dt;
+      if (!frozen && this.slowT > 0) {
+        step = dt * this.slowScale;
+        this.slowT -= dt;
+      }
+
+      const ctx = this.ctx;
+      ctx.setTransform(this.pixel, 0, 0, this.pixel, 0, 0);
+
+      // On a phone held upright the game waits (it asks you to turn the phone sideways).
+      const upright = MG.Touch && MG.Touch.enabled && MG.Touch.portrait() && this.scene && this.scene.wantsTouch;
+      if (this.scene) {
+        if (!frozen && !upright) this.scene.update(step);
+        this.scene.draw(ctx);
+        if (MG.Touch) MG.Touch.draw(ctx, this.scene.touchPlayer ? this.scene.touchPlayer() : null);
+      }
+
+      if (!frozen) MG.Input.endFrame();
+    },
+  });
+})();
