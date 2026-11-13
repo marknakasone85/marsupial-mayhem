@@ -55,7 +55,7 @@ function touch(type, id, x, y) { fire('pointer' + type, { pointerType: 'touch', 
 function scene() { return MG.Engine.scene; }
 function sceneName() {
   var s = scene();
-  return s instanceof MG.MenuScene ? 'Menu' : '?';
+  return s instanceof MG.MenuScene ? 'Menu' : s instanceof MG.CampaignScene ? 'Campaign' : '?';
 }
 function label(item) { return typeof item.label === 'function' ? item.label() : item.label; }
 function menuItem(menu, text) { return menu.items.find(function (i) { return label(i) === text; }); }

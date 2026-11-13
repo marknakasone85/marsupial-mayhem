@@ -156,6 +156,28 @@
     emptyClick() { this.tone(1800, 0.03, 'square', 0.08); this.tone(1200, 0.03, 'square', 0.06, null, 0.06); },
     ammo() { [660, 880, 1100].forEach((f, i) => this.tone(f, 0.07, 'square', 0.1, null, i * 0.05)); },
 
+    // ---------- Marsupial Mayhem ----------
+    jab() { this.noise(0.07, 0.7, 2600, 0.8); this.tone(320, 0.05, 'square', 0.1, 140); },
+    kick() {
+      this.noise(0.2, 1.0, 900, 0.6);
+      this.tone(150, 0.2, 'sawtooth', 0.22, 40);
+      this.tone(900, 0.12, 'sine', 0.08, 300, 0.03);
+    },
+    hop() { this.tone(170, 0.16, 'sine', 0.22, 420); },
+    // Grenade: the pin comes out with a little "tink", then a fizzing fuse; the boom is big and low.
+    pin() { this.tone(2600, 0.05, 'triangle', 0.15); this.tone(3400, 0.08, 'triangle', 0.1, null, 0.05); },
+    punt() { this.noise(0.08, 0.6, 1400, 1); this.tone(500, 0.1, 'square', 0.1, 900); },
+    boom() {
+      this.noise(0.7, 1.0, 240, 0.5);
+      this.noise(0.25, 0.6, 1200, 0.7);
+      this.tone(70, 0.6, 'sine', 0.5, 28);
+    },
+    gatling() { this.noise(0.05, 0.45, 1700, 0.9); this.tone(240, 0.04, 'square', 0.06, 120); },
+    munch() { [0, 0.09, 0.18].forEach((d) => this.noise(0.06, 0.5, 2000, 1.5, d)); },
+    thump() { this.tone(80, 0.18, 'sine', 0.5, 45); this.noise(0.1, 0.5, 300, 1); },
+    hiss() { this.noise(0.35, 0.35, 5200, 0.8); },
+    snort() { this.wobble(120, 0.3, 'sawtooth', 0.14, 30, 30, 80); },
+
     // Funny "you got me!" noises, one style per kind of enemy.
     funnyDeath(style) {
       switch (style) {
@@ -208,6 +230,14 @@
           this.tone(330, 0.12, 'square', 0.16, 280);
           this.tone(300, 0.2, 'square', 0.16, 240, 0.15);
           break;
+        case 'oink':
+          this.wobble(380, 0.18, 'square', 0.14, 35, 60, 300);
+          this.wobble(340, 0.3, 'square', 0.14, 35, 60, 200, 0.2);
+          break;
+        case 'yowl':
+          this.wobble(600, 0.5, 'sawtooth', 0.12, 9, 90, 900);
+          this.wobble(900, 0.3, 'sawtooth', 0.08, 9, 70, 400, 0.4);
+          break;
         case 'groan':
           this.wobble(130, 0.8, 'sawtooth', 0.14, 5, 18, 70);
           break;
@@ -233,6 +263,18 @@
     // ---------- tiny step-sequencer for background music ----------
     // Marsupial Mayhem's own tunes (16 steps each; MIDI note numbers, null = rest).
     SONGS: {
+      // The Outback: a bush-band stomp in D major.
+      outback: {
+        bpm: 132,
+        bass: [38, null, 45, null, 38, null, 45, null, 43, null, 50, null, 45, null, 52, null],
+        lead: [62, 66, 69, null, 71, 69, 66, null, 67, null, 71, 74, 73, null, 69, null],
+      },
+      // Boss fights: fast and grumpy in D minor.
+      boss: {
+        bpm: 148,
+        bass: [38, 38, 50, 38, 41, 41, 53, 41, 36, 36, 48, 36, 40, 40, 52, 43],
+        lead: [74, null, 72, 74, null, 77, 76, null, 72, null, 70, 72, null, 69, null, null],
+      },
       // Title screen: a bouncy, hopping tune in G major.
       title: {
         bpm: 124,

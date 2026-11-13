@@ -4,7 +4,7 @@
 
 A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possums and friends battle it out in the Great Pouch Tournament, until uninvited pests crash the party.
 
-**Early days:** this first version has the title screen and settings. The first playable level, starring Boomer the red kangaroo, comes next.
+**Early days:** the first map is playable. Boomer the red kangaroo boxes, tail-kicks and grenade-punts his way along the Tournament Trail, past rabbits, feral cats and feral pigs, to a showdown with Big Buck. Press PLAY on the title screen, or 2 PLAYERS for two on one keyboard. More marsupials and maps are on the way.
 
 ## Play it
 
@@ -30,10 +30,13 @@ Wi-Fi games for 2–4 players are coming soon; for now this shares the game so e
 | Attack | F | , (comma) | X |
 | Big attack | G | . (period) | Y |
 | Special | H | / (slash) | B |
-| Shoot | R | ; (semicolon) | RB / RT |
+| Shoot (hold) | R | ; (semicolon) | RB / RT |
+| Grenade | E | ' (quote) | LT |
 | Pause | Esc / P | Esc / P | Start |
 
-Playing alone? Arrows with J (attack), K (big), L (special) and ; (shoot) work too. On phones and tablets, touch buttons appear during play. The title screen's CONTROLS button shows this table too.
+Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot) and ' (grenade) work too. On phones and tablets, touch buttons appear during play (BOOM is the grenade). The title screen's CONTROLS button and the pause menu show this table too.
+
+**Tips:** press attack three times for a jab-jab-hook. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then kick it with attack (short), big attack (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
 
 ## Privacy
 

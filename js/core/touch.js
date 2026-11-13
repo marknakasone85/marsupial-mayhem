@@ -19,6 +19,7 @@
     { id: 'Big', corner: 'br', dx: 1.1, dy: 3.9, r: 0.9, label: 'BIG', color: '#ff4d6d' },
     { id: 'Shoot', corner: 'br', dx: 3.3, dy: 3.1, r: 0.85, label: 'SHOOT', color: '#ffb703' },
     { id: 'Special', corner: 'br', dx: 5.9, dy: 0.8, r: 0.75, label: 'SUPER', color: '#00f5d4' },
+    { id: 'Grenade', corner: 'br', dx: 5.6, dy: 2.6, r: 0.75, label: 'BOOM', color: '#9ef01a' },
     { id: 'Pause', corner: 'tr', dx: 0.6, dy: 0.6, r: 0.55, icon: 'pause' },
   ];
 
@@ -117,7 +118,7 @@
     },
 
     // Draw the buttons on their own layer (and the "turn sideways" hint on the game).
-    // player = fighter-like object ({ canSpecial, ammo }) to light up SUPER / dim SHOOT
+    // player = fighter-like object ({ canSpecial, ammo, grenades }) to light up SUPER / dim SHOOT and BOOM
     draw(ctx, player) {
       if (this.enabled && this.portrait()) this.drawRotate(ctx);
       const layer = this.layer;
@@ -144,6 +145,7 @@
         const down = !!I.keys['Touch' + b.id];
         let alpha = down ? 0.8 : 0.42;
         if (b.id === 'Shoot' && player && player.ammo <= 0) alpha *= 0.5;
+        if (b.id === 'Grenade' && player && player.grenades <= 0) alpha *= 0.5;
         const ready = b.id === 'Special' && player && player.canSpecial;
         c.save();
         c.translate(b.x, b.y);

@@ -55,3 +55,5 @@
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.
 2. **Names to confirm:** the Croc Emperor, the Smile Squad, Grin Isle Holidays, the weapons, and the boss names in `VILLAINS.md`. All are placeholders.
 3. **Trade mark:** registering Marsupial Mayhem is the owner's own step, ideally before release. A trade mark lawyer can advise.
+4. **The pouch for male characters (before Milestone 4):** only female kangaroos have a pouch, and "boomer" is the name for a big male, so Boomer can't really carry a joey. Options: Boomer carries his joey on his back (like the numbat), the joey is a nephew who hitches a ride, or Boomer becomes a female "flyer" (the name for a female red kangaroo) with a different name. Other roster characters may raise the same question.
+5. **Names from Milestone 1 (placeholders):** the mini-boss Big Buck, the Gumnut Gatling, and the power-ups Gumleaf Shield, Billy Tea Rush and Super Wallop.

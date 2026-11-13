@@ -8,7 +8,9 @@ The plan is in `docs/`. Read `docs/DESIGN.md`, `docs/ROSTER.md`, `docs/VILLAINS.
 
 Planning finished on 13 Nov 2026. Later that day the owner answered the open questions and extended the story (quokkas as allies who betray everyone to the reptilians, levels on a Marsupial World map), and added weapons, a shop and upgrades: see `docs/DECISIONS.md`.
 
-**Milestone 0 (setup) was built on 13 Nov 2026:** the engine from Sloth Slap, a title screen, the share server and tests. Next is Milestone 1 in `docs/BUILD_PLAN.md`. `docs/README.md` lists the plan files.
+**Milestone 0 (setup) was built on 13 Nov 2026:** the engine from Sloth Slap, a title screen, the share server and tests.
+
+**Milestone 1 (vertical slice) was built on 13 Nov 2026:** Boomer, the Outback map *Tournament Trail* (rabbits, cats, pigs, the mini-boss Big Buck), the kick grenade, the Gumnut Gatling, power-ups, gates, 2 players on one keyboard, and tests including a bot that plays the map. Still to do for Milestone 1: the owner plays it, and it's checked on a real phone (frames take about 1.5 ms on the Mac). Next is Milestone 2 (home Wi-Fi) in `docs/BUILD_PLAN.md`. `docs/README.md` lists the plan files.
 
 ## Rules the owner cares about
 
@@ -38,6 +40,14 @@ Copy and adapt Sloth Slap's `tools/share_server.py` and `share-on-network.comman
 
 **Ports:** use **8020** for the share and **8790** for the local preview. These are already taken by the owner's other games, so never stop or change them: 8000 (Sloth Slap), 8010 (Zombie Survival), 8765 (Survive Bob), 8770, 8781 and 8782 (previews).
 
+## Gameplay notes
+
+- Pests touch-damage players on their own timer (`touchT`), never the AI timer (`cool`): sharing them once froze Big Buck while he stood next to Boomer.
+- A press during a jab queues the next punch, and jabs push only a little (plus a small lunge), so jab-jab-hook combos connect.
+- Running into a block stops a charge or pounce dead, which sets up Boomer's Tail Counter.
+- Grenades only explode early on pests (not crates) and never hurt players: blasts just bounce them.
+- Hidden cats count toward a gate's pests, so they all come out when the players get near that gate.
+
 ## Content guardrails
 
 The full list is in `docs/DESIGN.md`. In short:
@@ -55,18 +65,27 @@ Script order lives in `index.html`: plain `<script>` tags, no modules. Everythin
 | Area | Files |
 |---|---|
 | Game loop, 960x540 scaling, host ticker, hit-stop, slow motion, `MG.U` helpers, `MG.Save` (localStorage, keys start `marsupialmayhem.`) | `js/core/engine.js` |
-| Keyboard, gamepad and pointer as virtual keys; control schemes `MG.Controls` (SOLO/P1/P2: left, right, up, down, attack, big, special, shoot); `MG.readControls`; `MG.Menu` | `js/core/input.js` |
-| Phone touch buttons (`TouchAttack`, `TouchBig`...) on their own layer | `js/core/touch.js` |
-| Synthesised sounds and step-sequencer music (`SONGS`: only `title` so far) | `js/core/audio.js` |
-| Particles, popups, shake, blood or confetti, slow-motion finisher; `MG.Settings.blood` (ON by default) | `js/core/fx.js` |
+| Keyboard, gamepad and pointer as virtual keys; control schemes `MG.Controls` (SOLO/P1/P2: left, right, up, down, attack, big, special, shoot, grenade); `MG.readControls` (presses like `attackP`, plus held `shoot` and `jump`); `MG.Menu` | `js/core/input.js` |
+| Phone touch buttons (HIT, BIG, SUPER, SHOOT, BOOM = grenade, JUMP, BLOCK...) on their own layer | `js/core/touch.js` |
+| Synthesised sounds and step-sequencer music (`SONGS`: `title`, `outback`, `boss`) | `js/core/audio.js` |
+| Particles, popups, shake, blast rings, blood or confetti, slow-motion finisher; `MG.Settings.blood` (ON by default) | `js/core/fx.js` |
+| Art drawn in code: shared helpers (`MG.Art.taper`, `oval`, `shadow`), kangaroos, grenade and gatling | `js/art/kangaroo.js` |
+| Art: rabbits (and Big Buck), feral cats, feral pigs, long grass | `js/art/pests.js` |
+| Art: Outback background, decorations, wooden platforms, crates, gates, finish line, pickups, projectiles | `js/art/outback.js` |
+| Data: playable characters `MG.CHARACTERS` (stats, special, trait, fact), `MG.GROUND_Y`; maps `MG.LEVELS` | `js/data/*.js` |
+| Fighter `MG.Fighter` (jab combo, tail kick, Tail Counter, Boomer Bound, grenade pin and punt, gatling, power-ups, `renderState`/`drawState`) and `MG.Projectile` | `js/entities/fighter.js` |
+| The kick grenade `MG.Grenade` (fuse, bounces, kicks, blast that never hurts players) | `js/entities/grenade.js` |
+| Pests `MG.Enemy` (behaviours: swarmer, ambusher, charger, boss), `MG.Crate`, `MG.Pickup` | `js/entities/enemy.js` |
 | Wi-Fi client `MG.Net` (header `X-Mayhem`) and the effect/sound recorder `MG.Sync` (scene snapshots come in Milestone 2) | `js/net/*.js` |
 | Drawing helpers, controls page, key strip, `MG.MenuList` | `js/scenes/ui.js` |
-| Title screen `MG.MenuScene` (PLAY placeholder, WI-FI, CONTROLS, BLOOD, SOUND) | `js/scenes/menu.js` |
+| Title screen `MG.MenuScene` (PLAY, 2 PLAYERS, WI-FI, CONTROLS, BLOOD, SOUND) | `js/scenes/menu.js` |
+| Campaign `MG.CampaignScene` (the world interface, camera, gates by zone, boss arena, pause, win/lose) and its HUD `MG.CampaignHUD` | `js/scenes/campaign.js`, `campaign_hud.js` |
 | Home-network share and relay (port 8020) | `tools/share_server.py`, `share-on-network.command` |
 
 ## Testing
 
 - **Automated:** `tools/run-tests.sh` (a few seconds). It syntax-checks every game file, runs `tools/tests/test_*.js` in macOS's built-in JavaScriptCore with a fake browser (`harness.js`), and checks the share server's safety rules (`test_server.py`). Add checks with `check(ok, 'what')` and add new test names to the `for t in ...` list.
-- **Visual:** `.claude/launch.json` has `marsupial-mayhem` (`share_server.py --local` on port 8790, this computer only). The app's preview tool reads `launch.json` from the session's main folder, so open Claude sessions in this folder; a session started in another game's folder can't use it, and must never add this game to that folder's `launch.json`. Without the preview, headless Chrome can screenshot the double-clicked page (`--headless=new --screenshot`, a file:// address).
+  Tests: `boot` (title screen, settings, Wi-Fi rules), `boomer` (every move, the grenade, the gatling, power-ups, each pest), `campaign` (map, gates, checkpoints, Big Buck, win/lose, blood, pause, touch, 2 players), `solo` (a bot plays the map 3 times and must finish most runs).
+- **Visual:** `.claude/launch.json` has `marsupial-mayhem` (`share_server.py --local` on port 8790, this computer only). The app's preview tool reads `launch.json` from the folder the session **started** in (moving a session to this folder later didn't change that), so start Claude sessions in this folder. A session started in another game's folder must never add this game to that folder's `launch.json`. Without the preview, headless Chrome can screenshot the double-clicked page: load the game scripts in a scratch page, drive `MG.Engine.frame()` yourself, then keep redrawing the frozen frame (a window resize clears the canvas).
 - A hidden preview pane doesn't animate: drive scenes with `MG.Engine.frame(t)` or the host ticker.
 - Tests change saves: back up `localStorage` keys starting `marsupialmayhem.` before testing in a browser, and put them back afterwards.

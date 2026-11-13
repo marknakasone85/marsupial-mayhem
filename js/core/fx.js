@@ -70,6 +70,12 @@
       if (this.decals.length > 80) this.decals.shift();
     }
 
+    // Expanding shock ring (grenade blasts, ground pounds).
+    ring(x, y, r, color = '#ffd23f') {
+      this.rings = this.rings || [];
+      this.rings.push({ x, y, r, color, life: 0.35, max: 0.35 });
+    }
+
     feathers(x, y, color, n) {
       for (let i = 0; i < n; i++) {
         this.parts.push({
@@ -211,9 +217,23 @@
         t.life -= dt;
       }
       this.texts = this.texts.filter((t) => t.life > 0);
+      if (this.rings) {
+        for (const r of this.rings) r.life -= dt;
+        this.rings = this.rings.filter((r) => r.life > 0);
+      }
     }
 
     draw(ctx) {
+      for (const r of this.rings || []) {
+        const k = 1 - r.life / r.max;
+        ctx.globalAlpha = (1 - k) * 0.8;
+        ctx.strokeStyle = r.color;
+        ctx.lineWidth = 10 * (1 - k) + 2;
+        ctx.beginPath();
+        ctx.ellipse(r.x, r.y, r.r * (0.3 + 0.7 * k), r.r * (0.3 + 0.7 * k) * 0.55, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
       for (const p of this.parts) {
         ctx.globalAlpha = Math.max(0, p.life / p.max);
         ctx.fillStyle = p.color;

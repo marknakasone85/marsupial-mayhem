@@ -1,5 +1,4 @@
-// Title screen (Milestone 0 placeholder): an Outback sunset, a hopping kangaroo with a joey in
-// its pouch, and a menu. PLAY says what's coming; the real game starts at Milestone 1.
+// Title screen: an Outback sunset, a hopping kangaroo with a joey in its pouch, and the menu.
 (function () {
   const W = MG.W, H = MG.H;
   const UI = MG.UI;
@@ -69,11 +68,10 @@
       this.info = opts.notice ? [opts.notice] : null; // a message panel (lines of text)
       this.notice = opts.notice || null;
       const items = [
-        { label: 'PLAY', act: () => this.say([
-          'Coming soon!',
-          'Boomer the red kangaroo hops in with the first level.',
-          'Hop back soon!',
-        ]) },
+        { label: 'PLAY', act: () => MG.Engine.setScene(new MG.CampaignScene({ charId: 'boomer', level: 0 })) },
+        { label: '2 PLAYERS', act: () => MG.Engine.setScene(new MG.CampaignScene({ level: 0, players: [
+          { id: 0, cid: 'boomer', local: 'P1' }, { id: 1, cid: 'boomer', local: 'P2' },
+        ] })) },
       ];
       // No WI-FI button on public web pages (GitHub Pages): they can't reach a home share.
       if (!MG.Net.webOnly()) items.push({ label: 'WI-FI', act: () => this.say(this.wifiInfo()) });
@@ -82,7 +80,7 @@
         { label: () => 'BLOOD: ' + (MG.Settings.blood ? 'ON' : 'OFF'), act: () => MG.toggleBlood() },
         { label: () => 'SOUND: ' + (MG.Audio.muted ? 'OFF' : 'ON'), act: () => MG.Audio.toggleMute() },
       );
-      this.menu = new MG.MenuList(items, W / 2, 238, { w: 270, h: 40, gap: 10, fontSize: 20 });
+      this.menu = new MG.MenuList(items, W / 2, 226, { w: 270, h: 38, gap: 7, fontSize: 20 });
     }
 
     wifiInfo() {

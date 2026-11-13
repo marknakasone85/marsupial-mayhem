@@ -59,8 +59,8 @@
     // Full controls page (title menu, pause menus).
     controlsPanel(ctx) {
       const W = MG.W;
-      UI.panel(ctx, 110, 150, W - 220, 360);
-      UI.outlineText(ctx, 'CONTROLS', W / 2, 180, 30, '#ffd23f', 'center');
+      UI.panel(ctx, 110, 140, W - 220, 380);
+      UI.outlineText(ctx, 'CONTROLS', W / 2, 168, 30, '#ffd23f', 'center');
       const rows = [
         ['', 'Player 1', 'Player 2', 'Gamepad'],
         ['Move', 'A / D', '← / →', 'D-pad / stick'],
@@ -69,20 +69,22 @@
         ['Attack', 'F', ', (comma)', 'X'],
         ['Big Attack', 'G', '. (period)', 'Y'],
         ['Special', 'H', '/ (slash)', 'B'],
-        ['Shoot', 'R', '; (semicolon)', 'RB / RT'],
+        ['Shoot (hold)', 'R', '; (semicolon)', 'RB / RT'],
+        ['Grenade, then kick it', 'E', "' (quote)", 'LT'],
         ['Pause', 'Esc / P', 'Esc / P', 'Start'],
       ];
       rows.forEach((r, i) => {
-        const y = 216 + i * 27;
+        const y = 202 + i * 25;
         const col = i === 0 ? '#9bf6ff' : '#ffffff';
-        UI.text(ctx, r[0], 150, y, 17, '#ffd23f');
+        UI.text(ctx, r[0], 140, y, 17, '#ffd23f');
         UI.text(ctx, r[1], 400, y, 17, col, 'center');
         UI.text(ctx, r[2], 570, y, 17, col, 'center');
         UI.text(ctx, r[3], 735, y, 17, col, 'center');
       });
-      UI.text(ctx, 'Playing alone? Arrows + J (attack) / K (big) / L (special) / ; (shoot) work too.', W / 2, 464, 14, '#cccccc', 'center');
-      UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 484, 14, '#cccccc', 'center');
-      UI.text(ctx, 'Press any key to go back.', W / 2, 502, 13, '#9bf6ff', 'center');
+      UI.text(ctx, 'Playing alone? Arrows + J (attack) / K (big) / L (special) / ; (shoot) / \' (grenade) work too.', W / 2, 460, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Grenade: pull the pin and drop it, then kick it with attack, big attack or the grenade key.', W / 2, 478, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 496, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Press any key to go back.', W / 2, 512, 13, '#9bf6ff', 'center');
     },
 
     // Key-hint strip along the bottom edge. Lights up the move the player is doing.
@@ -92,21 +94,22 @@
     //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
     keyStrip(ctx, player, t, opts = {}) {
       const LAYOUTS = {
-        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['Esc'], 'pause']],
-        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'attack'], [['K'], 'big'], [['L'], 'special'], [[';'], 'shoot'], [['Esc'], 'pause']],
-        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'attack'], [['Y'], 'big'], [['B'], 'special'], [['RB'], 'shoot'], [['Start'], 'pause']],
-        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot']],
-        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'attack'], [['.'], 'big'], [['/'], 'special'], [[';'], 'shoot']],
+        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade'], [['Esc'], 'pause']],
+        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'attack'], [['K'], 'big'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['Esc'], 'pause']],
+        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'attack'], [['Y'], 'big'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Start'], 'pause']],
+        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade']],
+        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'attack'], [['.'], 'big'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade']],
       };
-      const SHORT = { attack: 'hit', special: 'spec', move: '' };
+      const SHORT = { attack: 'hit', special: 'spec', grenade: 'nade', move: '' };
       const compact = !!opts.compact;
       let items = LAYOUTS[opts.layout || MG.Input.lastDevice] || LAYOUTS.wasd;
       if (compact) items = items.filter(([, label]) => label !== 'pause');
       const kind = player.move ? player.move.kind : null;
       const active = {
-        attack: kind === 'attack', big: kind === 'big',
-        special: kind && kind !== 'attack' && kind !== 'big' && kind !== 'shoot',
-        shoot: kind === 'shoot',
+        attack: kind === 'jab', big: kind === 'kick',
+        special: kind === 'bound',
+        shoot: !!player.firing,
+        grenade: kind === 'pin' || kind === 'punt',
         block: player.state === 'block', jump: !player.onGround && player.state !== 'ko',
       };
       const fs = compact ? 11 : 12;
@@ -134,7 +137,7 @@
       }
       for (const [keys, label] of items) {
         const ready = label === 'special' && player.canSpecial;
-        const empty = label === 'shoot' && player.ammo <= 0;
+        const empty = (label === 'shoot' && !(player.ammo > 0)) || (label === 'grenade' && !(player.grenades > 0));
         const on = active[label];
         const glow = ready && Math.floor(t * 4) % 2 === 0;
         for (const k of keys) {

@@ -18,11 +18,12 @@ check(m.page === 'controls', 'CONTROLS opens the controls page');
 tap('Escape'); frames(2);
 check(!m.page, 'a key press closes the controls page');
 
-// PLAY explains what's coming
+// PLAY starts Boomer's first map, 2 PLAYERS starts it for two on one keyboard
 menuItem(m.menu, 'PLAY').act(); frames(10);
-check(m.info && /Boomer/.test(m.info.join(' ')), 'PLAY says Boomer is coming');
-tap('Space'); frames(2);
-check(!m.info, 'a key press closes the message');
+check(sceneName() === 'Campaign' && scene().slots.length === 1 && scene().player.def.id === 'boomer', 'PLAY starts the first map with Boomer');
+menuItem(new MG.MenuScene().menu, '2 PLAYERS').act(); frames(10);
+check(sceneName() === 'Campaign' && scene().slots.map(function (s) { return s.local; }).join() === 'P1,P2', '2 PLAYERS starts it for two on one keyboard');
+MG.Engine.setScene(m); frames(2);
 
 // settings: blood ON by default and saved, sound on/off saved
 check(MG.Settings.blood === true, 'blood is ON by default');
@@ -39,7 +40,7 @@ check(MG.Audio.muted === false, 'SOUND switches back on');
 // controls: every scheme has every action, and keys reach the "controller state"
 ['P1', 'P2', 'SOLO'].forEach(function (s) {
   var c = MG.Controls[s];
-  check(['left', 'right', 'up', 'down', 'attack', 'big', 'special', 'shoot'].every(function (k) { return c[k] && c[k].length; }),
+  check(['left', 'right', 'up', 'down', 'attack', 'big', 'special', 'shoot', 'grenade'].every(function (k) { return c[k] && c[k].length; }),
     s + ' controls have every action');
 });
 key('KeyF', true);
@@ -49,7 +50,7 @@ key('KeyJ', true);
 check(MG.readControls(MG.Controls.SOLO).attackP === true && !MG.readControls(MG.Controls.P1).attackP, 'J attacks when playing alone only');
 frames(1); key('KeyJ', false); frames(1);
 var ids = MG.Touch.buttons.map(function (b) { return b.id; }).join(',');
-check(ids === 'Left,Right,Down,Attack,Jump,Big,Shoot,Special,Pause', 'phone touch buttons: ' + ids);
+check(ids === 'Left,Right,Down,Attack,Jump,Big,Shoot,Special,Grenade,Pause', 'phone touch buttons: ' + ids);
 
 // saves use the game's own name, so they never mix with Sloth Slap's
 MG.Save.set('probe', 7);

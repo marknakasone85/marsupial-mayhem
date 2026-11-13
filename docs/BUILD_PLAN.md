@@ -15,7 +15,7 @@ The family plays it two ways, and both must keep working after every milestone: 
 - **Done when:** the page opens by double-click and in the preview pane, the tests run (even if they only check boot), and there are no console errors.
 - Then offer to create the GitHub repo (`marsupial-mayhem`), push, and switch on GitHub Pages. Only with the owner's yes.
 
-## Milestone 1: vertical slice (the most important one)
+## Milestone 1: vertical slice (the most important one; built 13 Nov 2026, waiting for the owner to play it)
 
 This is where "better than Sloth Slap" gets decided. Polish it before adding more.
 - **Boomer** (red kangaroo) fully playable: move, jump, block, basic, big and special (Boomer Bound), plus the Tail Counter trait.
