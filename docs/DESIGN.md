@@ -40,6 +40,20 @@ The owner's outline (13 Nov 2026): the marsupials play levels across the Marsupi
 
 Tell the story with simple in-engine panels between worlds and on the world map: no video, just a few lines of text and the characters posing.
 
+### The villains' side in cutscenes (the owner, 14 Nov 2026)
+
+The owner asked for the story to develop more clearly, with a cutscene showing the quokkas making their alliance with the reptilians. So the players now see what the heroes don't (the heroes still only find out at the victory party). After each world a short **"MEANWHILE..." cutscene** (letterbox bars, a caption, characters walking in and talking in speech bubbles, the reptilians' leader as a dark silhouette with glowing eyes) shows the next step of the plan:
+1. **The secret deal** (after map 2, under Grin Isle): the jolly sponsor reports that the champions think the Smile Squad is helping; he and the shadowy crowned croc shake on it: DEAL! **Operation Marsupial World Conquest**: ship pests in to wear the marsupials out, then the reptilians take over.
+2. **The next shipment** (after the Rainforest, on Grin Isle's docks): crates stamped GRIN ISLE, Big Tom beaten, "send the next lot... CANE TOADS!", and a saltie sent up north to stir up trouble around Darwin (the Top End).
+3. **A new trick** (after the Cane Fields): the sponsor practises the Hypnotic Grin on pademelons, and whispers a lie to the quoll champion.
+4. **The party plan** (after Tasmania and the quoll): "throw them a VICTORY PARTY... on Grin Isle"; bunting goes up and the reptiles look for places to hide.
+5. **Places, everyone!** (after the City): the champions are on their way to the party.
+Then the betrayal plays as before, for the heroes.
+
+**Friends:** the quoll champion gets a "new friend" panel after Tasmania (with a real fact), and before the last battles a "friends from every map" panel brings back the tree-kangaroo, the quolls, the pygmy possum and the platypus.
+
+Cutscene panels are data in `MG.STORY` (see the comment at its top). A key press first finishes a panel's animation, the next one turns the page, and Esc skips.
+
 ## The Marsupial World map
 
 - Campaign levels are stops along paths on a cartoon map of **Marsupial World**: a made-up continent based on Australia's regions, with Grin Isle off the coast and the Time Rift as a glowing crack.

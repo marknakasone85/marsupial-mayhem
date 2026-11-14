@@ -92,6 +92,8 @@
 - **The new items and prices** (Thong Flinger, Full-Blast Garden Hose, Roo-Bar Armour, Gum-Leaf Tonic, Bigger Bang, Joey Snacks, Coin Magnet) are placeholders too.
 - **The map's SHOP button** sits top right, over the sea, so it never covers a stop.
 
+- **The twist is now shown to the players early** (the owner asked for the alliance to be clearer): "meanwhile" cutscenes after each world. The heroes still only find out at the victory party, so the betrayal stays a surprise for them (the players are in on it, like in a cartoon).
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.

@@ -148,18 +148,40 @@ frames(60 * 7);
 check(sc.allies[0].state !== 'ko', '...and is back a few seconds later');
 
 // ---- the story: the twist plays before Grin Isle, the ending after the last map
-fresh(); MG.Story.markSeen('opening'); MG.Progress.clear('city-4'); ['tasmania', 'quoll', 'city', 'rift', 'world3done', 'invasion', 'rainforest', 'canefields'].forEach(MG.Story.markSeen.bind(MG.Story));
+fresh(); MG.Story.markSeen('opening'); MG.Progress.clear('city-4'); ['tasmania', 'quoll', 'city', 'rift', 'world3done', 'invasion', 'rainforest', 'canefields', 'plot1', 'plot2', 'plot3', 'plot4', 'plot5'].forEach(MG.Story.markSeen.bind(MG.Story));
 var map = new MG.WorldMapScene({ players: [{ id: 0, cid: 'boomer', local: 'SOLO' }], at: lv('grin-1') }); MG.Engine.setScene(map); frames(3);
 check(map.stops[map.cur] === 'grin-1', 'walk to Grin Isle');
 map.choose(); frames(2);
 check(scene() instanceof MG.StoryScene && scene().id === 'betrayal', 'the victory party... the betrayal story plays first');
-for (var pg = 0; pg < MG.STORY.betrayal.length; pg++) { frames(25); press('Space', 2); }
+for (var pg = 0; pg < 20 && scene() instanceof MG.StoryScene; pg++) { frames(25); press('Space', 2); } // (a press finishes a cutscene's animation first)
 check(sceneName() === 'Campaign' && scene().L.id === 'grin-1', '...then the map starts');
 MG.Progress.clear('grin-4');
 check(MG.Story.pending() === 'ending', 'beating the Croc Emperor brings the ending');
 var sErr = null;
 ['tasmania', 'quoll', 'city', 'rift', 'ghost', 'betrayal', 'lair', 'isleofman', 'ending'].forEach(function (id) { (MG.STORY[id] || [null]).forEach(function (pp, k) { try { if (!pp) throw new Error('missing'); MG.Story.drawPanel(MG.Engine.ctx, id, k, 1); } catch (e) { if (!sErr) sErr = id + ': ' + e; } }); });
 check(!sErr, 'every new story panel draws' + (sErr ? ' ' + sErr : ''));
+
+// ---- the villains' side: "meanwhile" cutscenes after each world
+fresh(); ['opening', 'invasion'].forEach(MG.Story.markSeen.bind(MG.Story));
+MG.Progress.clear('outback-1'); MG.Progress.clear('outback-2');
+check(MG.Story.pending() === 'plot1', 'after map 2: MEANWHILE, UNDER GRIN ISLE... (the secret deal)');
+var order = [], cl = ['outback-4', 'rainforest-3', 'cane-4', 'alps-3', 'city-4'];
+cl.forEach(function (id) { MG.Progress.clear(id); var st; while ((st = MG.Story.pending())) { order.push(st); MG.Story.markSeen(st); } });
+check(order.join() === 'plot1,rainforest,plot2,canefields,world3done,plot3,tasmania,quoll,plot4,city,plot5,rift', 'the story goes: deal, rainforest, next shipment, cane fields, invitation, a new trick, Tasmania, the quoll, the party plan, the city, places everyone, the rift (' + order.join(', ') + ')');
+var plots = ['plot1', 'plot2', 'plot3', 'plot4', 'plot5'];
+check(plots.every(function (id) { return MG.STORY[id].every(function (pp) { return /^MEANWHILE/.test(pp.meanwhile) && pp.lines.length; }); }), 'each one is a "MEANWHILE..." cutscene');
+check(MG.STORY.plot1.some(function (pp) { return pp.cast.some(function (c) { return c.sponsor; }) && pp.cast.some(function (c) { return c.type === 'crocLand' && c.emperor; }) && pp.bursts; }), 'the deal: the jolly sponsor quokka shakes on it with the reptilians\' leader');
+sErr = null;
+plots.concat(['quoll', 'betrayal']).forEach(function (id) { MG.STORY[id].forEach(function (pp, k) { [0, 0.5, 1.5, 3, 9].forEach(function (tt) { try { MG.Story.drawPanel(MG.Engine.ctx, id, k, tt); } catch (e) { if (!sErr) sErr = id + ' ' + k + ' at ' + tt + ': ' + e; } }); }); });
+check(!sErr, 'every cutscene frame draws (walking in, speech, silhouettes, DEAL!)' + (sErr ? ' ' + sErr : ''));
+var ss = new MG.StoryScene({ id: 'plot1', after: function () { return new MG.MenuScene(); } }); MG.Engine.setScene(ss); frames(30);
+press('Space', 2);
+check(ss.page === 0 && ss.t >= MG.Story.length(MG.STORY.plot1[0]), 'a key press first finishes the animation...');
+press('Space', 2);
+check(ss.page === 1, '...the next one turns the page');
+press('Escape', 2);
+check(sceneName() === 'Menu' && (MG.Save.get('story', {}) || {}).plot1, 'Esc skips the cutscene (seen)');
+check(MG.STORY.quoll.length === 2 && /NEW FRIEND/.test(MG.STORY.quoll[1].title) && MG.STORY.betrayal.some(function (pp) { return /FRIENDS/.test(pp.title) && pp.cast.length >= 5; }), 'friends join up: the quoll champion, then everyone you met on the way');
 
 // ---- secret characters
 fresh();

@@ -28,8 +28,12 @@ MG.MAP_STOPS = {
 };
 
 // Story panels: a title, a few lines, and who's in the picture (cast: char, quokka, platypus, pest, ...).
-// They play on the world map: the opening the first time, the invasion after the first map, and an
-// intro for each new world. No twist here: the quokkas are only ever helpful (for now).
+// They play on the world map: the opening the first time, the invasion after the first map, an intro
+// for each new world, and "meanwhile" cutscenes (plot1-plot5) that show the players what the heroes
+// don't know: the jolly sponsor's secret deal with the reptilians, one step after each world.
+// Cutscene panels: meanwhile (a caption in letterbox bars), dark, props ({ decor } / { crate }),
+// bursts [{ at, x, y, text }], banner { at, text }; cast extras: from + walk (walks in), at (appears),
+// says [[time, text, for]], shadow + eyes/teeth (a silhouette), grin, dizzy, laugh, angryAt (times).
 MG.STORY = {
   opening: [
     { theme: 'outback', title: 'THE GREAT POUCH TOURNAMENT', lines: ['Every year the toughest marsupials in Marsupial World', 'meet in the Outback to decide who is CHAMPION.'],
@@ -64,6 +68,8 @@ MG.STORY = {
   quoll: [
     { theme: 'tasmania', title: 'THE QUOLL CHAMPION', lines: ['"Sorry, champs! Somebody told me YOU brought the pests to Marsupial World."', '"Who told you that?"  "Er... a very friendly, very smiley quokka."', 'Hmm. Funny, that.'],
       cast: [{ who: 'quoll', champ: true, x: 300, s: 2 }, { who: 'char', cid: 'boomer', x: 560, f: -1 }, { who: 'char', cid: 'stripes', x: 700, f: -1 }] },
+    { theme: 'tasmania', title: 'A NEW FRIEND: THE QUOLL CHAMPION', lines: ['"I was tricked! From now on, I fight beside you."', 'Real fact: the spotted-tailed quoll is the largest meat-eating marsupial on the mainland.'],
+      cast: [{ who: 'char', cid: 'boomer', x: 260 }, { who: 'quoll', champ: true, x: 470, from: 980, walk: 1.6, s: 1.8, f: -1, says: [[1.8, 'Let\'s find that smiley quokka!']] }, { who: 'char', cid: 'stripes', x: 680, f: -1 }] },
   ],
   city: [
     { theme: 'city', title: 'WORLD 5: THE CITY', lines: ['A harbour city of laneways, rooftops and wheelie bins: Bins\'s home turf!', 'Real fact: red foxes were brought over in the 1800s for hunting, and city foxes are real.', 'They answer to FOXY ROXY and her fox gang.'],
@@ -82,12 +88,111 @@ MG.STORY = {
       cast: [{ who: 'quokka', sponsor: true, x: 480, s: 2 }, { who: 'char', cid: 'boomer', x: 250 }, { who: 'char', cid: 'zip', x: 720, f: -1 }] },
     { theme: 'grinisle', title: 'IT\'S A TRAP!', lines: ['The quokkas drop their smiles.', '"You fools! WE shipped the pests in, for our friends the reptiles!"', '"It\'s all part of OPERATION MARSUPIAL WORLD CONQUEST!"'],
       cast: [{ who: 'quokka', angry: true, x: 480, s: 2 }, { who: 'pest', type: 'perentie', x: 230 }, { who: 'pest', type: 'frilledLizard', x: 730, f: -1 }] },
+    { theme: 'grinisle', title: 'FRIENDS FROM EVERY MAP', lines: ['Everyone you helped along the way comes running:', 'the tree-kangaroo, the quolls, the pygmy possum... and the platypus keeps the shop open!'],
+      cast: [{ who: 'treeKangaroo', x: 180, from: -60, walk: 1.4 }, { who: 'quoll', x: 330, from: -60, walk: 1.6, s: 1.2 }, { who: 'pygmyPossum', x: 450, from: -60, walk: 1.8 },
+        { who: 'quoll', champ: true, x: 600, from: 1020, walk: 1.6, s: 1.5, f: -1 }, { who: 'platypus', x: 790, from: 1040, walk: 1.8, s: 0.9, says: [[2.2, 'Egg-layers can\'t fight... but I CAN sell you stuff!']] }] },
     { theme: 'grinisle', title: 'JOIN FORCES!', lines: ['Rivals no more: every good marsupial in Marsupial World teams up.', 'CPU champions fight beside you from now on. FOR MARSUPIAL WORLD!'],
       cast: [{ who: 'char', cid: 'stinker', x: 200 }, { who: 'char', cid: 'tank', x: 330 }, { who: 'char', cid: 'drowsy', x: 460 }, { who: 'char', cid: 'chompers', x: 600, f: -1 }, { who: 'char', cid: 'benny', x: 740, f: -1 }] },
   ],
   lair: [
     { theme: 'lair', title: 'THE REPTILIANS\' LAIR', lines: ['Under Grin Isle: a cave full of eggs, crystals and very cross reptiles.', 'On a stone throne waits their leader: THE CROC EMPEROR.', 'Real fact: the saltwater crocodile is the largest living reptile.'],
       cast: [{ who: 'pest', type: 'crocLand', x: 480, emperor: true, s: 0.9 }] },
+  ],
+  // ---------------- the villains' side of the story ("meanwhile" cutscenes)
+  plot1: [
+    { theme: 'lair', meanwhile: 'MEANWHILE, UNDER GRIN ISLE...', title: 'THE SECRET DEAL', dark: true,
+      lines: ['Deep under the sunny holiday island, the jolly tournament sponsor sneaks into a secret cave.', 'Someone big is waiting in the dark...'],
+      props: [{ decor: { type: 'throne', x: 830, h: 230 } }, { decor: { type: 'crystal', x: 120 } }],
+      cast: [
+        { who: 'pest', type: 'perentie', x: 560, s: 0.8, f: -1, shadow: true, eyes: [[52, -44]], seed: 2 },
+        { who: 'pest', type: 'crocLand', emperor: true, x: 760, s: 1.05, f: -1, shadow: true, eyes: [[62, -63], [51, -65]], teeth: [86, -40, 48], seed: 1 },
+        { who: 'quokka', sponsor: true, x: 330, from: -80, walk: 2.4, s: 1.4, says: [[2.6, 'Your Scaliness? It\'s me!']] },
+      ] },
+    { theme: 'lair', meanwhile: 'MEANWHILE, UNDER GRIN ISLE...', title: 'THE SECRET DEAL', dark: true,
+      lines: ['The quokkas have a secret friend: the leader of the reptilians.'],
+      props: [{ decor: { type: 'throne', x: 830, h: 230 } }, { decor: { type: 'crystal', x: 120 } }],
+      cast: [
+        { who: 'pest', type: 'perentie', x: 560, s: 0.8, f: -1, shadow: true, eyes: [[52, -44]], seed: 2, says: [[3.8, 'Hsss hsss hsss!']] },
+        { who: 'pest', type: 'crocLand', emperor: true, x: 760, s: 1.05, f: -1, shadow: true, eyes: [[62, -63], [51, -65]], teeth: [86, -40, 48], seed: 1, says: [[0.3, 'Well? Did the champions fall for it?', 1.7]] },
+        { who: 'quokka', sponsor: true, x: 330, s: 1.4, says: [[2.0, 'Hook, line and sinker! They think the Smile Squad is HELPING them!']] },
+      ] },
+    { theme: 'lair', meanwhile: 'MEANWHILE, UNDER GRIN ISLE...', title: 'THE SECRET DEAL', dark: true,
+      lines: ['The plan: the quokkas ship pests all over Marsupial World to wear the marsupials out...', '...then the reptilians take over. And the champions have no idea!'],
+      props: [{ decor: { type: 'throne', x: 830, h: 230 } }, { decor: { type: 'crystal', x: 120 } }],
+      bursts: [{ at: 1.4, x: 590, y: 215, text: 'DEAL!' }],
+      banner: { at: 2.1, text: 'OPERATION MARSUPIAL WORLD CONQUEST', y: 120, size: 28 },
+      cast: [
+        { who: 'pest', type: 'perentie', x: 880, s: 0.8, f: -1, shadow: true, eyes: [[52, -44]], seed: 2, laugh: 2.3 },
+        { who: 'pest', type: 'crocLand', emperor: true, x: 680, from: 760, walk: 1.2, s: 1.05, f: -1, shadow: true, eyes: [[62, -63], [51, -65]], teeth: [86, -40, 48], seed: 1, laugh: 2.3, says: [[2.5, 'MWAHAHA!']] },
+        { who: 'quokka', sponsor: true, x: 470, from: 330, walk: 1.2, s: 1.4, laugh: 2.3, says: [[2.7, 'HEE HEE HEE!']] },
+      ] },
+  ],
+  plot2: [
+    { theme: 'grinisle', sky: 'sunset', meanwhile: 'MEANWHILE, ON GRIN ISLE\'S DOCKS...', title: 'THE NEXT SHIPMENT',
+      lines: ['Every pest crate is stamped GRIN ISLE. The Smile Squad ships them out when nobody\'s looking...'],
+      props: [{ decor: { type: 'wharf', x: 760, w: 300 } }, { crate: { x: 560, label: 'GRIN ISLE' } }, { crate: { x: 610, label: 'GRIN ISLE' } }, { crate: { x: 585, y: 406, label: 'GRIN ISLE' } }],
+      cast: [
+        { who: 'quokka', shirt: true, x: 200, from: 60, walk: 1, s: 1.2, says: [[0.6, 'Bad news, boss! Big Tom got beaten!', 1.6]] },
+        { who: 'quokka', sponsor: true, x: 390, s: 1.4, says: [[2.2, 'No worries. Send the next lot... CANE TOADS!']] },
+        { who: 'pest', type: 'toad', x: 690, from: 600, at: 3.0, walk: 0.8, s: 0.8, f: 1 },
+        { who: 'pest', type: 'toad', x: 760, from: 610, at: 3.3, walk: 0.9, s: 0.8, f: 1 },
+      ] },
+    { theme: 'grinisle', sky: 'sunset', meanwhile: 'MEANWHILE, ON GRIN ISLE\'S DOCKS...', title: 'THE NEXT SHIPMENT',
+      lines: ['...and a saltie is sent up north to stir up trouble around Darwin.'],
+      props: [{ decor: { type: 'wharf', x: 760, w: 300 } }, { crate: { x: 560, label: 'GRIN ISLE' } }, { crate: { x: 610, label: 'GRIN ISLE' } }],
+      cast: [
+        { who: 'quokka', sponsor: true, x: 390, s: 1.4, says: [[0.4, 'And tell the salties in the Top End to make some trouble!', 1.8]] },
+        { who: 'pest', type: 'crocLand', x: 780, from: 980, walk: 1.6, s: 0.7, f: -1, says: [[2.4, 'Hsss! With pleasure.']] },
+      ] },
+  ],
+  plot3: [
+    { theme: 'lair', meanwhile: 'MEANWHILE, UNDER GRIN ISLE...', title: 'A NEW TRICK', dark: true,
+      lines: ['The champions keep winning. The quokkas need a new trick...'],
+      props: [{ decor: { type: 'throne', x: 830, h: 230 } }],
+      cast: [
+        { who: 'pest', type: 'crocLand', emperor: true, x: 760, s: 1.05, f: -1, shadow: true, eyes: [[62, -63], [51, -65]], teeth: [86, -40, 48], seed: 1, says: [[1.9, 'Then use your little trick. That SMILE of yours...']] },
+        { who: 'quokka', sponsor: true, x: 330, s: 1.4, angry: true, says: [[0.3, 'Grrr! They beat the Cane Toad King too!', 1.5]] },
+      ] },
+    { theme: 'tasmania', meanwhile: 'MEANWHILE, IN TASMANIA...', title: 'THE HYPNOTIC GRIN',
+      lines: ['The HYPNOTIC GRIN! Anyone who stares at it gets dizzy and does what the quokkas say.'],
+      cast: [
+        { who: 'quokka', sponsor: true, x: 340, s: 1.4, grin: 0.6, still: true, says: [[1.4, 'Look into my smile...', 1.6]] },
+        { who: 'pest', type: 'pademelon', x: 600, s: 0.9, f: -1, dizzy: 1.6, says: [[3.0, 'Yes... master...']] },
+        { who: 'pest', type: 'pademelon', x: 720, s: 0.8, f: -1, dizzy: 2.0, seed: 3 },
+      ] },
+    { theme: 'tasmania', meanwhile: 'MEANWHILE, IN TASMANIA...', title: 'A LIE FOR THE QUOLL',
+      lines: ['...and the quokkas whisper a lie to the proud quoll champion.'],
+      cast: [
+        { who: 'quokka', sponsor: true, x: 360, s: 1.4, says: [[0.4, 'Psst! Those champions brought the pests. Go and get them!', 1.9]] },
+        { who: 'quoll', champ: true, x: 620, s: 1.6, f: -1, says: [[2.5, 'WHAT?! Grrr! Leave it to me!']] },
+      ] },
+  ],
+  plot4: [
+    { theme: 'lair', meanwhile: 'MEANWHILE, UNDER GRIN ISLE...', title: 'THE PARTY PLAN', dark: true,
+      lines: ['The quoll champion has joined the champions. The reptilians\' leader has a nasty idea.'],
+      props: [{ decor: { type: 'throne', x: 830, h: 230 } }],
+      cast: [
+        { who: 'pest', type: 'crocLand', emperor: true, x: 760, s: 1.05, f: -1, shadow: true, eyes: [[62, -63], [51, -65]], teeth: [86, -40, 48], seed: 1, laugh: 4, says: [[2.0, 'Then stop waiting. Throw them a VICTORY PARTY... on Grin Isle.']] },
+        { who: 'quokka', sponsor: true, x: 330, s: 1.4, angry: true, says: [[0.3, 'The quoll saw through us! The champions keep getting stronger!', 1.6]] },
+      ] },
+    { theme: 'grinisle', meanwhile: 'MEANWHILE, ON GRIN ISLE...', title: 'THE PARTY PLAN',
+      lines: ['The city foxes will keep the champions busy. Meanwhile, Grin Isle gets ready for a "party".'],
+      props: [{ decor: { type: 'partyBanner', x: 300 } }, { decor: { type: 'souvenirShop', x: 760, w: 240 } }],
+      cast: [
+        { who: 'pest', type: 'perentie', x: 930, from: 1080, at: 2.4, walk: 0.9, s: 0.7, f: -1, says: [[3.3, 'Hsss... where do I hide?']] },
+        { who: 'quokka', shirt: true, x: 180, s: 1.2 },
+        { who: 'quokka', sponsor: true, x: 440, s: 1.4, says: [[0.6, 'Bunting up! Reptiles, HIDE! And everyone... SMILE!']] },
+      ] },
+  ],
+  plot5: [
+    { theme: 'grinisle', meanwhile: 'MEANWHILE, ON GRIN ISLE...', title: 'PLACES, EVERYONE!',
+      lines: ['Grin Isle is ready for the victory party. The champions are on their way...', '...and so is every reptile in Marsupial World.'],
+      props: [{ decor: { type: 'partyBanner', x: 300 } }, { decor: { type: 'selfieBoard', x: 620 } }, { decor: { type: 'souvenirShop', x: 820, w: 220 } }],
+      cast: [
+        { who: 'pest', type: 'taipan', x: 548, s: 0.7, f: -1, at: 1.4 },
+        { who: 'pest', type: 'perentie', x: 930, from: 1080, at: 1.8, walk: 0.9, s: 0.7, f: -1, says: [[2.9, 'Hsss! Ready when you are!']] },
+        { who: 'quokka', sponsor: true, x: 380, s: 1.4, says: [[0.4, 'They said YES! The champions are coming!', 1.6], [2.4, 'Places, everyone... and SMILE!']] },
+      ] },
   ],
   topend: [
     { theme: 'topend', title: 'BONUS: THE TOP END', lines: ['Up north around Darwin, the saltwater crocodiles have gone very grumpy.', 'They\'ve teamed up with feral pigs and cats and taken over the harbour!', 'Real fact: salties live in rivers, swamps and the sea, and can swim a long way along the coast.'],

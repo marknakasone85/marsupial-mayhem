@@ -18,12 +18,18 @@
       const P = MG.Progress;
       if (!seen.opening) return 'opening';
       if (P.isCleared('outback-1') && !seen.invasion) return 'invasion';
+      // "meanwhile" cutscenes: the quokkas' secret deal with the reptilians, one step after each world
+      if (P.isCleared('outback-2') && !seen.plot1) return 'plot1';
       if (P.isCleared('outback-4') && !seen.rainforest) return 'rainforest';
+      if (P.isCleared('rainforest-3') && !seen.plot2) return 'plot2';
       if (P.isCleared('rainforest-3') && !seen.canefields) return 'canefields';
       if (P.isCleared('cane-4') && !seen.world3done) return 'world3done';
+      if (P.isCleared('cane-4') && !seen.plot3) return 'plot3';
       if (P.isCleared('cane-4') && !seen.tasmania) return 'tasmania';
       if (P.isCleared('alps-3') && !seen.quoll) return 'quoll';
+      if (P.isCleared('alps-3') && !seen.plot4) return 'plot4';
       if (P.isCleared('alps-3') && !seen.city) return 'city';
+      if (P.isCleared('city-4') && !seen.plot5) return 'plot5';
       if (P.isCleared('city-4') && !seen.rift) return 'rift';
       if (P.isCleared('rift-3') && !seen.ghost) return 'ghost';
       if (P.isCleared('grin-4') && !seen.ending) return 'ending';
@@ -31,35 +37,182 @@
     },
     markSeen(id) { const seen = MG.Save.get('story', {}) || {}; seen[id] = 1; MG.Save.set('story', seen); },
 
+    // How long a panel's little animation lasts (walks, speech, bursts), in seconds.
+    length(p) {
+      let n = 0;
+      for (const c of (p && p.cast) || []) {
+        n = Math.max(n, (c.at || 0) + (c.from !== undefined ? c.walk || 1.5 : 0));
+        for (const sy of says(c)) n = Math.max(n, sy[0] + 0.8);
+        for (const k of ['grin', 'dizzy', 'laugh', 'angryAt']) if (c[k] !== undefined) n = Math.max(n, c[k] + 0.5);
+      }
+      for (const b of (p && p.bursts) || []) n = Math.max(n, b.at + 0.6);
+      if (p && p.banner) n = Math.max(n, p.banner.at + 0.6);
+      return n;
+    },
+
     drawPanel(ctx, id, page, t) {
       const panels = has(MG.STORY, id) ? MG.STORY[id] : null;
       const p = panels && panels[Math.max(0, Math.min(panels.length - 1, page | 0))];
       if (!p) return;
       const A = MG.Art;
       const gy = 452;
-      A.background(ctx, 0, t, gy, 'day', p.theme || 'outback');
-      for (const c of p.cast || []) {
-        const x = c.x, y = c.y || gy, f = c.f || 1, s = c.s || 1;
-        if (c.who !== 'treeKangaroo') A.shadow(ctx, x, gy, 30 * s);
-        if (c.who === 'char') { const def = MG.charById(c.cid); A.character(ctx, def, { x, y, facing: f, scale: def.scale * 1.25 * s, t: t + x, pose: 'idle' }); }
-        else if (c.who === 'quokka' && A.quokka) A.quokka(ctx, x, y, { t: t + x, facing: f, scale: 1.4 * s, sponsor: !!c.sponsor, shirt: !!c.shirt, wave: !c.angry, angry: !!c.angry });
-        else if (c.who === 'platypus') A.platypus(ctx, x, y, 1.2 * s, t, { talk: Math.floor(t * 2) % 2 === 0 });
-        else if (c.who === 'pest' && A[c.type]) A[c.type](ctx, x, y, Object.assign({ t: t + x, facing: c.f || -1, scale: 1.5 * s }, c, { scale: 1.5 * s, facing: c.f || -1 }));
-        else if (c.who === 'cassowary' && A.cassowary) A.cassowary(ctx, x, y, { t, facing: f });
-        else if (c.who === 'treeKangaroo' && A.treeKangaroo) A.treeKangaroo(ctx, x, y, { t, facing: f, sit: true });
-        else if (c.who === 'quoll' && A.quoll) A.quoll(ctx, x, y, { t, facing: f, scared: !!c.scared, scale: 1.4 * s, spottedTail: !!c.champ, champ: !!c.champ });
-        else if (A[c.who]) A[c.who](ctx, x, y, { t: t + x, facing: f, scale: (c.who === 'diprotodon' ? 1 : 1.4) * s });
+      const film = !!p.meanwhile; // a cutscene of what the villains are up to: letterbox bars and a caption
+      A.background(ctx, 0, t, gy, p.sky || 'day', p.theme || 'outback');
+      for (const c of (p.cast || []).filter((c) => c.behind)) drawCast(ctx, c, t, gy); // hiding behind the props
+      for (const pr of p.props || []) {
+        if (pr.decor && A.decor) { ctx.save(); A.decor(ctx, Object.assign({}, pr.decor), gy, t); ctx.restore(); }
+        if (pr.crate) A.crate(ctx, pr.crate.x, pr.crate.y || gy, { label: pr.crate.label });
       }
-      UI.panel(ctx, 30, 18, W - 60, 40 + p.lines.length * 25 + 36, 'rgba(43,25,61,0.88)');
-      UI.outlineText(ctx, p.title, W / 2, 46, p.title.length > 30 ? 24 : 30, '#ffd23f', 'center');
-      p.lines.forEach((ln, i) => UI.text(ctx, ln, W / 2, 84 + i * 25, ln.length > 74 ? 14 : 17, '#ffffff', 'center'));
-      // page dots
-      panels.forEach((_, i) => {
-        ctx.fillStyle = i === page ? '#ffd23f' : 'rgba(255,255,255,0.35)';
-        ctx.beginPath(); ctx.arc(W / 2 - (panels.length - 1) * 9 + i * 18, 64 + p.lines.length * 25 + 18, 4, 0, Math.PI * 2); ctx.fill();
-      });
+      // the cast: anyone in silhouette goes through a second canvas so they come out as a dark shape
+      const shadows = (p.cast || []).filter((c) => c.shadow);
+      const lit = (p.cast || []).filter((c) => !c.shadow && !c.behind);
+      if (shadows.length) {
+        const off = silhouetteLayer();
+        if (off) {
+          const E = MG.Engine, o = off.getContext('2d');
+          o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, off.width, off.height);
+          o.setTransform(E.pixel || 1, 0, 0, E.pixel || 1, 0, 0);
+          for (const c of shadows) drawCast(o, c, t, gy);
+          o.setTransform(1, 0, 0, 1, 0, 0);
+          o.globalCompositeOperation = 'source-atop'; o.fillStyle = '#120a1c'; o.fillRect(0, 0, off.width, off.height);
+          o.globalCompositeOperation = 'source-over';
+          ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(off, 0, 0); ctx.restore();
+        } else for (const c of shadows) drawCast(ctx, c, t, gy);
+        for (const c of shadows) glowEyes(ctx, c, t, gy);
+      }
+      for (const c of lit) drawCast(ctx, c, t, gy);
+      if (p.dark) {
+        const v = ctx.createRadialGradient(W / 2, gy - 140, 120, W / 2, gy - 140, 620);
+        v.addColorStop(0, 'rgba(10,5,20,0)'); v.addColorStop(1, 'rgba(10,5,20,0.7)');
+        ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+      }
+      // bursts ("DEAL!") and a banner
+      for (const b of p.bursts || []) if (t >= b.at) burst(ctx, b, t - b.at);
+      if (p.banner && t >= p.banner.at) {
+        const k = Math.min(1, (t - p.banner.at) / 0.35), sc = 0.6 + 0.4 * k + Math.sin(Math.min(1, k) * Math.PI) * 0.15;
+        ctx.save(); ctx.translate(W / 2, p.banner.y || 200); ctx.scale(sc, sc);
+        UI.outlineText(ctx, p.banner.text, 0, 0, p.banner.size || 30, p.banner.color || '#ff4d6d', 'center');
+        ctx.restore();
+      }
+      if (film) {
+        ctx.fillStyle = '#0a0612';
+        ctx.fillRect(0, 0, W, 50); ctx.fillRect(0, H - 82, W, 82);
+        const cap = p.meanwhile.slice(0, Math.floor(t * 34));
+        UI.outlineText(ctx, cap, 24, 27, 20, '#ffd23f');
+        if (p.title) UI.text(ctx, p.title, W - 24, 27, 14, '#bde0fe', 'right');
+        p.lines.forEach((ln, i) => UI.text(ctx, ln, W / 2, H - 68 + i * 20, ln.length > 80 ? 13 : 15, '#ffffff', 'center'));
+        dots(ctx, panels, page, H - 68 + p.lines.length * 20 + (p.lines.length > 1 ? 0 : 4));
+      } else {
+        UI.panel(ctx, 30, 18, W - 60, 40 + p.lines.length * 25 + 36, 'rgba(43,25,61,0.88)');
+        UI.outlineText(ctx, p.title, W / 2, 46, p.title.length > 30 ? 24 : 30, '#ffd23f', 'center');
+        p.lines.forEach((ln, i) => UI.text(ctx, ln, W / 2, 84 + i * 25, ln.length > 74 ? 14 : 17, '#ffffff', 'center'));
+        dots(ctx, panels, page, 64 + p.lines.length * 25 + 18);
+      }
+      // speech bubbles last, over everything
+      for (const c of p.cast || []) {
+        const st = castAt(c, t, gy);
+        if (!st) continue;
+        const now = says(c).filter((sy) => t >= sy[0] && (sy[2] === undefined || t < sy[0] + sy[2])).pop();
+        if (now) MG.NPC.bubble(ctx, st.x + (c.bx || 0), st.y - headOf(c), now[1], { camX: 0 });
+      }
     },
   };
+
+  // ---- cutscene helpers: where a cast member is at time t, and how to draw them
+  const ease = (k) => 1 - Math.pow(1 - k, 2);
+  function says(c) { return c.says || (c.say ? [[c.sayAt === undefined ? 0.4 : c.sayAt, c.say, c.sayFor]] : []); }
+  function castAt(c, t, gy) {
+    const at = c.at || 0;
+    if (c.from === undefined && c.at !== undefined && t < at) return null; // appears at `at`
+    let x = c.x, walking = false;
+    if (c.from !== undefined) {
+      const k = Math.max(0, Math.min(1, (t - at) / (c.walk || 1.5)));
+      x = c.from + (c.x - c.from) * ease(k);
+      walking = k > 0 && k < 1;
+    }
+    let y = c.y || gy;
+    if (c.laugh !== undefined && t > c.laugh) y -= Math.abs(Math.sin(t * 11)) * 6;
+    const f = c.f || (c.from !== undefined && c.x !== c.from ? Math.sign(c.x - c.from) : 1);
+    return { x, y, f, walking };
+  }
+  // how high above the feet a speech bubble goes
+  function headOf(c) {
+    const s = c.s || 1;
+    if (c.head) return c.head;
+    if (c.who === 'char') return 150 * s;
+    if (c.who === 'quokka') return 100 * s;
+    if (c.who === 'pest') return ({ crocLand: 70, grandGrinner: 190, perentie: 55, frilledLizard: 70, toad: 45, pademelon: 70, quokka: 100 }[c.type] || 70) * s;
+    return 90 * s;
+  }
+  function drawCast(ctx, c, t, gy) {
+    const st = castAt(c, t, gy);
+    if (!st) return;
+    const A = MG.Art, { x, y, f } = st, s = c.s || 1, tt = t + x * 0.01 + (c.seed || 0);
+    if (c.who !== 'treeKangaroo' && !c.shadow) A.shadow(ctx, x, gy, 30 * s);
+    if (c.who === 'char') { const def = MG.charById(c.cid); A.character(ctx, def, { x, y, facing: f, scale: def.scale * 1.25 * s, t: tt, pose: st.walking ? 'walk' : c.pose || 'idle', walk: t * 2 }); }
+    else if (c.who === 'quokka' && A.quokka) {
+      const grin = c.grin !== undefined ? Math.max(0, Math.min(1, (t - c.grin) * 2)) : 0;
+      const angry = !!c.angry || (c.angryAt !== undefined && t >= c.angryAt);
+      A.quokka(ctx, x, y, { t: tt, facing: f, scale: 1.4 * s, sponsor: !!c.sponsor, shirt: !!c.shirt, wave: !angry && !grin && !st.walking && !c.still, angry, hop: st.walking, grin, talk: says(c).some((sy) => t >= sy[0] && t < sy[0] + 1.2) });
+    }
+    else if (c.who === 'platypus') A.platypus(ctx, x, y, 1.2 * s, t, { talk: Math.floor(t * 2) % 2 === 0 });
+    else if (c.who === 'pest' && A[c.type]) A[c.type](ctx, x, y, Object.assign({ t: tt, facing: c.f || -1, scale: 1.5 * s }, c, { scale: 1.5 * s, facing: c.f || f || -1, moving: st.walking, charging: false }));
+    else if (c.who === 'cassowary' && A.cassowary) A.cassowary(ctx, x, y, { t: tt, facing: f });
+    else if (c.who === 'treeKangaroo' && A.treeKangaroo) A.treeKangaroo(ctx, x, y, { t: tt, facing: f, sit: c.sit !== undefined ? c.sit : c.y !== undefined }); // sits up in a tree
+    else if (c.who === 'quoll' && A.quoll) A.quoll(ctx, x, y, { t: tt, facing: f, scared: !!c.scared, scale: 1.4 * s, spottedTail: !!c.champ, champ: !!c.champ, run: st.walking });
+    else if (A[c.who]) A[c.who](ctx, x, y, { t: tt, facing: f, scale: (c.who === 'diprotodon' ? 1 : 1.4) * s, wave: !!c.wave });
+    if (c.dizzy !== undefined && t >= c.dizzy) {
+      for (let i = 0; i < 3; i++) { const a = t * 4 + i * 2.1; A.star(ctx, x + Math.cos(a) * 22 * s, y - headOf(c) + 22 + Math.sin(a) * 7, 6, '#ffd23f'); }
+    }
+  }
+  // two glowing eyes on a silhouette (c.eyes: [[dx, dy], ...] from the feet, before facing)
+  function glowEyes(ctx, c, t, gy) {
+    const st = castAt(c, t, gy);
+    if (!st || !c.eyes) return;
+    const blink = Math.sin(t * 1.7 + (c.seed || 0)) > 0.97;
+    for (const [dx, dy] of c.eyes) {
+      const ex = st.x + dx * st.f, ey = st.y + dy;
+      ctx.fillStyle = 'rgba(255,230,80,0.25)';
+      ctx.beginPath(); ctx.ellipse(ex, ey, 11, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = c.eyeColor || '#ffe14d';
+      ctx.beginPath(); ctx.ellipse(ex, ey, 5, blink ? 0.8 : 3.6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#120a1c'; if (!blink) { ctx.beginPath(); ctx.ellipse(ex, ey, 1.2, 3, 0, 0, Math.PI * 2); ctx.fill(); }
+    }
+    if (c.teeth) { // a toothy grin in the dark
+      const [dx, dy, w] = c.teeth, gx = st.x + dx * st.f - w / 2, gyy = st.y + dy;
+      ctx.fillStyle = '#f4f1de';
+      ctx.beginPath();
+      for (let k = 0; k < w; k += 8) { ctx.moveTo(gx + k, gyy); ctx.lineTo(gx + k + 4, gyy + 7); ctx.lineTo(gx + k + 8, gyy); }
+      ctx.fill();
+    }
+  }
+  function burst(ctx, b, k) {
+    const pop = Math.min(1, k / 0.25), r = (b.r || 70) * (0.5 + 0.5 * pop);
+    ctx.save(); ctx.translate(b.x, b.y);
+    ctx.rotate(k * 0.4);
+    ctx.fillStyle = b.color || '#ffd23f'; ctx.strokeStyle = '#2b193d'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, rr = i % 2 ? r * 0.62 : r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    UI.outlineText(ctx, b.text, b.x, b.y + 2, (b.size || 30) * (0.6 + 0.4 * pop), b.textColor || '#ff4d6d', 'center');
+  }
+  function dots(ctx, panels, page, y) {
+    panels.forEach((_, i) => {
+      ctx.fillStyle = i === page ? '#ffd23f' : 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.arc(W / 2 - (panels.length - 1) * 9 + i * 18, y, 4, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+  // one spare canvas the size of the screen, for silhouettes (none in the test harness: then they're drawn as they are)
+  let layer = null;
+  function silhouetteLayer() {
+    const E = MG.Engine;
+    if (!E.canvas || typeof document === 'undefined' || !document.createElement) return null;
+    if (!layer) { try { layer = document.createElement('canvas'); } catch (e) { layer = null; } }
+    if (!layer || !layer.getContext) return null;
+    if (layer.width !== E.canvas.width || layer.height !== E.canvas.height) { layer.width = E.canvas.width; layer.height = E.canvas.height; }
+    return layer;
+  }
 
   MG.StoryScene = class {
     // opts: { id, after: () => scene, net }
@@ -83,6 +236,9 @@
       if (this.t < 0.35) return; // (so a key still held from before doesn't skip a page)
       if (I.anyPressed() || I.pointer.pressed) {
         MG.Audio.select();
+        // the first press finishes a cutscene's animation, the next one turns the page
+        const len = MG.Story.length((MG.STORY[this.id] || [])[this.page]);
+        if (this.t < len) { this.t = len + 0.05; return; }
         this.page++;
         this.t = 0.2;
         if (this.page >= this.count) this.finish();
@@ -188,7 +344,10 @@
           scene.onNet(m);
           return;
         }
-        if (m.t === 'wmap') this.view = m;
+        if (m.t === 'wmap') {
+          if (!this.view || this.view.story !== m.story || this.view.page !== m.page) this.storyT = 0;
+          this.view = m;
+        }
         return;
       }
       // host: friends joining or leaving while we look at the map
@@ -209,7 +368,7 @@
     update(dt) {
       this.t += dt;
       this.msgT -= dt;
-      if (this.guest) { MG.Net.maintain(dt); return; }
+      if (this.guest) { MG.Net.maintain(dt); this.storyT = (this.storyT || 0) + dt; return; }
       if (!this.storyChecked) {
         this.storyChecked = true;
         const story = MG.Story.pending();
@@ -330,7 +489,7 @@
     draw(ctx) {
       const v = this.guest ? this.view : null;
       if (this.guest && v && v.story) {
-        MG.Story.drawPanel(ctx, v.story, v.page || 0, this.t);
+        MG.Story.drawPanel(ctx, v.story, v.page || 0, this.storyT || 0);
         UI.text(ctx, 'The host is reading the story...', W / 2, H - 14, 13, '#ffffff', 'center');
         return;
       }
