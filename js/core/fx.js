@@ -41,6 +41,7 @@
     //  style: a blood color like '#d62828', or 'oil' (robots), or 'confetti'
     gore(x, y, style, amount, floorY) {
       if (style !== 'oil' && !MG.Settings.blood) style = 'confetti';
+      if (MG.Settings.gore && style !== 'confetti') amount = Math.round(amount * 2.2); // GORE: extra cartoon splatter
       for (let i = 0; i < amount; i++) {
         const a = -Math.PI / 2 + U.rand(-1.3, 1.3);
         const sp = U.rand(120, 420);
@@ -64,6 +65,7 @@
     splat(x, y, color, r) {
       if (color === 'confetti' || (!MG.Settings.blood && color !== 'oil')) return;
       if (color === 'oil') color = '#1d1d1d';
+      if (MG.Settings.gore) r *= 1.5;
       const blobs = [];
       for (let i = 0; i < 5; i++) blobs.push([U.rand(-r, r), U.rand(-r * 0.15, r * 0.15), U.rand(r * 0.3, r * 0.7)]);
       this.decals.push({ x, y, r, color, blobs, life: 7 });

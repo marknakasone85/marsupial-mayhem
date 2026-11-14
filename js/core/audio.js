@@ -312,6 +312,42 @@
         bass: [41, null, 48, null, 46, null, 53, null, 43, null, 50, null, 48, null, 52, null],
         lead: [65, 69, 72, null, 70, 74, 77, null, 74, 72, 70, null, 72, null, 69, null],
       },
+      // Milestone 7. Tasmania & the Alps: crisp and airy in E minor, high falling sparkles (Em C G D).
+      alps: {
+        bpm: 124,
+        bass: [40, null, 47, null, 36, null, 43, null, 43, null, 50, null, 38, null, 45, null],
+        lead: [83, 79, 76, null, 84, 79, 76, null, 86, 83, 79, null, 81, 78, 74, null],
+      },
+      // The City: funky E dorian, an octave-jumping bouncy bassline under offbeat stabs.
+      city: {
+        bpm: 140,
+        bass: [40, null, 52, 40, null, 50, 52, null, 45, null, 57, 45, null, 55, 47, 50],
+        lead: [null, 71, null, 74, 76, null, 74, 71, null, 76, null, 79, 78, null, 74, null],
+      },
+      // The Time Rift: mysterious and primal, pounding low "tom" notes and an eerie phrygian line in A.
+      rift: {
+        bpm: 124,
+        bass: [45, 45, null, 45, 52, null, 45, null, 45, 45, null, 48, null, 50, 48, null],
+        lead: [null, 76, null, 77, 76, null, null, 72, null, 74, null, 70, 69, null, null, null],
+      },
+      // Grin Isle: a sickly-sweet C major holiday jingle with a couple of notes that are just... off.
+      grinisle: {
+        bpm: 138,
+        bass: [36, null, 43, null, 36, null, 43, null, 41, null, 48, null, 43, null, 42, null],
+        lead: [72, 76, 79, 84, 79, 76, 72, null, 74, 77, 81, 80, 77, 74, 71, null],
+      },
+      // The reptilians' lair: the final showdown. Low, tense and chromatic in D minor.
+      lair: {
+        bpm: 146,
+        bass: [38, 38, 38, 39, 38, 38, 41, 40, 38, 38, 38, 39, 43, 42, 41, 39],
+        lead: [62, null, 63, null, 62, null, 69, 68, null, 62, 63, null, 65, 64, 63, null],
+      },
+      // The Isle of Man bonus map: a light, jolly folk jig in G with a skipping 3+3+2 lilt.
+      isleofman: {
+        bpm: 144,
+        bass: [43, null, null, 50, null, null, 43, null, 48, null, null, 50, null, null, 38, null],
+        lead: [67, 71, 74, 72, 71, 69, 71, 67, 69, 72, 76, 74, 72, 69, 67, 66],
+      },
     },
 
     playMusic(name) {

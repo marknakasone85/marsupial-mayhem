@@ -15,6 +15,7 @@
     constructor(opts) {
       this.opts = opts;
       this.levelIndex = opts.level || 0;
+      this.diff = MG.difficulty(); // Settings: EASY / NORMAL / HARD (pests' damage and toughness)
       this.L = MG.LEVELS[this.levelIndex];
       this.net = !!opts.net;
       this.groundY = MG.GROUND_Y;
@@ -36,6 +37,7 @@
       this.coins = (this.L.coins || []).map((c) => new MG.Coin(c.x, c.y, c.v || 1, null, true));
       this.water = MG.waterZones(this.L);
       this.npcs = (this.L.npcs || []).map((o) => new MG.NPC(o));
+      this.flashT = 0;
 
       this.slots = [];
       const players = opts.players || [{ id: 0, cid: opts.charId || 'boomer', local: 'SOLO' }];
@@ -58,13 +60,44 @@
       this.checkpoint = 0;
       this.placeHelpers();
       this.scaleForPlayers(players.length);
+      // CPU champions fighting beside the players (Grin Isle)
+      this.allies = (this.L.allies || []).map((cid, i) => this.makeAlly(cid, 80 + i * 40));
+    }
+
+    makeAlly(cid, x) {
+      const f = new MG.Fighter(MG.charById(cid), x, { team: 'player', mercy: 0.8 });
+      f.ai = new MG.AllyAI();
+      f.isAlly = true;
+      f.tag = f.def.name; // the champion's name over their head
+      f.tagColor = '#9ef01a';
+      f.reviveT = 0;
+      return f;
+    }
+    updateAllies(dt) {
+      for (let i = 0; i < this.allies.length; i++) {
+        const f = this.allies[i];
+        if (f.state === 'ko') {
+          f.reviveT += dt;
+          if (f.reviveT > 6 && this.state === 'play') {
+            // back in the fight next to the team
+            const lead = this.leader();
+            const n = this.makeAlly(f.def.id, lead.x - 60);
+            n.y = lead.y - 80; n.vy = -300; n.onGround = false; n.invuln = 2;
+            this.allies[i] = n;
+            this.fx.text(n.x, n.y - 120, n.def.name + ' IS BACK!', '#9ef01a', 20);
+          }
+          f.update(dt, {}, this);
+          continue;
+        }
+        f.update(dt, this.state === 'play' ? f.ai.control(f, this, dt) : {}, this);
+      }
     }
 
     // More players = tougher pests, so co-op stays a challenge.
     scaleForPlayers(n) {
       for (const e of this.enemies) {
         const base = MG.ENEMY_TYPES[e.type].hp;
-        const k = n <= 1 ? 1 : e.isBoss ? 1 + 0.5 * (n - 1) : 1 + 0.35 * (n - 1);
+        const k = (n <= 1 ? 1 : e.isBoss ? 1 + 0.5 * (n - 1) : 1 + 0.35 * (n - 1)) * this.diff.hp;
         const frac = e.hp / e.maxHp;
         e.maxHp = Math.round(base * k);
         e.hp = e.maxHp * frac;
@@ -83,8 +116,8 @@
       return list.reduce((a, b) => (b.x > a.x ? b : a));
     }
     nearestFighter(x) {
-      // pests ignore anyone playing dead (Dead Fred)
-      const alive = this.aliveFighters().filter((f) => !f.playingDead && !f.burrowed);
+      // pests ignore anyone playing dead (Dead Fred); CPU champions are fair game too
+      const alive = this.aliveFighters().concat((this.allies || []).filter((f) => f.state !== 'ko')).filter((f) => !f.playingDead && !f.burrowed);
       if (!alive.length) return this.decoy || (this.decoy = { x: -99999, y: this.groundY, h: 1, state: 'ko', box: { x: -99999, y: 0, w: 0, h: 0 }, takeHit: () => 'miss' });
       return alive.reduce((a, b) => (Math.abs(b.x - x) < Math.abs(a.x - x) ? b : a));
     }
@@ -197,7 +230,7 @@
       if (m.t === 'gear' || m.t === 'pick') MG.Gear.note(from, m);
       if (m.t === 'in') this.netInput(from, m);
       else if (m.t === 'pick' && m.ready && typeof from === 'number' && !this.slots.some((s) => s.id === from) &&
-        this.slots.length < 4 && MG.CHARACTERS.some((c) => c.id === m.cid)) {
+        this.slots.length < 4 && MG.validCid(m.cid)) {
         // drop-in: appear next to the team
         const lead = this.leader();
         const slot = this.addSlot({ id: from, cid: m.cid, local: null }, lead.x - 50);
@@ -325,16 +358,19 @@
     }
     // A boss calls in help: rabbits from burrows (Big Buck, the Warren Warlord), cats (Big Tom),
     // toadlets (the Cane Toad King). They come in at the edges of the arena.
-    spawnMinions(type, n) {
+    spawnMinions(type, n, nearView) {
       if (!MG.ENEMY_TYPES[type]) return 0;
       const living = this.enemies.filter((e) => e.alive && e.type === type).length;
       const count = Math.min(n, 7 - living);
+      // at the edges of the boss arena, or of the screen (a pademelon's thump)
+      const edge = this.bossAwake && !nearView && this.arenaX !== undefined ? this.arenaX : this.camX;
       for (let i = 0; i < count; i++) {
         const left = i % 2 === 0;
-        const x = left ? this.arenaX + 60 + i * 20 : this.arenaX + W - 60 - i * 20;
+        const x = left ? edge + 60 + i * 20 : edge + W - 60 - i * 20;
         const r = this.addEnemy(type, x);
         r.hidden = false;
         r.aggro = true;
+        r.thumped = true; // a called-in pademelon doesn't call more (no endless chain)
         r.vy = -500;
         r.onGround = false;
         this.enemies.push(r);
@@ -343,6 +379,20 @@
       return count;
     }
     spawnWarren(n) { return this.spawnMinions('rabbit', n); }
+    // The Grand Grinner calls an old boss back for a few seconds (a weak "echo").
+    spawnEcho(type) {
+      if (this.enemies.filter((e) => e.alive && e.echo).length >= 3) return null;
+      const x = U.clamp(this.leader().x + U.rand(-300, 300), (this.arenaX || 0) + 80, (this.arenaX || 0) + W - 80);
+      const e = this.addEnemy(type, x);
+      e.hp = e.maxHp = 60;
+      e.echo = 6;
+      e.aggro = true;
+      e.vy = -400; e.onGround = false;
+      this.enemies.push(e);
+      this.fx.burst(x, this.groundY - 40, '#bde0fe', 24, 300);
+      return e;
+    }
+    screenFlash(secs) { this.flashT = secs; this.flashMax = secs; }
 
     // ---------------- update ----------------
     update(dt) {
@@ -388,6 +438,8 @@
         slot.f.update(dt, ctrl, this);
         if (this.state === 'play') slot.f.meter = Math.min(MG.SPECIAL_COST, slot.f.meter + dt * 3);
       }
+      this.updateAllies(dt);
+      this.flashT = Math.max(0, this.flashT - dt);
       this.updateRevives(dt);
 
       for (const e of this.enemies) {
@@ -566,6 +618,8 @@
       this.hpBonus = Math.round((fs.reduce((s, f) => s + Math.max(0, f.hp) / f.maxHp, 0) / fs.length) * 500);
       // every map cleared makes each character's joey a level stronger (saved in the browser)
       this.joeyGrew = [];
+      // a secret character found here (Ghost, in the Time Rift)
+      if (this.L.unlocks && MG.Unlocks.unlock(this.L.unlocks)) this.joeyGrew.push(MG.charById(this.L.unlocks).name + ' IS UNLOCKED! (pick them on the select screen)');
       for (const cid of new Set(this.slots.map((s) => s.cid))) {
         const lv = MG.growJoey(cid);
         if (lv) this.joeyGrew.push(`${MG.charById(cid).name}'S JOEY GREW! (level ${lv})`);
@@ -705,7 +759,7 @@
         L: this.L, t: this.t, camX: this.camX, groundY: this.groundY, fx: this.fx, platforms: this.platforms,
         gates: this.gates.map((g, i) => ({ x: g.x, lift: g.lift, left: this.pestsLeft(i) })),
         crates: this.crates, pickups: this.pickups, enemies: this.enemies,
-        players: this.slots.map((s) => s.f.renderState()),
+        players: this.slots.map((s) => s.f.renderState()).concat(this.allies.map((f) => f.renderState())),
         grenades: this.grenades, projectiles: this.projectiles, coins: this.coins, npcs: this.npcs,
         goalOpen: !this.boss || !this.boss.alive, world: this,
       });
@@ -715,7 +769,15 @@
         hpBonus: this.hpBonus, newBest: this.newBest, coop: this.coop, showControls: this.showControls, joeyGrew: this.joeyGrew, coinLine: this.coinLine,
       });
       if (this.menu && !this.showControls) this.menu.draw(ctx);
+      MG.drawScreenFlash(ctx, this.flashT / (this.flashMax || 1));
     }
+  };
+
+  // The Grand Grinner's camera flash: the whole screen goes white for a moment.
+  MG.drawScreenFlash = function (ctx, k) {
+    if (!(k > 0)) return;
+    ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9, k * 1.2)})`;
+    ctx.fillRect(0, 0, MG.W, MG.H);
   };
 
   // The top surface under (x, y): the ground, or a platform.
@@ -760,7 +822,7 @@
     }
     for (const p of v.platforms) if (vis(p.x, p.w + 100)) A.platform(ctx, p, v.groundY, theme);
     const water = v.water || MG.waterZones(v.L);
-    if (A.water) for (const z of water) if (vis(z.x, z.w + 100)) A.water(ctx, z.x, z.w, z.surface, v.groundY, v.t, false);
+    if (A.water) for (const z of water) if (vis(z.x, z.w + 100)) A.water(ctx, z.x, z.w, z.surface, v.groundY, v.t, false, theme);
     for (const n of v.npcs || []) if (n.kind === 'croc' && vis(n.x)) n.draw(ctx, v.world);
     for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) A.grass(ctx, gr.x, gr.w, v.groundY, v.t, false);
     v.fx.drawDecals(ctx);
@@ -770,17 +832,24 @@
     for (const c of v.crates) if (vis(c.x)) c.draw(ctx);
     for (const pk of v.pickups) if (vis(pk.x)) pk.draw(ctx);
     for (const n of v.npcs || []) if (n.kind !== 'croc' && vis(n.x)) n.draw(ctx, v.world);
+    if (MG.Settings.contrast) {
+      // high contrast: a bright ring under every pest (red) and player (their colour)
+      ctx.lineWidth = 3;
+      for (const e of v.enemies) if (e.alive && !e.hidden && vis(e.x)) { ctx.strokeStyle = '#ff2050'; ctx.beginPath(); ctx.ellipse(e.x, v.groundY, e.d.w * 0.55, 8, 0, 0, Math.PI * 2); ctx.stroke(); }
+      for (const s of v.players) if (s.st !== 'ko') { ctx.strokeStyle = s.tc || '#ffffff'; ctx.beginPath(); ctx.ellipse(s.x, v.groundY, 30, 8, 0, 0, Math.PI * 2); ctx.stroke(); }
+    }
     for (const e of v.enemies) if (vis(e.x) || !e.alive) e.draw(ctx, v.world);
     const order = v.players.slice().sort((a, b) => (b.st === 'ko') - (a.st === 'ko'));
     for (const s of order) MG.Fighter.drawState(ctx, s, v.world);
     for (const g of v.grenades) g.draw(ctx);
     for (const pr of v.projectiles) pr.draw(ctx);
     for (const c of v.coins || []) if (vis(c.x, 60)) c.draw(ctx);
-    if (A.water) for (const z of water) if (vis(z.x, z.w + 100)) A.water(ctx, z.x, z.w, z.surface, v.groundY, v.t, true);
+    if (A.water) for (const z of water) if (vis(z.x, z.w + 100)) A.water(ctx, z.x, z.w, z.surface, v.groundY, v.t, true, theme);
     for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) A.grass(ctx, gr.x - 6, gr.w + 12, v.groundY + 4, v.t, true);
     v.fx.draw(ctx);
     ctx.restore();
     ctx.restore();
+    if (A.weather) A.weather(ctx, theme, v.camX, v.t);
     v.fx.drawFinisher(ctx, v.camX);
   };
 
@@ -801,7 +870,13 @@
     cleared() { const c = MG.Save.get('cleared', {}); return c && typeof c === 'object' ? c : {}; },
     isCleared(id) { return !!this.cleared()[id] || this.best(id) > 0; }, // (a best score from before Milestone 6 counts too)
     clear(id) { const c = this.cleared(); if (!c[id]) { c[id] = 1; MG.Save.set('cleared', c); } },
-    isOpen(i) { return i === 0 || (i > 0 && i < MG.LEVELS.length && (this.isCleared(MG.LEVELS[i].id) || this.isCleared(MG.LEVELS[i - 1].id))); },
+    isOpen(i) {
+      const L = MG.LEVELS[i];
+      if (!L) return false;
+      if (L.secret && !MG.Unlocks.has(L.secret)) return false; // e.g. Benny's Isle of Man
+      if (this.isCleared(L.id) || i === 0) return true;
+      return this.isCleared(L.after || MG.LEVELS[i - 1].id); // `after`: the map that opens it (branches)
+    },
     best(id) { return (MG.Save.get('best', {}) || {})[id] || 0; },
   };
 })();

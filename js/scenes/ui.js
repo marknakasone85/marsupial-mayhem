@@ -26,11 +26,12 @@
     },
 
     panel(ctx, x, y, w, h, color = 'rgba(43,25,61,0.82)') {
-      ctx.fillStyle = color;
+      const hc = MG.Settings && MG.Settings.contrast && /^rgba\(43,25,61/.test(color); // high contrast: solid dark panels
+      ctx.fillStyle = hc ? 'rgba(8,4,18,0.97)' : color;
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, 16);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.strokeStyle = hc ? '#ffffff' : 'rgba(255,255,255,0.25)';
       ctx.lineWidth = 3;
       ctx.stroke();
     },
@@ -61,18 +62,22 @@
       const W = MG.W;
       UI.panel(ctx, 110, 140, W - 220, 380);
       UI.outlineText(ctx, 'CONTROLS', W / 2, 168, 30, '#ffd23f', 'center');
+      // the keys come from MG.Keys (they can be changed in Settings)
+      const K = (p, a) => MG.Keys.label(p, a);
+      const NAMES = { ',': ', (comma)', '.': '. (period)', '/': '/ (slash)', ';': '; (semicolon)', "'": "' (quote)" };
+      const P2 = (a) => NAMES[K('P2', a)] || K('P2', a);
       const rows = [
         ['', 'Player 1', 'Player 2', 'Gamepad'],
-        ['Move', 'A / D', '← / →', 'D-pad / stick'],
-        ['Jump', 'W', '↑', 'A'],
-        ['Block (hold)', 'S', '↓', 'Down / LB'],
-        ['Attack', 'F', ', (comma)', 'X'],
-        ['Big Attack', 'E', '. (period)', 'Y'],
-        ['Special', 'H', '/ (slash)', 'B'],
-        ['Shoot (hold)', 'R', '; (semicolon)', 'RB'],
-        ['Grenade, then kick it', 'G', "' (quote)", 'LT'],
-        ['Joey (send it out)', 'Q', '[', 'Back / View'],
-        ['Pouch (use saved item)', 'T', ']', 'RT'],
+        ['Move', K('P1', 'left') + ' / ' + K('P1', 'right'), K('P2', 'left') + ' / ' + K('P2', 'right'), 'D-pad / stick'],
+        ['Jump', K('P1', 'up'), P2('up'), 'A'],
+        ['Block (hold)', K('P1', 'down'), P2('down'), 'Down / LB'],
+        ['Attack', K('P1', 'attack'), P2('attack'), 'X'],
+        ['Big Attack', K('P1', 'big'), P2('big'), 'Y'],
+        ['Special', K('P1', 'special'), P2('special'), 'B'],
+        ['Shoot (hold)', K('P1', 'shoot'), P2('shoot'), 'RB'],
+        ['Grenade, then kick it', K('P1', 'grenade'), P2('grenade'), 'LT'],
+        ['Joey (send it out)', K('P1', 'joey'), P2('joey'), 'Back / View'],
+        ['Pouch (use saved item)', K('P1', 'pouch'), P2('pouch'), 'RT'],
         ['Pause', 'Esc / P', 'Esc / P', 'Start'],
       ];
       rows.forEach((r, i) => {
@@ -83,7 +88,7 @@
         UI.text(ctx, r[2], 570, y, 17, col, 'center');
         UI.text(ctx, r[3], 735, y, 17, col, 'center');
       });
-      UI.text(ctx, 'Playing alone? Arrows + J (attack) K (big) L (special) ; (shoot) \' (grenade) [ (joey) ] (pouch) work too.', W / 2, 460, 14, '#cccccc', 'center');
+      UI.text(ctx, `Playing alone? Arrows + J (attack) K (big) L (special) ${K('P2', 'shoot')} (shoot) ${K('P2', 'grenade')} (grenade) ${K('P2', 'joey')} (joey) ${K('P2', 'pouch')} (pouch) work too.`, W / 2, 460, 14, '#cccccc', 'center');
       UI.text(ctx, 'Grenade: pull the pin and drop it, then kick it with attack, big attack or the grenade key.', W / 2, 478, 14, '#cccccc', 'center');
       UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 496, 14, '#cccccc', 'center');
       UI.text(ctx, 'Press any key to go back.', W / 2, 512, 13, '#9bf6ff', 'center');
@@ -95,12 +100,17 @@
     //  opts.compact: for two strips side by side: each label sits under its key, no pause key
     //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
     keyStrip(ctx, player, t, opts = {}) {
+      // keyboard layouts follow the keys chosen in Settings (MG.Keys)
+      const K = (p, a) => MG.Keys.label(p, a);
+      const kb = (p) => [[[K(p, 'left'), K(p, 'right')], 'move'], [[K(p, 'up')], 'jump'], [[K(p, 'down')], 'block'], [[K(p, 'attack')], 'attack'],
+        [[K(p, 'big')], 'big'], [[K(p, 'special')], 'special'], [[K(p, 'shoot')], 'shoot'], [[K(p, 'grenade')], 'grenade'], [[K(p, 'joey')], 'joey'], [[K(p, 'pouch')], 'pouch']];
+      const solo2 = kb('P2'); solo2[3] = [['J'], 'attack']; solo2[4] = [['K'], 'big']; solo2[5] = [['L'], 'special'];
       const LAYOUTS = {
-        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['E'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch'], [['Esc'], 'pause']],
-        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'attack'], [['K'], 'big'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['['], 'joey'], [[']'], 'pouch'], [['Esc'], 'pause']],
+        wasd: kb('P1').concat([[['Esc'], 'pause']]),
+        arrows: solo2.concat([[['Esc'], 'pause']]),
         pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'attack'], [['Y'], 'big'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Back'], 'joey'], [['RT'], 'pouch'], [['Start'], 'pause']],
-        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['E'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch']],
-        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'attack'], [['.'], 'big'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['['], 'joey'], [[']'], 'pouch']],
+        p1: kb('P1'),
+        p2: kb('P2'),
       };
       const compact = !!opts.compact;
       let items = LAYOUTS[opts.layout || MG.Input.lastDevice] || LAYOUTS.wasd;

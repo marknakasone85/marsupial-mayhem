@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marsupial Mayhem™ level editor</title>
+  <!-- A developer tool: open this file by double-clicking it (it isn't part of the game page,
+       and the home-network share never serves the tools folder). -->
+  <style>
+    body { margin: 0; background: #1b1430; color: #f4ecff; font: 14px "Trebuchet MS", sans-serif; }
+    #wrap { display: flex; gap: 12px; padding: 10px; align-items: flex-start; }
+    #side { width: 290px; display: flex; flex-direction: column; gap: 8px; }
+    #main { flex: 1; min-width: 0; }
+    canvas#view { width: 100%; max-width: 1152px; aspect-ratio: 16 / 9; background: #000; border-radius: 8px; cursor: crosshair; display: block; }
+    canvas#strip { width: 100%; max-width: 1152px; height: 46px; background: #2b193d; border-radius: 6px; margin-top: 6px; cursor: pointer; display: block; }
+    fieldset { border: 1px solid #5a4a78; border-radius: 8px; padding: 6px 8px; margin: 0; }
+    legend { color: #ffd23f; font-weight: bold; padding: 0 4px; }
+    label { display: block; margin: 3px 0; }
+    input[type=text], input[type=number], select { width: 100%; box-sizing: border-box; background: #2b193d; color: #fff; border: 1px solid #6c5a8c; border-radius: 4px; padding: 3px; }
+    .tools label { display: inline-block; width: 48%; }
+    button { background: #ffd23f; color: #2b193d; border: 0; border-radius: 6px; padding: 6px 10px; font-weight: bold; cursor: pointer; margin: 2px 0; }
+    button.alt { background: #4a3a6a; color: #fff; }
+    #checks { color: #ffb3c1; font-size: 12px; white-space: pre-wrap; }
+    #checks.ok { color: #9ef01a; }
+    #out { width: 100%; height: 200px; background: #120c22; color: #cfe; font: 11px monospace; border-radius: 6px; margin-top: 6px; }
+    #help { font-size: 12px; color: #bbb; margin-top: 6px; }
+    #game { display: none; position: fixed; inset: 0; margin: auto; }
+    #back { display: none; position: fixed; top: 8px; right: 8px; z-index: 5; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="side">
+      <fieldset><legend>Map</legend>
+        <label>Open <select id="mapSel"></select></label>
+        <button id="newMap" class="alt">New empty map</button>
+        <label>Id <input id="fId" type="text"></label>
+        <label>World <input id="fWorld" type="text"></label>
+        <label>Name <input id="fName" type="text"></label>
+        <label>Theme <select id="fTheme"></select></label>
+        <label>Music <select id="fMusic"></select></label>
+        <label>Sky <select id="fSky"><option value="">day</option><option value="sunset">sunset</option></select></label>
+        <label>Length <input id="fLength" type="number" min="1500" step="100"></label>
+        <label>Tip <input id="fTip" type="text"></label>
+      </fieldset>
+      <fieldset class="tools"><legend>Tool (click the map)</legend>
+        <label><input type="radio" name="tool" value="select" checked> Select / move</label>
+        <label><input type="radio" name="tool" value="platform"> Platform</label>
+        <label><input type="radio" name="tool" value="pest"> Pest</label>
+        <label><input type="radio" name="tool" value="crate"> Crate</label>
+        <label><input type="radio" name="tool" value="coin"> Coin</label>
+        <label><input type="radio" name="tool" value="pickup"> Pickup</label>
+        <label><input type="radio" name="tool" value="decor"> Decor</label>
+        <label><input type="radio" name="tool" value="npc"> Animal</label>
+        <label><input type="radio" name="tool" value="gate"> Gate</label>
+        <label><input type="radio" name="tool" value="water"> Water</label>
+        <label><input type="radio" name="tool" value="grass"> Long grass</label>
+        <label><input type="radio" name="tool" value="boss"> Boss</label>
+        <label>Kind <select id="kind"></select></label>
+        <label>Width (platform, water, grass) <input id="width" type="number" value="170" step="10"></label>
+      </fieldset>
+      <fieldset><legend>Check, play and export</legend>
+        <div id="checks"></div>
+        <button id="play">Test play (Esc, then Quit, or the button)</button>
+        <button id="export">Export</button>
+        <button id="undo" class="alt">Undo (Ctrl+Z)</button>
+      </fieldset>
+    </div>
+    <div id="main">
+      <canvas id="view" width="960" height="540"></canvas>
+      <canvas id="strip" width="960" height="46"></canvas>
+      <div id="help">
+        Arrow keys, the mouse wheel or the strip below scroll. Select: click something, drag to move, Delete to remove.
+        Platforms, water and grass use the width box. Export, then paste the text at the end of <b>MG.LEVELS</b> in
+        <b>js/data/levels.js</b> (never replace a map) and add a stop for it in <b>js/data/worldmap.js</b>.
+        Your draft is kept in this browser.
+      </div>
+      <textarea id="out" spellcheck="false" placeholder="Exported map appears here"></textarea>
+    </div>
+  </div>
+  <canvas id="game"></canvas>
+  <button id="back">Back to the editor</button>
+
+  <!-- the game's scripts (same order as index.html, without main.js); tools/tests/test_editor.js checks the list -->
+  <script src="../js/core/engine.js"></script>
+  <script src="../js/core/input.js"></script>
+  <script src="../js/core/touch.js"></script>
+  <script src="../js/core/audio.js"></script>
+  <script src="../js/core/fx.js"></script>
+  <script src="../js/core/settings.js"></script>
+  <script src="../js/art/kangaroo.js"></script>
+  <script src="../js/art/critters.js"></script>
+  <script src="../js/art/pests.js"></script>
+  <script src="../js/art/outback.js"></script>
+  <script src="../js/art/gear.js"></script>
+  <script src="../js/art/worlds.js"></script>
+  <script src="../js/art/worlds2.js"></script>
+  <script src="../js/art/creatures.js"></script>
+  <script src="../js/data/characters.js"></script>
+  <script src="../js/data/levels.js"></script>
+  <script src="../js/data/weapons.js"></script>
+  <script src="../js/data/worldmap.js"></script>
+  <script src="../js/entities/abilities.js"></script>
+  <script src="../js/entities/specials.js"></script>
+  <script src="../js/entities/joey.js"></script>
+  <script src="../js/entities/gear.js"></script>
+  <script src="../js/entities/hazards.js"></script>
+  <script src="../js/entities/allies.js"></script>
+  <script src="../js/entities/fighter.js"></script>
+  <script src="../js/entities/grenade.js"></script>
+  <script src="../js/entities/enemy.js"></script>
+  <script src="../js/entities/ai.js"></script>
+  <script src="../js/net/net.js"></script>
+  <script src="../js/net/sync.js"></script>
+  <script src="../js/scenes/ui.js"></script>
+  <script src="../js/scenes/menu.js"></script>
+  <script src="../js/scenes/campaign_hud.js"></script>
+  <script src="../js/scenes/campaign.js"></script>
+  <script src="../js/scenes/lobby.js"></script>
+  <script src="../js/scenes/remote.js"></script>
+  <script src="../js/scenes/select.js"></script>
+  <script src="../js/scenes/shop.js"></script>
+  <script src="../js/scenes/worldmap.js"></script>
+  <script src="../js/scenes/settings.js"></script>
+  <script src="../js/scenes/duel.js"></script>
+  <script src="../js/scenes/remote_duel.js"></script>
+  <script src="editor-core.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>

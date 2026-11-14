@@ -1559,17 +1559,29 @@
 
   // ================================================================ allies and story characters
   // Quokka, about 50 px tall: round, brown, rounded ears, short tail and a HUGE friendly smile.
-  // o: { wave, hop, frozen, sponsor (sash and medal), shirt (teal SMILE SQUAD vest), talk }
+  // o: { wave, hop, frozen, sponsor (sash and medal), shirt (teal SMILE SQUAD vest), talk,
+  //      grin (0..1: the Hypnotic Grin: spiral eyes, an impossibly wide sparkly smile, rings radiating out),
+  //      evil (the revealed army: narrowed eyes, a sharp-toothed grin, a dark sash), angry (the smile dropped) }
   const QK = { fur: '#8f7558', dark: '#6b5640', belly: '#c9b394', face: '#a68a6a', ear: '#d9a08a' };
   A.quokka = function (ctx, x, y, o) {
     o = o || {};
     const s = o.scale || 1, t = o.t || 0, fr = !!o.frozen, hop = o.hop && !fr ? 1 : 0;
     const talk = o.talk && !fr ? Math.abs(Math.sin(t * 9)) : 0;
+    const grin = fr ? 0 : k01(o.grin), evil = !!o.evil, angry = !!o.angry && !fr;
     ctx.save();
     ctx.translate(x + (fr ? Math.sin(t * 40) * 0.4 : 0), y);
     ctx.scale((o.facing || 1) * s, s);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     const fill = (col) => white(o, col);
+    if (grin > 0 && !angry && !o.flash) {
+      // the Hypnotic Grin: rings radiating out from the face
+      ctx.lineWidth = 2.2;
+      for (let j = 0; j < 4; j++) {
+        const k = (t * 0.9 + j / 4) % 1;
+        ctx.strokeStyle = j % 2 ? 'rgba(255,79,163,' + (grin * (1 - k) * 0.8).toFixed(3) + ')' : 'rgba(157,78,221,' + (grin * (1 - k) * 0.8).toFixed(3) + ')';
+        ctx.beginPath(); ctx.arc(6, -36, 12 + k * 38, 0, TAU); ctx.stroke();
+      }
+    }
     // short tail and long hind feet
     ctx.fillStyle = fill(QK.dark); ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
     A.taper(ctx, -9, -10, -18, -6 - hop * 6, -24, -2 - hop * 10, 6, 2); ctx.fill(); ctx.stroke();
@@ -1609,6 +1621,17 @@
       A.oval(ctx, 2, -18, 4.4, 4.4, 0, fill('#ffd23f'), '#8a5a00', 1.2);
       A.star(ctx, 2, -18, 2.6, fill('#fff3b0'));
     }
+    if (evil) {
+      // the revealed army's dark sash, with a gold buckle
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(0, -18, 13, 15.5, 0, 0, TAU); ctx.clip();
+      ctx.strokeStyle = fill('#2d1b3d'); ctx.lineWidth = 6.5;
+      ctx.beginPath(); ctx.moveTo(12, -32); ctx.lineTo(-12, -6); ctx.stroke();
+      if (!o.flash) { ctx.strokeStyle = '#8a1c2b'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(14.5, -30); ctx.lineTo(-9.5, -4); ctx.stroke(); }
+      ctx.restore();
+      ctx.fillStyle = fill('#ffd23f'); ctx.strokeStyle = '#8a5a00'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(-2.6, -21.5, 5.2, 5, 1.2); ctx.fill(); ctx.stroke();
+    }
     // arms: resting, waving, gesturing, or stiff at the sides when caught
     const arm = (sx, sy, px, py, col) => {
       ctx.fillStyle = fill(col); ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
@@ -1639,7 +1662,7 @@
     A.oval(ctx, hx, hy, 11, 10, 0, fill(QK.fur), LINE, 2);
     A.oval(ctx, hx + fx + 1, hy + 4, 7, 5, 0, fill(QK.belly));
     // rosy cheeks
-    if (!o.flash) { A.oval(ctx, hx + fx - 7, hy + 3, 2.6, 1.8, 0, 'rgba(240,130,130,0.55)'); A.oval(ctx, hx + fx + 8, hy + 3, 2.6, 1.8, 0, 'rgba(240,130,130,0.55)'); }
+    if (!o.flash && !angry) { A.oval(ctx, hx + fx - 7, hy + 3, 2.6, 1.8, 0, 'rgba(240,130,130,0.55)'); A.oval(ctx, hx + fx + 8, hy + 3, 2.6, 1.8, 0, 'rgba(240,130,130,0.55)'); }
     if (fr) {
       // staring straight at you, too innocently
       for (const ex of [-3.8, 3.8]) {
@@ -1651,6 +1674,71 @@
       ctx.beginPath(); ctx.moveTo(hx - 6.5, hy + 3); ctx.quadraticCurveTo(hx, hy + 10, hx + 6.5, hy + 3); ctx.quadraticCurveTo(hx, hy + 5.5, hx - 6.5, hy + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(hx - 3, hy + 4.4); ctx.lineTo(hx - 3, hy + 6.6); ctx.moveTo(hx, hy + 4.8); ctx.lineTo(hx, hy + 7.2); ctx.moveTo(hx + 3, hy + 4.4); ctx.lineTo(hx + 3, hy + 6.6); ctx.stroke();
       sweatDrop(ctx, hx - 12, hy - 4, 2.2);
+    } else if (angry) {
+      // the smile dropped: a furious red frown
+      if (!o.flash) A.oval(ctx, hx + 2, hy - 1, 10, 8, 0, 'rgba(230,57,70,0.35)');
+      for (const ex of [-0.5, 6.5]) {
+        A.oval(ctx, hx + ex, hy - 2.2, 1.8, 1.5, 0, '#141418');
+        A.oval(ctx, hx + ex + 0.4, hy - 2.2, 0.6, 0.6, 0, '#ff3b3b');
+      }
+      ctx.strokeStyle = LINE; ctx.lineWidth = 1.7;
+      ctx.beginPath(); ctx.moveTo(hx - 3.5, hy - 6.5); ctx.lineTo(hx + 2, hy - 4); ctx.moveTo(hx + 4, hy - 4); ctx.lineTo(hx + 9.5, hy - 6.8); ctx.stroke();
+      A.oval(ctx, hx + 9.5, hy + 1.2, 2.3, 1.6, 0, LINE);
+      ctx.fillStyle = '#5a1a1a'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(hx - 0.5, hy + 7); ctx.quadraticCurveTo(hx + 5, hy + 1.5, hx + 10.5, hy + 6.5); ctx.quadraticCurveTo(hx + 5, hy + 4.6, hx - 0.5, hy + 7); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.lineWidth = 0.7;
+      ctx.beginPath(); ctx.moveTo(hx + 1.5, hy + 5.4); ctx.quadraticCurveTo(hx + 5, hy + 3.2, hx + 8.8, hy + 5.1); ctx.lineTo(hx + 8.5, hy + 5.8); ctx.quadraticCurveTo(hx + 5, hy + 4.2, hx + 1.8, hy + 6.1); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (!o.flash) {
+        for (let j = 0; j < 2; j++) {
+          const k = (t * 1.5 + j * 0.5) % 1;
+          ctx.globalAlpha = 1 - k;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(hx - 8 - k * 4, hy - 12 - k * 10, 1.8 + k * 2.4, 0, TAU); ctx.fill();
+          ctx.beginPath(); ctx.arc(hx + 11 + k * 4, hy - 13 - k * 10, 1.8 + k * 2.4, 0, TAU); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+    } else if (grin > 0 || evil) {
+      // eyes: spirals for the Hypnotic Grin, narrowed and mean for the army
+      for (const ex of [-0.5, 6.5]) {
+        if (grin > 0.25) {
+          const r = 2.2 + grin * 0.9;
+          A.oval(ctx, hx + ex, hy - 2.5, r, r, 0, '#ffffff', LINE, 0.8);
+          ctx.strokeStyle = evil ? '#c1121f' : '#9d4edd'; ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          for (let i = 0; i <= 20; i++) { const k = i / 20, a = t * 7 + k * TAU * 2, rr = k * r * 0.85; if (i) ctx.lineTo(hx + ex + Math.cos(a) * rr, hy - 2.5 + Math.sin(a) * rr); else ctx.moveTo(hx + ex, hy - 2.5); }
+          ctx.stroke();
+        } else {
+          A.oval(ctx, hx + ex, hy - 2.2, 1.9, 1.4, 0, '#141418');
+          A.oval(ctx, hx + ex + 0.5, hy - 2.5, 0.55, 0.55, 0, '#ff3b3b');
+          ctx.strokeStyle = LINE; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(hx + ex - 2.6, hy - (ex < 3 ? 5.2 : 3.6)); ctx.lineTo(hx + ex + 2.6, hy - (ex < 3 ? 3.6 : 5.2)); ctx.stroke();
+        }
+      }
+      A.oval(ctx, hx + 9.5, hy + 1.2, 2.3, 1.6, 0, LINE);
+      // the grin: wider and wider (sparkling) for the Hypnotic Grin, sharp teeth for the army
+      const l = hx - 1 - grin * 6, r = hx + 11 + grin * 5, m = 3.5 + grin * 3;
+      ctx.fillStyle = '#5a1a1a'; ctx.strokeStyle = LINE; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(l, hy + 2.5 - grin * 2); ctx.quadraticCurveTo(hx + 5, hy + 3.5, r, hy + 2 - grin * 2.5);
+      ctx.quadraticCurveTo(hx + 6, hy + 3 + m * 1.6, l, hy + 2.5 - grin * 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      if (evil) {
+        for (let i = 0; i < 6; i++) { const tx = lerp(l + 1.5, r - 2.5, i / 5); ctx.moveTo(tx - 0.9, hy + 2.7); ctx.lineTo(tx, hy + 4.8); ctx.lineTo(tx + 0.9, hy + 2.7); }
+      } else {
+        ctx.moveTo(l + 1.4, hy + 2.6 - grin * 1.6); ctx.quadraticCurveTo(hx + 5, hy + 3.6, r - 1.4, hy + 2.2 - grin * 2); ctx.lineTo(r - 2, hy + 3.6 - grin * 1.2); ctx.quadraticCurveTo(hx + 5, hy + 5.4, l + 2, hy + 3.9 - grin);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = LINE; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(l - 1.2, hy + 1.2 - grin * 2); ctx.lineTo(l, hy + 2.5 - grin * 2); ctx.moveTo(r + 1.2, hy + 0.8 - grin * 2.5); ctx.lineTo(r, hy + 2 - grin * 2.5); ctx.stroke();
+      if (grin > 0.3 && !o.flash) {
+        // twinkles round the smile
+        for (let j = 0; j < 3; j++) {
+          const k = (t * 2 + j / 3) % 1, a = j * 2.1 + t;
+          A.star(ctx, hx + 5 + Math.cos(a) * (9 + grin * 6), hy + 5 + Math.sin(a) * (5 + grin * 3), (1.2 + grin * 1.6) * (1 - Math.abs(k - 0.5)), '#fff3b0');
+        }
+        A.star(ctx, r - 3, hy + 3, 1.6 * grin + 0.4, '#ffffff');
+      }
     } else {
       for (const ex of [-0.5, 6.5]) {
         A.oval(ctx, hx + ex, hy - 2.5, 1.9, 2.2, 0, '#141418');
@@ -1813,56 +1901,92 @@
     ctx.restore();
   };
 
-  // Northern quoll: small, brown with white spots, pink nose, about 35 px tall. o: { run, bite (0..1), scared }
+  // Northern quoll: small, brown with white spots, pink nose, about 35 px tall. o: { run, bite (0..1), scared,
+  //   spottedTail (a spotted-tailed quoll: about 20% bigger, rich chestnut, white spots right down its tail),
+  //   champ (a rival champion's red-and-gold sash and medal), crouch (winding up), air (leaping, legs out) }
+  const QUOLL = { tail: '#4a3a2c', far: '#5a3a26', fur: '#8a5a3a', belly: '#e8d8c0', snout: '#a7764f', ear: '#e8a0a0', foot: '#e8b5a0' };
+  const SPOTTED = { tail: '#7a3a1e', far: '#5c2a15', fur: '#8e4424', belly: '#ecd6bc', snout: '#a85a35', ear: '#e8a0a0', foot: '#e8b5a0' };
   A.quoll = function (ctx, x, y, o) {
     o = o || {};
     const s = o.scale || 1, t = o.t || 0, bite = k01(o.bite), scared = !!o.scared;
+    const C = o.spottedTail ? SPOTTED : QUOLL;
     const fill = (col) => white(o, col);
-    const run = o.run ? Math.sin(t * 18) : 0;
-    const bob = o.run ? -Math.abs(Math.sin(t * 18)) * 2 : 0;
+    const air = o.air ? 1 : 0;
+    const run = o.run && !air ? Math.sin(t * 18) : 0;
+    const bob = (o.run && !air ? -Math.abs(Math.sin(t * 18)) * 2 : 0) + (o.crouch && !air ? 3 : 0);
     ctx.save();
     ctx.translate(x, y);
     ctx.scale((o.facing || 1) * s, s);
+    if (o.spottedTail) ctx.scale(1.2, 1.2);
+    if (air) { ctx.translate(0, -10); ctx.rotate(-0.15); }
     if (scared) { ctx.rotate(-0.18); ctx.translate(Math.sin(t * 30) * 0.5, 0); }
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    // long dark tail
-    ctx.fillStyle = fill('#4a3a2c'); ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
-    A.taper(ctx, -16, -15 + bob, -30, -24 + bob - run * 3 + (scared ? 8 : 0), -44, -16 + bob + (scared ? 12 : 0), 6, 2); ctx.fill(); ctx.stroke();
+    // long tail (the spotted-tailed quoll's is longer, chestnut and spotted)
+    ctx.fillStyle = fill(C.tail); ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
+    if (o.spottedTail) {
+      const tx = -50, ty = -14 + bob + (scared ? 12 : 0) - air * 8, cx = -32, cy = -26 + bob - run * 3 + (scared ? 8 : 0);
+      A.taper(ctx, -16, -15 + bob, cx, cy, tx, ty, 7.5, 2.4); ctx.fill(); ctx.stroke();
+      if (!o.flash) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        for (const k of [0.25, 0.42, 0.58, 0.74, 0.88]) { const m = 1 - k, px = m * m * -16 + 2 * m * k * cx + k * k * tx, py = m * m * (-15 + bob) + 2 * m * k * cy + k * k * ty; circ(ctx, px, py - 0.6, 1.3 - k * 0.5); }
+        ctx.fill();
+      }
+    } else {
+      A.taper(ctx, -16, -15 + bob, -30, -24 + bob - run * 3 + (scared ? 8 : 0), -44, -16 + bob + (scared ? 12 : 0), 6, 2); ctx.fill(); ctx.stroke();
+    }
     // legs (back pair darker)
     const leg = (lx, ph, col) => {
       ctx.fillStyle = fill(col); ctx.strokeStyle = LINE; ctx.lineWidth = 1.4;
+      if (air) {
+        const fx = lx < 0 ? lx - 9 : lx + 9;
+        A.taper(ctx, lx, -13 + bob, (lx + fx) / 2, -9, fx, -5, 5, 4); ctx.fill(); ctx.stroke();
+        A.oval(ctx, fx + (lx < 0 ? -1 : 1.5), -4.5, 3.5, 1.6, lx < 0 ? 0.4 : -0.3, fill(C.foot), LINE, 1);
+        return;
+      }
       ctx.beginPath(); ctx.roundRect(lx - 2.5 + ph * 5, -12 + bob, 5, 12 - bob, 2); ctx.fill(); ctx.stroke();
-      A.oval(ctx, lx + 1.5 + ph * 5, -1, 3.5, 1.6, 0, fill('#e8b5a0'), LINE, 1);
+      A.oval(ctx, lx + 1.5 + ph * 5, -1, 3.5, 1.6, 0, fill(C.foot), LINE, 1);
     };
-    leg(-12, run, '#5a3a26'); leg(10, -run, '#5a3a26');
+    leg(-12, run, C.far); leg(10, -run, C.far);
     // body with white spots
-    A.oval(ctx, -2, -16 + bob, 18, 10, 0, fill('#8a5a3a'), LINE, 2);
-    A.oval(ctx, 1, -10 + bob, 12, 3.5, 0, fill('#e8d8c0'));
+    A.oval(ctx, -2, -16 + bob, 18, 10, 0, fill(C.fur), LINE, 2);
+    A.oval(ctx, 1, -10 + bob, 12, 3.5, 0, fill(C.belly));
     if (!o.flash) {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       for (const [sx, sy, r] of [[-12, -20, 1.8], [-6, -23, 1.6], [0, -19, 1.9], [6, -22, 1.5], [-9, -15, 1.5], [3, -15, 1.4], [-15, -14, 1.3], [10, -17, 1.3]]) circ(ctx, sx, sy + bob, r);
       ctx.fill();
     }
-    leg(-8, -run, '#8a5a3a'); leg(14, run, '#8a5a3a');
+    leg(-8, -run, C.fur); leg(14, run, C.fur);
+    if (o.champ) {
+      // the champion's sash over the shoulder, with a gold star medal
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(-2, -16 + bob, 17.5, 9.5, 0, 0, TAU); ctx.clip();
+      ctx.strokeStyle = fill('#ffd23f'); ctx.lineWidth = 6.4;
+      ctx.beginPath(); ctx.moveTo(4, -27 + bob); ctx.lineTo(12, -5 + bob); ctx.stroke();
+      ctx.strokeStyle = fill('#d62828'); ctx.lineWidth = 4.4; ctx.stroke();
+      ctx.restore();
+      A.oval(ctx, 9.5, -11 + bob, 3, 3, 0, fill('#ffd23f'), '#8a5a00', 1);
+      A.star(ctx, 9.5, -11 + bob, 1.9, fill('#fff3b0'));
+    }
     // head: rounded ears, pointed snout, pink nose; jaws open for a bite
     ctx.save();
     ctx.translate(16 + bite * 6, -21 + bob);
     for (const [ex, ey] of [[-3, -9], [2, -10]]) {
       const back = scared ? -0.8 : 0;
-      A.oval(ctx, ex + back * 2, ey + Math.abs(back) * 2, 3.6, 4, back, fill('#8a5a3a'), LINE, 1.4);
-      A.oval(ctx, ex + back * 2, ey + 0.6 + Math.abs(back) * 2, 1.8, 2.2, back, fill('#e8a0a0'));
+      A.oval(ctx, ex + back * 2, ey + Math.abs(back) * 2, 3.6, 4, back, fill(C.fur), LINE, 1.4);
+      A.oval(ctx, ex + back * 2, ey + 0.6 + Math.abs(back) * 2, 1.8, 2.2, back, fill(C.ear));
     }
-    A.oval(ctx, 0, -1, 8.5, 7.5, 0, fill('#8a5a3a'), LINE, 1.8);
+    A.oval(ctx, 0, -1, 8.5, 7.5, 0, fill(C.fur), LINE, 1.8);
     if (bite > 0.05) {
       ctx.save(); ctx.translate(4, 2); ctx.rotate(bite * 0.5);
-      ctx.fillStyle = fill('#a7764f'); ctx.strokeStyle = LINE; ctx.lineWidth = 1.4;
+      ctx.fillStyle = fill(C.snout); ctx.strokeStyle = LINE; ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.moveTo(0, -1); ctx.lineTo(11, 0); ctx.lineTo(0, 3); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#ffffff';
       ctx.beginPath(); ctx.moveTo(6, -0.6); ctx.lineTo(7, -3); ctx.lineTo(8, -0.4); ctx.fill();
       ctx.restore();
     }
-    ctx.fillStyle = fill('#a7764f'); ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
+    ctx.fillStyle = fill(C.snout); ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
     ctx.beginPath(); ctx.moveTo(4, -5); ctx.quadraticCurveTo(10, -4, 15, 0 - bite * 2); ctx.quadraticCurveTo(10, 3, 3, 3); ctx.closePath(); ctx.fill(); ctx.stroke();
     A.oval(ctx, 15, -bite * 2, 2, 1.6, 0, fill('#ff9eb5'), LINE, 0.8);
     if (scared) {
@@ -1936,7 +2060,8 @@
     MG.UI.outlineText(ctx, str, x, y, 13, '#fff6d8', 'center', 'rgba(43,25,61,0.85)');
     ctx.restore();
   }
-  A.worldMap = function (ctx, t) {
+  // o (optional): { isleOfMan: true } adds the bonus island in the open sea to the north-west.
+  A.worldMap = function (ctx, t, o) {
     t = t || 0;
     ctx.save();
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -2103,6 +2228,17 @@
     label(ctx, 'TASMANIA', 690, 528);
     label(ctx, 'TIME RIFT', 330, 146);
     label(ctx, 'GRIN ISLE', 90, 362);
+    // the bonus Isle of Man: a little green island with a hill, a stone wall, a cottage and sheep
+    if (o && o.isleOfMan) {
+      island(ctx, 150, 96, 30, 18, 91, '#7cc464');
+      A.oval(ctx, 142, 92, 15, 7, 0, '#68b052');
+      ctx.strokeStyle = 'rgba(80,90,70,0.8)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(130, 99); ctx.quadraticCurveTo(146, 94, 168, 100); ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(156, 87, 8, 5);
+      ctx.fillStyle = '#4f5866'; ctx.beginPath(); ctx.moveTo(155, 87.5); ctx.lineTo(160, 84); ctx.lineTo(165, 87.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ell(ctx, 138, 101, 2.2, 1.5, 0); ell(ctx, 145, 103, 2.2, 1.5, 0); ctx.fill();
+      label(ctx, 'ISLE OF MAN', 150, 126);
+    }
     ctx.restore();
   };
 })();

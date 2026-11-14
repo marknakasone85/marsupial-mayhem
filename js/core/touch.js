@@ -86,7 +86,8 @@
     // Button circles in screen pixels for the current screen size.
     layout() {
       const vw = window.innerWidth, vh = window.innerHeight;
-      const u = Math.max(24, Math.min(vh * 0.11, vw * 0.075, 62));
+      const big = MG.Settings && MG.Settings.bigTouch ? 1.2 : 1; // Settings: bigger buttons
+      const u = Math.max(24, Math.min(vh * 0.11 * big, vw * 0.075 * big, 62 * big));
       const pad = 10;
       return BUTTONS.map((b) => {
         const x = b.corner === 'bl' ? pad + b.dx * u : vw - pad - b.dx * u;

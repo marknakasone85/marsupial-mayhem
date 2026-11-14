@@ -21,6 +21,12 @@
       if (P.isCleared('outback-4') && !seen.rainforest) return 'rainforest';
       if (P.isCleared('rainforest-3') && !seen.canefields) return 'canefields';
       if (P.isCleared('cane-4') && !seen.world3done) return 'world3done';
+      if (P.isCleared('cane-4') && !seen.tasmania) return 'tasmania';
+      if (P.isCleared('alps-3') && !seen.quoll) return 'quoll';
+      if (P.isCleared('alps-3') && !seen.city) return 'city';
+      if (P.isCleared('city-4') && !seen.rift) return 'rift';
+      if (P.isCleared('rift-3') && !seen.ghost) return 'ghost';
+      if (P.isCleared('grin-4') && !seen.ending) return 'ending';
       return null;
     },
     markSeen(id) { const seen = MG.Save.get('story', {}) || {}; seen[id] = 1; MG.Save.set('story', seen); },
@@ -36,12 +42,13 @@
         const x = c.x, y = c.y || gy, f = c.f || 1, s = c.s || 1;
         if (c.who !== 'treeKangaroo') A.shadow(ctx, x, gy, 30 * s);
         if (c.who === 'char') { const def = MG.charById(c.cid); A.character(ctx, def, { x, y, facing: f, scale: def.scale * 1.25 * s, t: t + x, pose: 'idle' }); }
-        else if (c.who === 'quokka' && A.quokka) A.quokka(ctx, x, y, { t: t + x, facing: f, scale: 1.4 * s, sponsor: !!c.sponsor, shirt: !!c.shirt, wave: true });
+        else if (c.who === 'quokka' && A.quokka) A.quokka(ctx, x, y, { t: t + x, facing: f, scale: 1.4 * s, sponsor: !!c.sponsor, shirt: !!c.shirt, wave: !c.angry, angry: !!c.angry });
         else if (c.who === 'platypus') A.platypus(ctx, x, y, 1.2 * s, t, { talk: Math.floor(t * 2) % 2 === 0 });
-        else if (c.who === 'pest' && A[c.type]) A[c.type](ctx, x, y, { t: t + x, facing: c.f || -1, scale: 1.5 * s });
+        else if (c.who === 'pest' && A[c.type]) A[c.type](ctx, x, y, Object.assign({ t: t + x, facing: c.f || -1, scale: 1.5 * s }, c, { scale: 1.5 * s, facing: c.f || -1 }));
         else if (c.who === 'cassowary' && A.cassowary) A.cassowary(ctx, x, y, { t, facing: f });
         else if (c.who === 'treeKangaroo' && A.treeKangaroo) A.treeKangaroo(ctx, x, y, { t, facing: f, sit: true });
-        else if (c.who === 'quoll' && A.quoll) A.quoll(ctx, x, y, { t, facing: f, scared: !!c.scared, scale: 1.4 * s });
+        else if (c.who === 'quoll' && A.quoll) A.quoll(ctx, x, y, { t, facing: f, scared: !!c.scared, scale: 1.4 * s, spottedTail: !!c.champ, champ: !!c.champ });
+        else if (A[c.who]) A[c.who](ctx, x, y, { t: t + x, facing: f, scale: (c.who === 'diprotodon' ? 1 : 1.4) * s });
       }
       UI.panel(ctx, 30, 18, W - 60, 40 + p.lines.length * 25 + 36, 'rgba(43,25,61,0.88)');
       UI.outlineText(ctx, p.title, W / 2, 46, p.title.length > 30 ? 24 : 30, '#ffd23f', 'center');
@@ -114,6 +121,16 @@
 
     levelIndex(stop) { return MG.LEVELS.findIndex((l) => l.id === stop); }
     isOpen(i) { const s = this.stops[i]; return s === 'shop' || MG.Progress.isOpen(this.levelIndex(s)); }
+    // a secret stop (the Isle of Man) only shows once it's been found
+    isShown(i) { const s = this.stops[i]; if (s === 'shop') return true; const L = MG.LEVELS[this.levelIndex(s)]; return !L.secret || MG.Unlocks.has(L.secret); }
+    // the stop a path comes from: the map that opens this one
+    fromStop(i) {
+      const s = this.stops[i];
+      if (s === 'shop') return null;
+      const li = this.levelIndex(s), L = MG.LEVELS[li];
+      if (li === 0) return 'shop';
+      return L.after || MG.LEVELS[li - 1].id;
+    }
     startStop(at) {
       if (at === 'shop') return 0;
       if (typeof at === 'number' && MG.LEVELS[at]) { const i = this.stops.indexOf(MG.LEVELS[at].id); if (i >= 0) return i; }
@@ -128,6 +145,7 @@
     }
 
     enter() {
+      this.storyChecked = false; // (stories can come one after another)
       MG.Audio.playMusic(MG.Audio.SONGS.map ? 'map' : 'title');
       if (this.net || this.guest) MG.Net.onMessage = (m, from) => this.onNet(m, from);
       if (this.net) this.broadcast();
@@ -138,6 +156,7 @@
       MG.Net.send({
         t: 'wmap', cur: this.cur, pos: [Math.round(this.pos[0]), Math.round(this.pos[1])],
         cl: MG.LEVELS.filter((l) => MG.Progress.isCleared(l.id)).map((l) => l.id),
+        iom: MG.Unlocks.has('isleofman') ? 1 : 0,
         pl: this.players.map((p) => ({ id: p.id, cid: p.cid })),
       }, 'all', true);
       this.sendT = 0.25;
@@ -165,7 +184,7 @@
       }
       if (m.t === 'gear' || m.t === 'pick') MG.Gear.note(from, m);
       if (m.t === 'pick' && m.ready && typeof from === 'number' && !this.players.some((p) => p.id === from) &&
-        this.players.length < 4 && MG.CHARACTERS.some((c) => c.id === m.cid)) {
+        this.players.length < 4 && MG.validCid(m.cid)) {
         this.players.push({ id: from, cid: m.cid, local: null });
         MG.Audio.confirm();
       }
@@ -180,6 +199,8 @@
         this.storyChecked = true;
         const story = MG.Story.pending();
         if (story) { MG.Engine.setScene(new MG.StoryScene({ id: story, net: this.net, after: () => this })); return; }
+        // Benny knows a secret island (the Isle of Man bonus map)
+        if (this.players.some((p) => p.cid === 'benny') && MG.Unlocks.unlock('isleofman')) { this.msg = 'Benny knows a secret island! (the Isle of Man)'; this.msgT = 4; MG.Audio.powerUp(); }
       }
       if (this.net) {
         MG.Net.maintain(dt);
@@ -202,6 +223,7 @@
         for (let i = 0; i < this.stops.length; i++) {
           const [sx, sy] = MG.MAP_STOPS[this.stops[i]];
           if (Math.hypot(p.x - sx, p.y - sy) > 26) continue;
+          if (!this.isShown(i)) continue;
           if (i === this.cur) this.choose();
           else if (this.isOpen(i)) this.goTo(i);
           else this.say('Clear the map before it first!');
@@ -212,9 +234,14 @@
     }
     say(msg) { this.msg = msg; this.msgT = 2; MG.Audio.emptyClick(); }
     step(d) {
-      const i = this.cur + d;
+      let i = this.cur + d;
+      while (i >= 0 && i < this.stops.length && !this.isShown(i)) i += d;
       if (i < 0 || i >= this.stops.length) return;
-      if (!this.isOpen(i)) { this.say('Clear ' + MG.LEVELS[this.levelIndex(this.stops[i - 1])].name + ' first!'); return; }
+      if (!this.isOpen(i)) {
+        const from = this.fromStop(i), L = MG.LEVELS[this.levelIndex(from)];
+        this.say('Clear ' + (L ? L.name : 'the map before it') + ' first!');
+        return;
+      }
       this.goTo(i);
     }
     goTo(i) {
@@ -231,9 +258,15 @@
         MG.Engine.setScene(new MG.ShopScene({ net: this.net, level: next, players: this.players, toMap: true, gid: null, earned: [] }));
         return;
       }
-      const i = this.levelIndex(stop);
-      if (this.net) MG.Net.send({ t: 'start', mode: 'campaign', level: i }, 'all', true);
-      MG.Engine.setScene(new MG.CampaignScene({ level: i, net: this.net, players: this.players }));
+      const i = this.levelIndex(stop), L = MG.LEVELS[i];
+      const go = () => {
+        if (this.net) MG.Net.send({ t: 'start', mode: 'campaign', level: i }, 'all', true);
+        return new MG.CampaignScene({ level: i, net: this.net, players: this.players });
+      };
+      // some maps have a story first (the betrayal on Grin Isle...)
+      const seen = MG.Save.get('story', {}) || {};
+      if (L.storyBefore && !seen[L.storyBefore]) { MG.Engine.setScene(new MG.StoryScene({ id: L.storyBefore, net: this.net, after: go })); return; }
+      MG.Engine.setScene(go());
     }
     leave() {
       if (this.net) {
@@ -255,23 +288,27 @@
       }
       const cleared = v ? new Set(v.cl || []) : null;
       const isCleared = (id) => (cleared ? cleared.has(id) : MG.Progress.isCleared(id));
+      const iom = v ? !!v.iom : MG.Unlocks.has('isleofman');
+      const isShown = (i) => { const s = this.stops[i]; if (s === 'shop') return true; const L = MG.LEVELS[this.levelIndex(s)]; return !L.secret || iom; };
       const isOpen = (i) => {
         const s = this.stops[i];
         if (s === 'shop') return true;
+        if (!isShown(i)) return false;
         const li = this.levelIndex(s);
-        return li === 0 || isCleared(s) || (li > 0 && isCleared(MG.LEVELS[li - 1].id));
+        return li === 0 || isCleared(s) || isCleared(this.fromStop(i));
       };
       const cur = v ? v.cur || 0 : this.cur;
       const pos = v && v.pos ? v.pos : this.pos;
       const players = v && v.pl ? v.pl : this.players;
 
-      if (MG.Art.worldMap) MG.Art.worldMap(ctx, this.t);
+      if (MG.Art.worldMap) MG.Art.worldMap(ctx, this.t, { isleOfMan: iom });
       else { ctx.fillStyle = '#3a86c8'; ctx.fillRect(0, 0, W, H); }
       // worlds still to come
       for (const s of MG.WORLDS_SOON) UI.outlineText(ctx, 'coming soon', s.x, s.y, 10, '#ffd23f', 'center');
       // paths between the stops
       for (let i = 1; i < this.stops.length; i++) {
-        const [ax, ay] = MG.MAP_STOPS[this.stops[i - 1]], [bx, by] = MG.MAP_STOPS[this.stops[i]];
+        if (!isShown(i)) continue;
+        const [ax, ay] = MG.MAP_STOPS[this.fromStop(i)], [bx, by] = MG.MAP_STOPS[this.stops[i]];
         const open = isOpen(i);
         ctx.strokeStyle = open ? '#fff3c4' : 'rgba(255,255,255,0.35)';
         ctx.lineWidth = open ? 5 : 3;
@@ -281,6 +318,7 @@
       }
       // the stops
       this.stops.forEach((stop, i) => {
+        if (!isShown(i)) return;
         const [x, y] = MG.MAP_STOPS[stop];
         const here = i === cur;
         if (stop === 'shop') {
@@ -314,18 +352,19 @@
       const top = this.net || this.guest ? 46 : 24;
       UI.outlineText(ctx, 'MARSUPIAL WORLD', 16, top, 22, '#ffd23f');
       const stop = this.stops[cur];
-      UI.panel(ctx, 16, H - 74, W - 230, 58);
+      UI.panel(ctx, 16, H - 74, 470, 58);
       if (stop === 'shop') {
-        UI.text(ctx, 'THE PLATYPUS\'S SHOP', 30, H - 56, 18, '#ffd23f');
-        UI.text(ctx, 'Weapons, armor and upgrades. Egg-layers can\'t enter the tournament, but they can sell stuff!', 30, H - 32, 12, '#ffffff');
+        UI.text(ctx, 'THE PLATYPUS\'S SHOP', 30, H - 56, 17, '#ffd23f');
+        UI.text(ctx, 'Weapons, armor and upgrades. Egg-layers can sell stuff!', 30, H - 32, 12, '#ffffff');
       } else {
         const li = this.levelIndex(stop), L = MG.LEVELS[li];
         const world = MG.WORLDS.find((w) => w.levels.includes(stop));
-        UI.text(ctx, `${world ? world.name : L.world}  ·  MAP ${li + 1}: ${L.name}`, 30, H - 56, 17, '#ffd23f');
+        const label = `${world ? world.name : L.world}: ${L.name}`;
+        UI.text(ctx, label, 30, H - 56, label.length > 44 ? 13 : 15, '#ffd23f');
         const best = MG.Progress.best(stop);
         const info = !isOpen(cur) ? 'Locked: clear the map before it first.'
           : (isCleared(stop) ? '✓ Cleared' + (best ? `   Best score ${best}` : '') : 'Not cleared yet') + (L.boss && L.boss.type !== 'bigBuck' ? '   Boss: ' + MG.ENEMY_TYPES[L.boss.type].name : '');
-        UI.text(ctx, info, 30, H - 32, 13, '#ffffff');
+        UI.text(ctx, info, 30, H - 32, info.length > 60 ? 11 : 12, '#ffffff');
       }
       if (!this.guest) {
         const r = this.playRect();

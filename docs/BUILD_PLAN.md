@@ -70,14 +70,14 @@ Details agreed with the owner on 13 Nov 2026 (`DESIGN.md`, "The signature mechan
 - Story panels: the opening, the invasion, the quokkas offering to help.
 - Checkpoints and saves.
 
-## Milestone 7: campaign, worlds 4–7 and the twist
+## Milestone 7: campaign, worlds 4–7 and the twist (built 14 Nov 2026, waiting for the owner to try it)
 
 - Tasmania & Alps (3), the City (4), the Time Rift bonus world (3) and Grin Isle (4, the last in the reptilians' lair).
 - The betrayal, the reptilian enemies, joining forces (CPU champions fighting beside the players), and the finale: the Grand Grinner, then the Croc Emperor. The Hypnotic Grin mechanic.
 - Secret unlocks: Ghost (thylacine) in the Time Rift, and Cousin Cuscus (Sloth Slap crossover).
 - Bonus: the Isle of Man wallaby level.
 
-## Milestone 8: polish and release
+## Milestone 8: polish and release (built 14 Nov 2026 except the owner's steps: itch.io page and trade mark)
 
 - Music for each world, settings (volume, blood and gore, key remapping, difficulty), accessibility (bigger touch buttons option, high contrast).
 - The level editor (developer tool).

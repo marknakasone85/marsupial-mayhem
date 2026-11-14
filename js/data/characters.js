@@ -126,13 +126,49 @@ MG.CHARACTERS = [
   },
 ];
 
-// The two secret characters (docs/ROSTER.md) show as locked "?" tiles until they're unlocked (Milestone 6).
+// The two secret characters (docs/ROSTER.md): locked "?" tiles until they're found (MG.Unlocks).
+//  Ghost: found in the Time Rift (clear its last map). Cousin Cuscus: a hidden crossover with
+//  Sloth Slap (find the sloth who fell through the Time Rift, or play Sloth Slap in this same browser).
 MG.SECRETS = [
-  { id: 'ghost', name: 'GHOST', species: 'Thylacine (Tasmanian tiger)', build: 'FAST', hint: 'Found in the Time Rift...' },
-  { id: 'cuscus', name: 'COUSIN CUSCUS', species: 'Spotted cuscus', build: 'POWER', hint: 'A cousin from another game...' },
+  {
+    id: 'ghost', joey: 'back', name: 'GHOST', species: 'Thylacine (Tasmanian tiger)', build: 'FAST', art: 'critter', look: 'thylacine', scale: 0.95, ghostly: true,
+    speed: 375, atk: 1.25, power: 0.95, hp: 95, weight: 0.85, jump: 900, kickPower: 0.9,
+    basic: { style: 'bite', combo: true }, big: { style: 'wideJaw', dmg: 13, guardBreak: true, reach: 80 },
+    abilities: ['phase'],
+    special: 'phantomDash', specialName: 'PHANTOM DASH',
+    trait: 'Phase: every few seconds a hit passes straight through him. His wide-jaw bite breaks blocks.',
+    fact: 'The last known thylacine died in 1936. It could open its jaws extremely wide.',
+    hint: 'Found in the Time Rift...',
+  },
+  {
+    id: 'cuscus', joey: 'pouch', name: 'COUSIN CUSCUS', species: 'Spotted cuscus', build: 'POWER', art: 'critter', look: 'cuscus', scale: 1,
+    speed: 225, atk: 0.8, power: 1.75, hp: 155, weight: 1.9, jump: 760, kickPower: 1.0,
+    basic: { style: 'slap', dmg: 7, combo: true }, big: { style: 'megaSlap', dmg: 18, kbx: 900, kby: -420, reach: 80 },
+    abilities: ['takeItEasy'],
+    special: 'slapStorm', specialName: 'SLAP STORM',
+    trait: 'Takes it easy: slow, but standing still for a moment makes the next slap a SUPER SLAP.',
+    fact: 'A slow-moving, sloth-like possum relative from New Guinea and Cape York.',
+    hint: 'A cousin from another game...',
+  },
 ];
 
-MG.charById = (id) => MG.CHARACTERS.find((c) => c.id === id) || MG.CHARACTERS[0];
+// Unlocked secrets, saved in this browser.
+MG.Unlocks = {
+  list() { const u = MG.Save.get('unlocked', {}); return u && typeof u === 'object' ? u : {}; },
+  has(id) {
+    if (this.list()[id]) return true;
+    // the Sloth Slap crossover: Sloth Slap saves in this same browser (same website) unlock the cousin
+    if (id === 'cuscus') { try { for (let i = 0; i < localStorage.length; i++) if (/^slothslap\./.test(localStorage.key(i))) return true; } catch (e) { /* no storage */ } }
+    return false;
+  },
+  unlock(id) { const u = this.list(); if (u[id]) return false; u[id] = 1; MG.Save.set('unlocked', u); return true; },
+};
+// Characters you can pick on this device (the 12, plus unlocked secrets), and any real character id
+// (Wi-Fi friends may have unlocked a secret on their own device).
+MG.pickable = () => MG.CHARACTERS.concat(MG.SECRETS.filter((c) => MG.Unlocks.has(c.id)));
+MG.validCid = (id) => typeof id === 'string' && (MG.CHARACTERS.some((c) => c.id === id) || MG.SECRETS.some((c) => c.id === id));
+
+MG.charById = (id) => MG.CHARACTERS.find((c) => c.id === id) || MG.SECRETS.find((c) => c.id === id) || MG.CHARACTERS[0];
 // Coat for player 2-4 when several players pick the same character (kangaroos have their own list).
 MG.coatFor = (def, slotId) => {
   if (def.coats) return def.coats[slotId % def.coats.length];

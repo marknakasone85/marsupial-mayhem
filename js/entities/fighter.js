@@ -139,6 +139,18 @@
       if (this.weapon && !this.weapon.own && this.weapon.id === id) this.weapon.ammo = Math.min(this.weapon.max, this.weapon.ammo + ammo);
       else this.weapon = { id, level: 1, ammo, max: Math.max(MG.WEAPONS[id].pickupAmmo, ammo), own: false };
     }
+    // The quokkas' Hypnotic Grin: look at it too long and you get dizzy (turn away or block!).
+    hypnotise(dt, world) {
+      this.hypno = (this.hypno || 0) + dt;
+      this.hypnoT = 0.25;
+      if (this.hypno >= 1.1) {
+        this.hypno = 0;
+        this.dizzy(2.2, world);
+        world.fx.text(this.x, this.y - this.h - 30, 'HYPNOTISED! (turn away or block)', '#c77dff', 18);
+      }
+    }
+    // Dizzy: slow, and can't attack for a moment.
+    dizzy(secs) { if (this.state !== 'ko') this.dizzyT = Math.max(this.dizzyT || 0, secs); }
     // Armor found in a map (a bark patch).
     giveArmor(n) {
       this.armorMax = Math.max(this.armorMax, 30);
@@ -151,6 +163,10 @@
     // ------------------------------------------------------------------
     update(dt, ctrl, world) {
       ctrl = ctrl || {};
+      this.dizzyT = (this.dizzyT || 0) - dt;
+      this.hypnoT = (this.hypnoT || 0) - dt;
+      if (this.hypnoT <= 0 && this.hypno) this.hypno = Math.max(0, this.hypno - dt * 0.6);
+      if (this.dizzyT > 0) ctrl = Object.assign({}, ctrl, { attackP: false, bigP: false, specialP: false, shoot: false, shootP: false, grenadeP: false });
       this.ctrl = ctrl;
       this.t += dt;
       this.flash -= dt;
@@ -221,7 +237,7 @@
         } else {
           this.state = 'idle';
           const firing = ctrl.shoot && this.weapon;
-          const swim = this.swimming ? (this.has('swimmer') ? 1.35 : 0.6) : 1; // Paddles is at home in the water
+          const swim = (this.swimming ? (this.has('swimmer') ? 1.35 : 0.6) : 1) * (this.dizzyT > 0 ? 0.45 : 1); // Paddles is at home in the water
           const speed = this.def.speed * tea * (firing ? 0.55 : 1) * swim * MG.Abilities.speed(this);
           const accel = (this.onGround ? 2400 : 1500) * tea * (this.sprintT > 0 ? 2 : 1);
           this.vx = approach(this.vx, dir * speed, accel * dt);
@@ -412,12 +428,13 @@
         const kb = Math.sqrt(this.def.power);
         const bane = this.has('rabbitBane') && target.type === 'rabbit' ? 1.5 : 1;
         const hit = {
-          dmg: h.dmg * this.def.power * (sup ? 2 : 1) * bane, kbx: h.kbx * dir * kb * (sup ? 1.4 : 1),
+          dmg: h.dmg * this.def.power * (this.easyT > 1 ? 1.6 : 1) * (sup ? 2 : 1) * bane, kbx: h.kbx * dir * kb * (sup ? 1.4 : 1),
           kby: h.kby * Math.sqrt(kb) * (sup ? 1.25 : 1), stun: h.stun, big: !!h.big, guardBreak: !!h.guardBreak, from: this, dir,
         };
         const result = target.takeHit(hit, world);
         if (result === 'miss') continue;
         landed = true;
+        if (this.easyT > 1 && result === 'hit') { world.fx.text(target.x, target.box.y - 20, 'SUPER SLAP!', '#ffd23f', 24); this.easyT = 0; }
         if (result !== 'blocked' && !target.isProp) {
           this.meter = Math.min(SPECIAL_COST, this.meter + (h.big ? 16 : 9));
           this.combo++;
@@ -491,6 +508,8 @@
     // ------------------------------------------------------------------ getting hit
     takeHit(hit, world) {
       if (this.state === 'ko' || this.invuln > 0 || this.playingDead || this.burrowed) return 'miss';
+      // campaign difficulty (Settings): pests hit softer on EASY, harder on HARD
+      if (world.diff && world.diff.dmg !== 1 && this.team === 'player' && hit.from && hit.from.team === 'enemy') hit = Object.assign({}, hit, { dmg: hit.dmg * world.diff.dmg });
       if (this.powers.shield) {
         this.vx = hit.kbx * 0.2;
         MG.Audio.tone(300, 0.2, 'sine', 0.3, 700);
@@ -611,6 +630,7 @@
         fl: this.flash > 0 ? 1 : 0,
         gun: this.weapon && ['idle', 'block'].includes(this.state) ? this.weapon.id : 0, mz: this.muzzleT > 0 ? 1 : 0, sp: r2(this.spin),
         ar: this.armor > 0 ? Math.ceil(this.armor) : 0, arm: this.armorMax, ai: this.armor > 0 ? this.armorId || 'patch' : 0,
+        dz: this.dizzyT > 0 ? 1 : 0, gh: this.def.ghostly ? (this.phasedT > 0 || this.phantom ? 2 : 1) : 0,
         hold: m && m.kind === 'pin' && !m.fired ? 1 : 0,
         hide: this.invuln > 0.1 && !this.burrowed && !(m && m.kind === 'special') && Math.floor(this.t * 20) % 2 === 0 ? 1 : 0,
         ps: r2(this.powers.shield || 0), su: this.powers.super ? 1 : 0, tea: this.powers.tea || this.sprintT > 0 ? 1 : 0,
@@ -659,6 +679,14 @@
           ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - Math.sign(s.vx) * 26, ly); ctx.stroke();
         }
       }
+      // Ghost, the thylacine: a soft pale glow (and see-through while phasing)
+      if (s.gh) {
+        ctx.save();
+        ctx.fillStyle = `rgba(189,224,254,${0.18 + Math.sin(s.t * 3) * 0.06})`;
+        ctx.beginPath(); ctx.ellipse(s.x, s.y - h * 0.5, w * 1.15, h * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        if (s.gh === 2) ctx.globalAlpha = 0.45;
+      }
       const coat = s.coat ? MG.coatFor(def, s.coat) : null;
       const basicStyle = sp.basicStyle || (def.basic && def.basic.style) || 'punch';
       const bigStyle = sp.bigStyle || (def.big && def.big.style) || 'kick';
@@ -686,7 +714,15 @@
       }
       // the joey: in the pouch, on the back, or out hopping about
       if (s.ai && s.pose !== 'ko') MG.Art.armorOn(ctx, def, s);
+      if (s.dz && s.pose !== 'ko') {
+        // dizzy: stars circling the head
+        for (let i = 0; i < 3; i++) {
+          const a = s.t * 6 + i * 2.1;
+          MG.Art.star(ctx, s.x + Math.cos(a) * 20, s.y - h - 10 + Math.sin(a) * 6, 6, i === 1 ? '#c77dff' : '#ffd23f');
+        }
+      }
       if (Array.isArray(s.jy)) MG.Art.joey(ctx, def, s, s.jy);
+      ctx.globalAlpha = 1;
       if (s.ps && (s.ps > 2 || Math.floor(s.t * 8) % 2 === 0)) {
         const r = h * 0.62 + Math.sin(s.t * 6) * 3;
         ctx.fillStyle = 'rgba(82,183,136,0.18)';

@@ -85,12 +85,13 @@
       for (const id of Object.keys(this.players)) if (!seen.has(+id)) delete this.players[id];
 
       const ids = new Set();
-      for (const [uid, type, x, y, facing, fl, alive, spin, dizzy, et, vf] of m.en || []) {
+      for (const [uid, type, x, y, facing, fl, alive, spin, dizzy, et, vf, pn, pa] of m.en || []) {
         if (!has(MG.ENEMY_TYPES, type)) continue;
         ids.add(uid);
         let e = this.enemies.get(uid);
         if (!e) { e = new MG.Enemy(type, x, y); this.enemies.set(uid, e); }
-        Object.assign(e, { tx: x, ty: y, facing, flash: fl ? 0.1 : 0, alive: !!alive, spin, hurt: dizzy ? 0.6 : 0, t: et, remoteFlags: vf || 0, hidden: !!(vf & 4) });
+        Object.assign(e, { tx: x, ty: y, facing, flash: fl ? 0.1 : 0, alive: !!alive, spin, hurt: dizzy ? 0.6 : 0, t: et, remoteFlags: vf || 0, hidden: !!(vf & 4),
+          remotePose: typeof pn === 'string' ? [pn, pa || 1] : null });
       }
       for (const uid of [...this.enemies.keys()]) if (!ids.has(uid)) this.enemies.delete(uid);
 
@@ -197,7 +198,7 @@
       MG.drawCampaignWorld(ctx, {
         L: this.L, t: this.t, camX: this.camX, groundY: this.groundY, fx: this.fx, platforms: this.platforms,
         gates: this.gates, crates: this.crates, pickups: this.pickups, enemies: [...this.enemies.values()],
-        players: Object.values(this.players), grenades: this.nades, projectiles: proj, coins: this.coins, npcs: this.npcs,
+        players: Object.values(this.players).concat(s.al || []), grenades: this.nades, projectiles: proj, coins: this.coins, npcs: this.npcs,
         goalOpen: !(s.bo && s.bo[3]), world: this,
       });
 
@@ -245,6 +246,7 @@
         UI.outlineText(ctx, 'Connection lost - rejoining...', W / 2, 254, 22, '#ff4d6d', 'center');
         UI.text(ctx, `Reconnecting by itself to code ${MG.Net.code}`, W / 2, 278, 13, '#ffffff', 'center');
       }
+      MG.drawScreenFlash(ctx, s.fl || 0);
       if (this.showControls) { UI.fade(ctx, 0.55); UI.controlsPanel(ctx); return; }
       if (this.menu) {
         UI.fade(ctx, 0.55);

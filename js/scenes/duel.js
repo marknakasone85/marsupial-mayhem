@@ -262,7 +262,7 @@
         s.lastIn = this.t;
         if (m.n > s.inSeq) { s.inSeq = m.n; s.held = { left: !!m.l, right: !!m.r, down: !!m.d, shoot: !!m.s, jump: !!m.j }; }
         for (const k of Array.isArray(m.p) ? m.p : []) if (MG.PRESS_KEYS.includes(k)) s.presses[k] = true;
-      } else if (m.t === 'pick' && m.ready && typeof from === 'number' && MG.CHARACTERS.some((c) => c.id === m.cid) &&
+      } else if (m.t === 'pick' && m.ready && typeof from === 'number' && MG.validCid(m.cid) &&
         !this.slots.some((s) => s.id === from) && !this.pending.some((p) => p.id === from)) {
         if (this.slots.length + this.pending.length >= 4) return;
         this.pending.push({ id: from, cid: m.cid, local: null });

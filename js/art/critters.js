@@ -71,7 +71,44 @@
       ears: { type: 'round', size: 8, inner: '#2b2b2b', solid: '#2b2b2b', tipColor: '#f2efe9' }, eye: { r: 3.4, style: 'shiny' },
       tail: { type: 'naked', len: 44, w: 7, color: '#f0b8b8', base: '#2b2b2b' }, marks: [],
     },
+    // the secret two: Ghost the thylacine (sandy coat, dark stripes over the back and rump, a long jaw
+    // and a stiff tail) and Cousin Cuscus (a cream spotted cuscus with blotches, big orange-red eyes,
+    // tiny ears and a prehensile tail with a bare, curling tip)
+    thylacine: {
+      L: 21, rx: 20, ry: 21, hr: 14, armLen: 20, armW: 9, legW: 11, footLen: 18,
+      fur: '#cfa46a', dark: '#a87d4a', belly: '#f0dfbb', stripe: '#3b281c',
+      snout: { len: 19, w: 11, color: '#dcb886', nose: '#2b1a14', noseW: 3.8, noseH: 3 },
+      ears: { type: 'erect', size: 10, inner: '#ecb9a2' }, eye: { r: 3.4, style: 'normal' },
+      tail: { type: 'stiff', len: 52, w: 15, color: '#cfa46a', stripe: '#3b281c' }, marks: ['tigerStripes', 'paleEyes'],
+    },
+    cuscus: {
+      L: 13, rx: 27, ry: 26, hr: 18, armLen: 25, armW: 11, legW: 13, footLen: 16,
+      fur: '#f3ecda', dark: '#d8ccb2', belly: '#fffaf0', spot: '#8f7c68',
+      snout: { len: 4, w: 11, color: '#f7dcc2', nose: '#e8968a', noseW: 5, noseH: 4 },
+      ears: { type: 'tiny', size: 5, inner: '#e8c4ac' }, eye: { r: 5.8, style: 'round', iris: '#ee6a28' },
+      tail: { type: 'prehensile', len: 46, w: 13, color: '#f3ecda', bare: '#e9c3a0', spot: '#8f7c68' }, marks: ['blotches', 'peachFace'],
+    },
   });
+
+  // A tapered spiral (a tail tip curling round): from (x, y) heading in direction a0, curling
+  // `turn` radians (sign = which way), starting radius r, width w0 down to w1.
+  function curlPath(ctx, x, y, a0, r, turn, w0, w1) {
+    const N = 16, L = [], R = [];
+    let px = x, py = y, a = a0;
+    for (let i = 0; i <= N; i++) {
+      const k = i / N, w = lerp(w0, w1, k) / 2;
+      L.push([px - Math.sin(a) * w, py + Math.cos(a) * w]);
+      R.push([px + Math.sin(a) * w, py - Math.cos(a) * w]);
+      const step = (Math.abs(turn) * r * (1 - k * 0.55)) / N;
+      a += turn / N;
+      px += Math.cos(a) * step; py += Math.sin(a) * step;
+    }
+    ctx.beginPath();
+    ctx.moveTo(L[0][0], L[0][1]);
+    for (let i = 1; i <= N; i++) ctx.lineTo(L[i][0], L[i][1]);
+    for (let i = N; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+    ctx.closePath();
+  }
 
   // ---------------------------------------------------------------- pieces
   function tail(ctx, k, T, root, pose) {
@@ -95,6 +132,39 @@
       A.taper(ctx, root.x, root.y, ctrl.x, ctrl.y, tip.x, tip.y, T.w, 2.5);
       ctx.fill(); ctx.stroke();
       if (T.tip) { A.oval(ctx, tip.x, tip.y, 3, 3, 0, pose.flash ? '#ffffff' : T.tip); }
+    } else if (T.type === 'stiff') {
+      // the thylacine's long, stiff tail: thick where it joins the body, held straight out behind
+      // (flat along the floor when knocked out)
+      const sx = pose.ko ? root.x - 4 : tip.x, sy = pose.ko ? root.y - T.len : tip.y + 8;
+      const mx = (root.x + sx) / 2, my = (root.y + sy) / 2 + 3;
+      A.taper(ctx, root.x + 4, root.y - 2, mx, my, sx, sy, T.w, 3.5);
+      ctx.fill(); ctx.stroke();
+      if (T.stripe && !pose.flash) {
+        ctx.strokeStyle = T.stripe;
+        ctx.lineWidth = 2.6;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < 4; i++) {
+          const q = 0.1 + i * 0.1, m = 1 - q;
+          const x = m * m * (root.x + 4) + 2 * m * q * mx + q * q * sx, y = m * m * (root.y - 2) + 2 * m * q * my + q * q * sy;
+          const hw = lerp(T.w, 3.5, q) * 0.42;
+          ctx.beginPath(); ctx.moveTo(x + 1, y - hw); ctx.lineTo(x - 1, y + hw * 0.2); ctx.stroke();
+        }
+      }
+    } else if (T.type === 'prehensile') {
+      // the cuscus's grasping tail: furry at the base, then a bare tip that curls round
+      // (lying along the ground, the tip curled up behind; up off the floor when knocked out)
+      const gy = pose.ko ? root.y - T.len * 0.2 : Math.max(root.y + 4, (pose.ground || 14) - T.w * 0.45 - (pose.air ? 12 : 0));
+      const mx = root.x - T.len * (pose.ko ? 0.2 : 0.5), my = pose.ko ? root.y - T.len * 0.55 : gy;
+      A.taper(ctx, root.x, root.y, root.x - T.len * 0.3, pose.ko ? root.y - 4 : gy, mx, my, T.w, T.w * 0.68);
+      ctx.fill(); ctx.stroke();
+      if (T.spot && !pose.flash) {
+        A.oval(ctx, lerp(root.x, mx, 0.35), lerp(root.y, my, 0.5) - 1, T.w * 0.28, T.w * 0.2, 0.4, T.spot);
+        A.oval(ctx, lerp(root.x, mx, 0.72), lerp(root.y, my, 0.85) - 1, T.w * 0.2, T.w * 0.16, 0.9, T.spot);
+      }
+      ctx.fillStyle = pose.flash ? '#ffffff' : T.bare;
+      ctx.strokeStyle = LINE;
+      curlPath(ctx, mx + 2, my, pose.ko ? -Math.PI / 2 - 0.3 : Math.PI + 0.25, T.len * 0.3, 3.7 + Math.sin(pose.t * 1.5) * 0.25, T.w * 0.62, 2.4);
+      ctx.fill(); ctx.stroke();
     } else if (T.type === 'thick') {
       A.taper(ctx, root.x, root.y, ctrl.x, ctrl.y + 6, tip.x, tip.y + 8, T.w, T.w * 0.45);
       ctx.fill(); ctx.stroke();
@@ -163,6 +233,15 @@
           ctx.lineWidth = 1.5;
           for (let j = -2; j <= 2; j++) { ctx.beginPath(); ctx.moveTo(j * 3, -E.size * 0.2); ctx.lineTo(j * 4, -E.size * 0.85); ctx.stroke(); }
         }
+      } else if (E.type === 'erect') {
+        // the thylacine's short, rounded, upright ears
+        ctx.rotate(-0.15 + (back ? -0.3 : 0.05));
+        A.oval(ctx, 0, -E.size * 0.62, E.size * 0.55, E.size * 0.85, 0, fill(back ? c.dark : c.fur), LINE, 2);
+        A.oval(ctx, 0.6, -E.size * 0.55, E.size * 0.3, E.size * 0.58, 0, fill(E.inner));
+      } else if (E.type === 'tiny') {
+        // the cuscus's little ears, almost hidden in its fur
+        A.oval(ctx, back ? -1 : 0, -E.size * 0.1, E.size * 0.8, E.size * 0.75, 0, fill(back ? c.dark : c.fur), LINE, 1.8);
+        A.oval(ctx, back ? -0.5 : 0.5, -E.size * 0.05, E.size * 0.42, E.size * 0.38, 0, fill(E.inner));
       } else {
         A.oval(ctx, 0, -E.size * 0.4, E.size, E.size * 0.95, 0, fill(E.solid || (back ? c.dark : c.fur)), LINE, 2);
         if (!E.solid) A.oval(ctx, 0.5, -E.size * 0.35, E.size * 0.55, E.size * 0.5, 0, fill(E.inner));
@@ -170,6 +249,39 @@
       }
       ctx.restore();
     });
+  }
+
+  // The thylacine's enormous gape: the jaws hinge right open (o.basicStyle / o.bigStyle 'wideJaw').
+  function wideJaw(ctx, k, S, sx, sy, wj, fill) {
+    const J = S.len + S.w * 0.9, hx = sx - S.w * 0.45, hy = sy + 1;
+    const up = -wj * 0.32, down = wj * 1.05;
+    const pt = (a, x, y) => [hx + Math.cos(a) * x - Math.sin(a) * y, hy + Math.sin(a) * x + Math.cos(a) * y];
+    // the inside of the mouth, between the two jaws
+    const u = pt(up, J - 3, S.w * 0.3), l = pt(down, J * 0.9, -S.w * 0.05);
+    ctx.fillStyle = '#5a1a1a'; ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(hx - 2, hy); ctx.lineTo(u[0], u[1]); ctx.quadraticCurveTo(hx + J * 1.0, hy + J * 0.45 * wj, l[0], l[1]); ctx.closePath(); ctx.fill();
+    // lower jaw, teeth up and a pink tongue
+    ctx.save(); ctx.translate(hx, hy); ctx.rotate(down);
+    A.oval(ctx, J * 0.42, S.w * 0.18, J * 0.36, S.w * 0.18, 0, '#e86a8a');
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = LINE; ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) { const tx = 5 + i * ((J - 8) / 5); ctx.moveTo(tx, -1); ctx.lineTo(tx + 1.4, -4.2); ctx.lineTo(tx + 2.8, -1); }
+    ctx.moveTo(J - 6, -1); ctx.lineTo(J - 4.6, -6.5); ctx.lineTo(J - 3, -1);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -S.w * 0.05); ctx.lineTo(J * 0.95, -S.w * 0.05); ctx.quadraticCurveTo(J * 1.02, S.w * 0.3, J * 0.85, S.w * 0.45);
+    ctx.quadraticCurveTo(J * 0.4, S.w * 0.62, 0, S.w * 0.4); ctx.closePath();
+    ctx.fillStyle = fill(S.color); ctx.lineWidth = 2; ctx.fill(); ctx.stroke();
+    ctx.restore();
+    // upper jaw, teeth down, nose on the end
+    ctx.save(); ctx.translate(hx, hy); ctx.rotate(up);
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = LINE; ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) { const tx = 6 + i * ((J - 9) / 5); ctx.moveTo(tx, S.w * 0.28); ctx.lineTo(tx + 1.4, S.w * 0.28 + 3.6); ctx.lineTo(tx + 2.8, S.w * 0.28); }
+    ctx.moveTo(J - 7, S.w * 0.28); ctx.lineTo(J - 5.5, S.w * 0.28 + 6.5); ctx.lineTo(J - 4, S.w * 0.28);
+    ctx.fill(); ctx.stroke();
+    A.oval(ctx, J * 0.5, -S.w * 0.12, J * 0.5 + 1.5, S.w * 0.46, 0.02, fill(S.color), LINE, 2);
+    A.oval(ctx, J - 0.5, -S.w * 0.3, S.noseW, S.noseH, 0, fill(S.nose));
+    ctx.restore();
   }
 
   function head(ctx, k, c, pose) {
@@ -184,9 +296,15 @@
       ctx.beginPath(); ctx.moveTo(hr * 0.8, -hr * 0.2); ctx.quadraticCurveTo(hr * 0.2, -hr * 1.0, -hr * 0.8, -hr * 0.5); ctx.stroke();
     }
     // jaw opens for bites, screeches and grins
-    const open = pose.mouth || 0;
+    const wj = pose.wideJaw || 0;
+    const open = wj > 0 ? 0 : pose.mouth || 0;
     const sx = hr * 0.62, sy = hr * 0.18;
-    if (open > 0) {
+    if (k.marks.includes('peachFace') && !pose.flash) {
+      // the cuscus's bare, peachy face around the nose and eyes
+      A.oval(ctx, hr * 0.42, -hr * 0.02, hr * 0.62, hr * 0.5, 0.1, '#f9e2c6');
+    }
+    if (wj > 0) wideJaw(ctx, k, S, sx, sy, wj, fill);
+    else if (open > 0) {
       A.oval(ctx, sx + S.len * 0.45, sy + 5 + open * 6, S.len * 0.55 + 3, S.w * 0.45 + open * 4, 0.15, fill(S.color), LINE, 2);
       A.oval(ctx, sx + S.len * 0.5, sy + 1 + open * 3, S.len * 0.5 + 2, Math.max(1, open * 6), 0.05, '#5a1a1a');
       // teeth (a whole row of them for Dead Fred's 50-tooth grin)
@@ -198,16 +316,19 @@
       }
     }
     // snout and nose
-    A.oval(ctx, sx + S.len * 0.5, sy - open * 2, S.len * 0.5 + S.w * 0.35, S.w * 0.55, 0.05, fill(S.color), LINE, 2);
-    A.oval(ctx, sx + S.len + S.w * 0.2, sy - S.w * 0.15 - open * 2, S.noseW, S.noseH, 0, fill(S.nose));
+    if (!wj) {
+      A.oval(ctx, sx + S.len * 0.5, sy - open * 2, S.len * 0.5 + S.w * 0.35, S.w * 0.55, 0.05, fill(S.color), LINE, 2);
+      A.oval(ctx, sx + S.len + S.w * 0.2, sy - S.w * 0.15 - open * 2, S.noseW, S.noseH, 0, fill(S.nose));
+    }
     if (k.marks.includes('darkMuzzle') && !pose.flash) A.oval(ctx, sx + S.len * 0.4, sy - 2 - open * 2, S.len * 0.35, S.w * 0.3, 0, 'rgba(40,40,45,0.45)');
-    if (!open) {
+    if (!open && !wj) {
       ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(sx + S.len * 0.9, sy + S.w * 0.35); ctx.quadraticCurveTo(sx + S.len * 0.5, sy + S.w * 0.55, sx + 2, sy + S.w * 0.3); ctx.stroke();
     }
     // face markings
     const ex = hr * 0.32, ey = -hr * 0.22;
     if (!pose.flash) {
+      if (k.marks.includes('paleEyes')) A.oval(ctx, ex + 0.5, ey + 0.5, k.eye.r + 3.2, k.eye.r + 2.6, 0.2, '#f6ead0');
       if (k.marks.includes('mask')) { A.oval(ctx, ex, ey, hr * 0.42, hr * 0.2, -0.1, '#262626'); A.oval(ctx, ex - 2, ey - hr * 0.32, hr * 0.32, hr * 0.1, -0.1, '#f2f2f2'); }
       if (k.marks.includes('eyeStripe')) {
         ctx.strokeStyle = '#2b1a14'; ctx.lineWidth = 3;
@@ -234,6 +355,16 @@
       if (E.style === 'big') {
         A.oval(ctx, ex, ey, r, r * 1.05, 0, '#141418');
         A.oval(ctx, ex + r * 0.3, ey - r * 0.35, r * 0.32, r * 0.32, 0, '#ffffff');
+      } else if (E.style === 'round') {
+        // big round coloured eyes (the cuscus's are orange-red), with a sleepy lid
+        A.oval(ctx, ex, ey, r + 0.8, r + 0.8, 0, E.iris, LINE, 1.5);
+        A.oval(ctx, ex + 0.8, ey + 0.5, r * 0.5, r * 0.56, 0, '#141418');
+        A.oval(ctx, ex + 2, ey - r * 0.3, r * 0.26, r * 0.26, 0, '#ffffff');
+        A.oval(ctx, ex - r * 0.35, ey + r * 0.45, r * 0.12, r * 0.12, 0, '#ffffff');
+        ctx.fillStyle = fill(k.marks.includes('peachFace') ? '#f9e2c6' : k.head || c.fur);
+        ctx.beginPath(); ctx.ellipse(ex, ey, r + 1.8, r + 1.8, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.ellipse(ex, ey, r + 0.8, r + 0.8, 0, Math.PI * 1.13, Math.PI * 1.87); ctx.stroke();
       } else if (E.style === 'shiny' || E.style === 'beady') {
         if (E.style === 'shiny') A.oval(ctx, ex, ey, r + 1.2, r + 1.4, 0, '#f4f1ea');
         A.oval(ctx, ex + 0.5, ey, r, r * 1.05, 0, '#141418');
@@ -248,9 +379,10 @@
           ctx.beginPath(); ctx.moveTo(ex - r - 1, ey - 0.6); ctx.lineTo(ex + r + 1, ey - 0.6); ctx.stroke();
         }
       }
-      // a determined brow
+      // a determined brow (a softer, raised one over big round eyes)
       ctx.strokeStyle = LINE; ctx.lineWidth = 2.2;
-      ctx.beginPath(); ctx.moveTo(ex - r - 2, ey - r - 4); ctx.lineTo(ex + r + 1, ey - r - 2); ctx.stroke();
+      if (E.style === 'round') { ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(ex, ey + 1, r + 4.5, Math.PI * 1.3, Math.PI * 1.62); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.moveTo(ex - r - 2, ey - r - 4); ctx.lineTo(ex + r + 1, ey - r - 2); ctx.stroke(); }
     }
     if (pose.tongue && !pose.flash) {
       // the numbat's long sticky tongue (the special draws the rest of it)
@@ -273,6 +405,9 @@
     const flash = !!o.flash;
     const fill = (col) => (flash ? '#ffffff' : col);
     const basic = o.basic || 0, big = o.big || 0, bs = o.basicStyle, gs = o.bigStyle;
+    // the secret characters' moves: a huge gape, a big open-paw slap and a two-handed overhead slap
+    const amt = (st) => Math.min(1, (bs === st ? basic : 0) + (gs === st ? big : 0));
+    const wj = amt('wideJaw'), slap = amt('slap'), mega = amt('megaSlap');
     const crouch = o.crouch || 0;
     let facing = o.facing || 1;
     let shove = 0;
@@ -287,11 +422,13 @@
     if (gs === 'crunch' || gs === 'grinChomp') lean += big * 0.35;
     if (gs === 'bumBlock') lean += big * 0.5;
     if (gs === 'treeHug') lean += big * 0.25;
+    lean += wj * 0.4 + slap * 0.12;
+    if (mega) lean += mega < 0.45 ? -0.22 * (mega / 0.45) : lerp(-0.22, 0.42, (mega - 0.45) / 0.55);
     if (o.dive) lean = 0.9;
     if (o.glide) lean = 1.15; // stretched out flat, like a little kite
     lean += crouch * 0.35;
     const L = k.L * (1 - crouch * 0.4);
-    const pa = { t, air, flash, tailSwing: 0, tailHigh: 0 };
+    const pa = { t, air, flash, tailSwing: 0, tailHigh: 0, ko: pose === 'ko', ground: L };
     if (gs === 'tailFlick') { pa.tailSwing = big; }
     if (gs === 'tailSlap' || gs === 'tailWhip') { pa.tailSwing = big; pa.tailHigh = 1; }
 
@@ -345,8 +482,55 @@
         }
       }
       if (gs === 'treeHug' && big > 0) p = { x: lerp(p.x, k.rx * 1.25, big), y: lerp(p.y, -k.ry * (1.2 - big * 0.3), big) };
+      const sa = slapAngle(back);
+      if (sa) {
+        // wind the paw up overhead, then sweep it round and down in a big arc
+        const sh = shoulder(back), R = k.armLen + 9;
+        const at = (a) => ({ x: sh.x + Math.cos(a) * R, y: sh.y + Math.sin(a) * R });
+        p = sa.windup < 1 ? { x: lerp(p.x, at(sa.a).x, sa.windup), y: lerp(p.y, at(sa.a).y, sa.windup) } : at(sa.a);
+      }
       return p;
     };
+    // slaps: { a: the arm's angle from the shoulder, windup: 0..1 while the paw goes up, sweep: 0..1 }
+    function slapAngle(back) {
+      const v = mega || (!back ? slap : 0);
+      if (!v) return null;
+      const top = mega ? (back ? -1.95 : -1.75) : -2.1, end = mega ? (back ? 0.32 : 0.45) : 0.32;
+      const split = mega ? 0.45 : 0.35;
+      if (v < split) return { a: top, windup: v / split, sweep: 0 };
+      const q = (v - split) / (1 - split);
+      return { a: lerp(top, end, q), windup: 1, sweep: q };
+    }
+    // an open paw with three long claws, plus whoosh lines while it sweeps
+    function openPaw(back, p) {
+      const sa = slapAngle(back), sh = shoulder(back), R = k.armLen + 9;
+      if (sa.sweep > 0.35 && !flash) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+        ctx.lineWidth = 2.5;
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(sh.x, sh.y, R + 5 + i * 5, sa.a - 1.05 + i * 0.12, sa.a - 0.15); ctx.stroke(); }
+      }
+      const d = Math.atan2(p.y - sh.y, p.x - sh.x);
+      ctx.strokeStyle = LINE;
+      for (const f of [-0.55, 0, 0.55]) {
+        const fx = p.x + Math.cos(d + f) * k.armW * 0.75, fy = p.y + Math.sin(d + f) * k.armW * 0.75;
+        A.oval(ctx, fx, fy, k.armW * 0.32, k.armW * 0.24, d + f, fill(c.dark), LINE, 1.4);
+        if (!flash) {
+          ctx.strokeStyle = '#f4e7c5'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(fx + Math.cos(d + f) * 2, fy + Math.sin(d + f) * 2);
+          ctx.quadraticCurveTo(fx + Math.cos(d + f) * 7, fy + Math.sin(d + f) * 7, fx + Math.cos(d + f + 0.7) * 7, fy + Math.sin(d + f + 0.7) * 7); ctx.stroke();
+        }
+      }
+      A.oval(ctx, p.x + 1, p.y, k.armW * 0.62, k.armW * 0.56, d, fill(c.dark), LINE, 1.6);
+      if (!flash) A.oval(ctx, p.x + 1 + Math.cos(d) * 1.5, p.y + Math.sin(d) * 1.5, k.armW * 0.3, k.armW * 0.26, d, '#e9b8a4');
+      if (sa.sweep > 0.92) {
+        // SLAP! a little burst where the paw lands
+        ctx.strokeStyle = flash ? '#ffffff' : '#ffd23f'; ctx.lineWidth = 2.5;
+        const bx = p.x + Math.cos(d) * 14, by = p.y + Math.sin(d) * 14;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) { const a = d - 1.2 + i * 0.48; ctx.moveTo(bx + Math.cos(a) * 4, by + Math.sin(a) * 4); ctx.lineTo(bx + Math.cos(a) * 11, by + Math.sin(a) * 11); }
+        ctx.stroke();
+      }
+    }
     const arm = (back) => {
       const sh = shoulder(back), p = pawRest(back);
       ctx.fillStyle = fill(back ? c.dark : c.fur);
@@ -354,7 +538,8 @@
       ctx.lineWidth = 2;
       A.taper(ctx, sh.x, sh.y, (sh.x + p.x) / 2 + 2, (sh.y + p.y) / 2 + 4, p.x, p.y, k.armW, k.armW * 0.75);
       ctx.fill(); ctx.stroke();
-      A.oval(ctx, p.x + 1.5, p.y, k.armW * 0.55, k.armW * 0.5, 0, fill(c.dark), LINE, 1.6);
+      if (slapAngle(back)) openPaw(back, p);
+      else A.oval(ctx, p.x + 1.5, p.y, k.armW * 0.55, k.armW * 0.5, 0, fill(c.dark), LINE, 1.6);
     };
 
     // tail (behind everything)
@@ -418,6 +603,32 @@
         ctx.strokeStyle = k.stripe; ctx.lineWidth = 3.5;
         ctx.beginPath(); ctx.moveTo(k.rx * 0.2, -k.ry * 1.85); ctx.quadraticCurveTo(-k.rx * 0.5, -k.ry * 1.6, -k.rx * 0.8, -k.ry * 0.6); ctx.stroke();
       }
+      if (k.marks.includes('tigerStripes')) {
+        // dark stripes across the back and rump (longest over the rump)
+        ctx.save();
+        ctx.beginPath(); ctx.ellipse(bodyC.x, bodyC.y, k.rx - 1, k.ry - 1, 0.08, 0, Math.PI * 2); ctx.clip();
+        ctx.fillStyle = k.stripe;
+        for (let i = 0; i < 9; i++) {
+          const q = i / 8, yy = bodyC.y - k.ry * 0.62 + q * k.ry * 1.42, len = k.rx * (0.42 + q * 0.5), x0 = bodyC.x - k.rx - 2;
+          ctx.beginPath(); ctx.moveTo(x0, yy - 3); ctx.quadraticCurveTo(x0 + len * 0.6, yy - 3, x0 + len, yy + 1.4);
+          ctx.quadraticCurveTo(x0 + len * 0.5, yy + 2, x0, yy + 3); ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+      }
+      if (k.marks.includes('blotches')) {
+        // the spotted cuscus's grey-brown blotches
+        ctx.save();
+        ctx.beginPath(); ctx.ellipse(bodyC.x, bodyC.y, k.rx - 1, k.ry - 1, 0.08, 0, Math.PI * 2); ctx.clip();
+        ctx.fillStyle = k.spot;
+        for (const [bx, by, brx, bry, br] of [[-0.6, -0.55, 0.3, 0.2, 0.5], [-0.15, -0.8, 0.22, 0.14, -0.3], [-0.85, 0.05, 0.22, 0.3, 0.2],
+          [-0.42, -0.08, 0.17, 0.13, 0.7], [-0.55, 0.55, 0.26, 0.18, -0.25], [0.25, -0.78, 0.14, 0.1, 0.3], [-0.1, 0.62, 0.12, 0.09, 0]]) {
+          ctx.beginPath();
+          ctx.ellipse(bodyC.x + bx * k.rx, bodyC.y + by * k.ry, brx * k.rx, bry * k.ry, br, 0, Math.PI * 2);
+          ctx.ellipse(bodyC.x + (bx + brx * 0.6) * k.rx, bodyC.y + (by + bry * 0.5) * k.ry, brx * 0.6 * k.rx, bry * 0.7 * k.ry, br + 0.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
       if (k.marks.includes('rumpPlate') && (gs === 'bumBlock' && big > 0.25)) {
         A.oval(ctx, bodyC.x - k.rx * 0.75, bodyC.y + 2, k.rx * 0.3, k.ry * 0.7, 0, '#b39577', LINE, 2);
       }
@@ -439,11 +650,13 @@
     ctx.rotate(lean);
     // head (kept level whatever the body does)
     ctx.save();
-    const lunge = (bs === 'bite' || bs === 'headbutt' ? basic : 0) * 8 + ((gs === 'crunch' || gs === 'grinChomp') ? big * 10 : 0);
+    const lunge = (bs === 'bite' || bs === 'headbutt' ? basic : 0) * 8 + ((gs === 'crunch' || gs === 'grinChomp') ? big * 10 : 0) + wj * 10;
     ctx.translate(k.rx * 0.42 + k.hr * 0.3 + lunge, -k.ry * 1.72 - k.hr * 0.72);
     ctx.rotate(-lean * 0.8 + (pose === 'hurt' ? -0.2 : 0) + (o.screech ? -0.35 : 0));
-    const mouth = bs === 'bite' ? basic : (gs === 'crunch' || gs === 'grinChomp') ? big : o.screech ? 1 : o.mouth === 'open' ? 0.4 : o.mouth === 'ouch' ? 0.5 : 0;
+    let mouth = bs === 'bite' ? basic : (gs === 'crunch' || gs === 'grinChomp') ? big : o.screech ? 1 : o.mouth === 'open' ? 0.4 : o.mouth === 'ouch' ? 0.5 : 0;
+    if (!mouth && (slap > 0.6 || mega > 0.6)) mouth = 0.45;
     head(ctx, k, c, {
+      wideJaw: wj,
       t, flash, mouth, grin: gs === 'grinChomp' && big > 0.2, ko: pose === 'ko', dead: !!o.dead, hurt: pose === 'hurt',
       nap: !!o.nap, tongue: !!o.tongue, earFlap: gs === 'earSlap' ? big : 0,
     });

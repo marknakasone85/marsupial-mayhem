@@ -37,15 +37,21 @@ MG.Engine.setScene(m); frames(2);
 
 // settings: blood ON by default and saved, sound on/off saved
 check(MG.Settings.blood === true, 'blood is ON by default');
-menuItem(m.menu, 'BLOOD: ON').act();
-check(MG.Settings.blood === false && !!menuItem(m.menu, 'BLOOD: OFF'), 'BLOOD switches off');
-check(localStorage.getItem('marsupialmayhem.blood') === 'false', 'the blood setting is saved in the browser');
-menuItem(m.menu, 'BLOOD: OFF').act();
-check(MG.Settings.blood === true, 'BLOOD switches back on');
-menuItem(m.menu, 'SOUND: ON').act();
+menuItem(m.menu, 'SETTINGS').act(); frames(2);
+var st = scene();
+check(st instanceof MG.SettingsScene, 'SETTINGS opens the settings page');
+var item = function (re) { return st.items.findIndex(function (it) { return re.test(typeof it.label === 'function' ? it.label() : it.label); }); };
+st.activate(item(/^Blood/));
+check(MG.Settings.blood === true && MG.Settings.gore === true, 'Blood: ON -> GORE');
+st.activate(item(/^Blood/));
+check(MG.Settings.blood === false && localStorage.getItem('marsupialmayhem.blood') === 'false', '-> OFF (confetti), saved');
+st.activate(item(/^Blood/));
+check(MG.Settings.blood === true && !MG.Settings.gore, '-> back ON');
+st.activate(item(/^Sound:/));
 check(MG.Audio.muted === true && localStorage.getItem('marsupialmayhem.muted') === 'true', 'SOUND switches off and is saved');
-menuItem(m.menu, 'SOUND: OFF').act();
+st.activate(item(/^Sound:/));
 check(MG.Audio.muted === false, 'SOUND switches back on');
+MG.Engine.setScene(m); frames(2);
 
 // controls: every scheme has every action, and keys reach the "controller state"
 ['P1', 'P2', 'SOLO'].forEach(function (s) {

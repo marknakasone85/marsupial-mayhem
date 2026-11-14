@@ -150,7 +150,7 @@
       if (m.t === 'pick' || m.t === 'gear') MG.Gear.note(from, m); // their bought gear comes along
       if (m.t === 'pick') {
         const p = this.players.find((q) => q.id === from && (q.cpu === undefined || q.cpu === null));
-        if (p && MG.CHARACTERS.some((c) => c.id === m.cid)) {
+        if (p && MG.validCid(m.cid)) {
           p.cid = m.cid;
           p.ready = !!m.ready;
           if (p.ready) MG.Audio.select();
@@ -174,10 +174,11 @@
 
     // the host changes their own character with up/down
     changeHost(d) {
-      const n = MG.CHARACTERS.length;
+      const list = MG.pickable(); // the 12, plus any secret this computer has unlocked
+      const n = list.length;
       const h = this.host;
-      const i = MG.CHARACTERS.findIndex((c) => c.id === h.cid);
-      h.cid = MG.CHARACTERS[(i + d + n) % n].id;
+      const i = list.findIndex((c) => c.id === h.cid);
+      h.cid = list[(i + d + n) % n].id;
       MG.Audio.select();
       this.broadcast();
     }
@@ -310,7 +311,7 @@
       this.code = '';
       this.error = null;
       const last = MG.Save.get('lastPicks', [0, 8])[0];
-      this.cur = MG.Net.myCid ? Math.max(0, MG.CHARACTERS.findIndex((c) => c.id === MG.Net.myCid)) : last % MG.CHARACTERS.length;
+      this.cur = MG.Net.myCid ? Math.max(0, MG.pickable().findIndex((c) => c.id === MG.Net.myCid)) : last % MG.pickable().length;
       this.lobby = null;
       this.inGame = false;
       this.mode = null;
@@ -358,7 +359,7 @@
 
     sendPick(ready) {
       this.isReady = ready;
-      MG.Net.myCid = MG.CHARACTERS[this.cur].id; // remembered for automatic rejoins
+      MG.Net.myCid = MG.pickable()[this.cur % MG.pickable().length].id; // remembered for automatic rejoins
       MG.Net.send(Object.assign({ t: 'pick', cid: MG.Net.myCid, ready }, MG.Gear.mine()), 'host', true);
     }
 
@@ -394,7 +395,7 @@
         }
         if (I.anyHit(['Enter', 'NumpadEnter'])) this.tryJoin();
       } else if (this.phase === 'pick') {
-        const n = MG.CHARACTERS.length;
+        const n = MG.pickable().length;
         const pick = (d) => { this.cur = (this.cur + d + n) % n; MG.Audio.select(); if (this.isReady) this.sendPick(false); };
         if (MG.Menu.left()) pick(-1);
         if (MG.Menu.right()) pick(1);
@@ -438,7 +439,7 @@
       const me = this.mode === 'battle' && idx >= 0 ? idx : MG.Net.id || 0;
       const what = this.mode === 'battle' ? '  -  BATTLE' : this.mode === 'campaign' ? '  -  CO-OP' : '';
       UI.outlineText(ctx, `You are P${me + 1}${what}`, W / 2, 86, 24, MG.PLAYER_COLORS[me % 4], 'center');
-      const def = MG.CHARACTERS[this.cur];
+      const def = MG.pickable()[this.cur % MG.pickable().length];
       UI.characterDetails(ctx, def, 80, 110, W - 160, 280, this.t, { ready: this.isReady, colors: MG.coatFor(def, me) });
       UI.outlineText(ctx, '◀', 40, 250, 40, '#ffd23f', 'center');
       UI.outlineText(ctx, '▶', W - 40, 250, 40, '#ffd23f', 'center');

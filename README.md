@@ -4,7 +4,7 @@
 
 A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possums and friends battle it out in the Great Pouch Tournament, until uninvited pests crash the party.
 
-**Now playable:** 12 marsupials and 3 worlds of the **Marsupial World** map (11 maps). Pick your marsupial and walk the map from the Outback through the Rainforest to the Cane Fields & Coast. Box, kick, bite and grenade-punt rabbits, feral cats, feral pigs and cane toads, dodge emu stampedes, cassowaries and crocodiles, swim, and take on the Warren Warlord, Big Tom and the Cane Toad King. The quokkas' cheerful Smile Squad helps out along the way. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Pests drop coins: spend them at the platypus's shop on silly weapons, armor and upgrades. Or settle who's the champion in a **Tournament Duel**. More worlds are on the way.
+**The whole adventure is playable:** 12 marsupials (plus 2 secret ones to find) and all 7 worlds of the **Marsupial World** map (25 maps, plus a secret bonus map). Pick your marsupial and walk the map from the Outback through the Rainforest, the Cane Fields & Coast, Tasmania & the Alps and the City, with a bonus trip through a Time Rift, all the way to the grand finale on Grin Isle. Box, kick, bite and grenade-punt rabbits, feral cats, feral pigs, cane toads and city foxes, dodge emu stampedes, cassowaries and crocodiles, swim, and take on a boss at the end of every world. The quokkas' cheerful Smile Squad helps out along the way. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Pests drop coins: spend them at the platypus's shop on silly weapons, armor and upgrades. Or settle who's the champion in a **Tournament Duel**. More worlds are on the way.
 
 ## The marsupials
 
@@ -23,7 +23,7 @@ A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possu
 | **Bins** (brushtail possum) | Balanced | Bin Fling | Wall cling and wall jump |
 | **Dead Fred** (Virginia opossum) | Balanced | Play Dead, then a surprise chomp | Immune to poison |
 
-Two secret marsupials are still locked. Every move comes from something the real animal does, and the select screen shows a true fact about each one.
+Two secret marsupials are hidden somewhere in the game: the select screen gives a hint for each. Every move comes from something the real animal does, and the select screen shows a true fact about each one.
 
 ## Coins, weapons and the platypus's shop
 
@@ -49,7 +49,7 @@ Knocked-out pests and smashed crates drop **coins**, and they fly straight to wh
 ## Ways to play
 
 - **PLAY:** pick a marsupial, then walk the Marsupial World map (arrows or A/D) and press Enter at a stop. Clearing a map opens the next one; cleared maps show a tick and your best score, and you can replay any of them. The platypus's shop is a stop on the map too. **2 PLAYERS:** two players on one keyboard, each picking their own.
-- **Worlds:** The Outback (4 maps), The Rainforest (3) and Cane Fields & Coast (4), each ending with a big boss. In the water, press jump to swim up (Paddles, the water opossum, swims fastest).
+- **Worlds:** The Outback (4 maps), The Rainforest (3), Cane Fields & Coast (4), Tasmania & the Alps (3), The City (4), the Time Rift bonus world (3) and Grin Isle (4), each ending with a big boss. In the water, press jump to swim up (Paddles, the water opossum, swims fastest). Some native animals have been tricked into fighting you: knock them out and they come to their senses and run home (no blood for them).
 - **TOURNAMENT DUEL:** you against the CPU (JOEY, CHAMPION or LEGEND) or 2 players on one keyboard. First to win 2 rounds. Fair fights: everyone starts equal, and grenades, the gatling and power-ups only come from supply drops.
 - **WI-FI:** co-op through the maps (the host picks the map, and everyone sees the world map), or a battle for 2-4 players with CPU fighters to fill the gaps (see below).
 
@@ -95,6 +95,8 @@ Good to know:
 
 Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot), ' (grenade), [ (joey) and ] (pouch) work too. On phones and tablets, touch buttons appear during play (BOOM is the grenade). The title screen's CONTROLS button and the pause menu show this table too.
 
+**Settings** (on the title screen): music and sound-effects volume, blood (on, gore, or confetti), difficulty for the adventure (easy, normal or hard; duels always stay fair), bigger touch buttons, high contrast, the key hints, and **changing the keys** for player 1 and player 2 (the key hints and the Controls page follow your keys).
+
 **Tips:** some marsupials (Boomer, Chompers, Bins, Dead Fred) chain their attack: press it three times for a combo. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then kick it with attack (short), big attack (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
 
 **Joeys and the pouch:** every marsupial carries a joey, in the pouch or riding on the back. It hops out by itself to nip pests that get close and to fetch pickups, and the joey key sends it on a Joey Rush (then it needs a rest: watch the ring by JOEY on the screen). Once per map, if you're knocked out, your joey gets you back up. Clear a map and that marsupial's joey grows (up to level 5), so it hits harder. Pick up a heart at full health, or a power-up while another is running, and it goes in the pouch: press the pouch key when you need it. In duels every joey starts at level 1 and there's no rescue.
@@ -108,13 +110,13 @@ The game collects no personal information. It has no accounts, ads, analytics or
 
 ## Content
 
-Cartoon action: kicks, bites, bonks, silly sound effects and cartoon weapons. **Cartoon blood is on by default.** For younger players, **BLOOD: OFF** on the title screen turns it into confetti.
+Cartoon action: kicks, bites, bonks, silly sound effects and cartoon weapons. **Cartoon blood is on by default.** For younger players, **Blood: OFF** in Settings turns it into confetti; **GORE** adds extra cartoon splatter. Native animals tricked into fighting never bleed: they come to their senses and run home.
 
 The animals are real species drawn as cartoons, and the animal facts in the game are true. All characters, places and stories are made up. The game is not affiliated with or endorsed by any company, show, game, government or wildlife organisation.
 
 ## For developers
 
-Plain HTML5 canvas and JavaScript with no build step and no dependencies: every picture and sound is made in code. The plan is in `docs/` (start with `docs/README.md`; it has story spoilers). Run the tests with `tools/run-tests.sh` (macOS).
+Plain HTML5 canvas and JavaScript with no build step and no dependencies: every picture and sound is made in code. The plan is in `docs/` (start with `docs/README.md`; it has story spoilers). Run the tests with `tools/run-tests.sh` (macOS). A **level editor** is in `tools/editor.html`: double-click it to open any map (or a new one), place platforms, pests, crates, coins, decor, animals, gates and water, test-play it, and export it to paste into `js/data/levels.js`. `tools/make-itch-zip.sh` packs the game for an itch.io HTML page.
 
 ## Trademark and copyright
 

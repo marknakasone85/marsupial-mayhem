@@ -286,6 +286,51 @@
       },
       pose(f, m) { return m.phase === 'start' ? { dead: true } : { big: 1, bigStyle: 'grinChomp' }; },
     },
+
+    // ---- Ghost (secret): fades out and streaks straight through everything in front, biting on the way
+    phantomDash: {
+      range: [0, 380],
+      update(f, dt, ctrl, world, m) {
+        if (m.phase === undefined || m.phase === 'start') {
+          if (!m.fade) { m.fade = true; f.phantom = true; world.fx.text(f.x, f.y - f.h - 20, 'PHANTOM DASH!', '#bde0fe', 28); MG.Audio.whiff(); }
+          f.vx = 0;
+          if (m.t > 0.15) { m.phase = 'dash'; m.t = 0; f.hitList.clear(); }
+        } else if (m.phase === 'dash') {
+          f.invuln = Math.max(f.invuln, 0.05);
+          f.vx = f.facing * 900;
+          f.doHits(world, { x: f.x - 30, y: f.y - f.h, w: 60, h: f.h }, { dmg: 14, kbx: 300, kby: -380, stun: 0.6, big: true });
+          if (Math.random() < dt * 30) world.fx.burst(f.x - f.facing * 20, f.y - f.h * 0.5, '#bde0fe', 2, 80);
+          if (m.t > 0.42) { m.phase = 'end'; m.t = 0; f.vx = f.facing * 120; }
+        } else if (m.t > 0.2) { f.phantom = false; return true; }
+        return false;
+      },
+      pose(f, m) { return m.phase === 'dash' ? { big: 1, bigStyle: 'wideJaw' } : { crouch: 0.5 }; },
+    },
+
+    // ---- Cousin Cuscus (secret): a flurry of Sloth-Slap-style slaps, then one enormous one
+    slapStorm: {
+      range: [0, 150],
+      update(f, dt, ctrl, world, m) {
+        f.vx = approach(f.vx, 0, 1600 * dt);
+        m.n = m.n || 0;
+        if (m.t > 0.12 && m.n < 8) {
+          m.t = 0; m.n++;
+          f.hitList.clear();
+          f.doHits(world, { x: f.facing > 0 ? f.x : f.x - 110, y: f.y - f.h, w: 110, h: f.h }, { dmg: 4, kbx: 90, kby: -60, stun: 0.3 });
+          world.fx.text(f.x + f.facing * U.rand(40, 90), f.y - f.h * U.rand(0.4, 1), 'SLAP!', '#ffd23f', 16);
+          MG.Audio.jab();
+        } else if (m.n >= 8 && !m.big && m.t > 0.2) {
+          m.big = true; m.t = 0;
+          f.hitList.clear();
+          f.doHits(world, { x: f.facing > 0 ? f.x : f.x - 130, y: f.y - f.h - 10, w: 130, h: f.h + 10 }, { dmg: 22, kbx: 820, kby: -520, stun: 0.8, big: true });
+          world.fx.text(f.x + f.facing * 70, f.y - f.h - 30, 'SLAP STORM!', '#ff4d6d', 32);
+          world.fx.shake(12);
+          MG.Audio.kick();
+        } else if (m.big && m.t > 0.35) return true;
+        return false;
+      },
+      pose(f, m) { return m.big ? { big: 1, bigStyle: 'megaSlap' } : { basic: (m.n || 0) % 2 ? 1 : 0.4, basicStyle: 'slap' }; },
+    },
   };
 
   // (diveBomb.start needs the move object: the fighter sets f.move before calling start)

@@ -125,7 +125,7 @@
       }
       if (m.t === 'gear' || m.t === 'pick') MG.Gear.note(from, m);
       if (m.t === 'pick' && m.ready && typeof from === 'number' && !this.players.some((p) => p.id === from) &&
-        this.players.length < 4 && MG.CHARACTERS.some((c) => c.id === m.cid)) {
+        this.players.length < 4 && MG.validCid(m.cid)) {
         this.players.push({ id: from, cid: m.cid, local: null }); // joined while we shop
         MG.Audio.confirm();
       }

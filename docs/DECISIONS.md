@@ -66,6 +66,24 @@
 - **Wi-Fi co-op:** the lobby still picks the first map (only maps this computer has opened); after that the host can take everyone to the shared world map.
 - **Story panels play once** each and can be skipped with Esc.
 
+## Chosen while building Milestone 7 (14 Nov 2026; the owner can change any of these)
+
+- **Map names** (placeholders) for worlds 4-7 and the Isle of Man: see `DESIGN.md`.
+- **Native animals don't bleed:** tricked or hypnotised natives (pademelons, reptiles, quokkas, the quoll, the extinct giants) snap out of it and run off, which keeps the story pro-wildlife. Invasive pests keep the cartoon blood.
+- **The Time Rift and Grin Isle both open after the City**, so the bonus world can be skipped.
+- **The Sloth Slap crossover:** a sloth cameo in the Time Rift unlocks Cousin Cuscus, and so do Sloth Slap saves in the same browser (only possible when both games are on the same website, like GitHub Pages). Nothing is sent anywhere.
+- **Benny's secret:** the Isle of Man stop appears once Benny walks the world map.
+- **The owner said to keep saving and pushing without asking** while away (14 Nov 2026), and to check the full build afterwards.
+
+## Chosen while building Milestone 8 (14 Nov 2026; the owner can change any of these)
+
+- **Settings** replaced the title screen's BLOOD and SOUND buttons (the pause menus still have Blood and Sound). Blood cycles ON, GORE (2.2x the cartoon splatter, bigger splats), OFF (confetti).
+- **Difficulty** affects only the adventure: EASY pests hit 0.65x and have 0.8x health; HARD 1.35x and 1.3x. Duels stay fair.
+- **Changing keys:** one keyboard key per action per player; taking a key another action uses swaps the two; gamepads and touch buttons stay as they are; Esc can't be used. Solo play's extra J, K and L keys stay.
+- **Accessibility:** bigger touch buttons (1.2x) and high contrast (solid dark panels with white borders, and a coloured ring under every pest and player).
+- **The level editor** is a developer tool in `tools/` (not part of the game page, and never served on the home network).
+- **itch.io:** `tools/make-itch-zip.sh` makes the zip; uploading it and the price are the owner's decisions.
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.

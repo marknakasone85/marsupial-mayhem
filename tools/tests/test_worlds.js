@@ -21,13 +21,15 @@ fresh();
 
 // ---- the maps
 var ids = MG.LEVELS.map(function (l) { return l.id; });
-check(MG.LEVELS.length === 11 && ids[0] === 'outback-1' && MG.LEVELS[0].name === 'TOURNAMENT TRAIL', '11 maps; the Tournament Trail is still map 1 (new maps are appended)');
+check(MG.LEVELS.length >= 11 && ids.slice(0, 11).join() === 'outback-1,outback-2,outback-3,outback-4,rainforest-1,rainforest-2,rainforest-3,cane-1,cane-2,cane-3,cane-4' && MG.LEVELS[0].name === 'TOURNAMENT TRAIL', 'worlds 1-3 are maps 1-11; the Tournament Trail is still map 1 (new maps are appended)');
 check(new Set(ids).size === ids.length, 'every map has its own id');
-var worldCounts = MG.WORLDS.map(function (w) { return w.levels.length; }).join(',');
+var worldCounts = MG.WORLDS.slice(0, 3).map(function (w) { return w.levels.length; }).join(',');
 check(worldCounts === '4,3,4' && MG.WORLDS.every(function (w) { return w.levels.every(function (id) { return ids.indexOf(id) >= 0 && MG.MAP_STOPS[id]; }); }), 'Outback 4, Rainforest 3, Cane Fields & Coast 4, each a stop on the world map');
 var problems = [];
-var DECOR = ['mound', 'sign', 'tree', 'vines', 'waterfall', 'cane', 'mangrove', 'shed', 'redrock', 'snakeSkin', 'footprints', 'quokkaGoanna'];
-var NPCS = ['emus', 'cassowary', 'croc', 'quokka', 'treeKangaroo', 'quoll'];
+var DECOR = ['mound', 'sign', 'tree', 'vines', 'waterfall', 'cane', 'mangrove', 'shed', 'redrock', 'snakeSkin', 'footprints', 'quokkaGoanna',
+  'snowgum', 'hut', 'cliff', 'buttongrass', 'building', 'bin', 'streetlight', 'laneway', 'billboard', 'fern', 'volcano', 'riftCrack',
+  'souvenirShop', 'selfieBoard', 'lighthouse', 'plushies', 'partyBanner', 'stalagmite', 'crystal', 'throne', 'eggs', 'stonewall', 'cottage', 'sheep'];
+var NPCS = ['emus', 'cassowary', 'croc', 'quokka', 'treeKangaroo', 'quoll', 'pygmyPossum', 'wallaby', 'sloth'];
 MG.LEVELS.forEach(function (L) {
   if (L.boss && L.length < L.boss.x + 580) problems.push(L.id + ' too short for its boss');
   (L.enemies || []).forEach(function (e) { if (!MG.ENEMY_TYPES[e.type]) problems.push(L.id + ' pest ' + e.type); });
@@ -221,7 +223,7 @@ sc.camX = qg.x - 900; sc.draw(MG.Engine.ctx);
 var far = qg.frozen;
 sc.camX = qg.x - MG.W / 2; sc.draw(MG.Engine.ctx);
 check(!far && qg.frozen, 'a quokka chatting with a goanna in the background... freezes when you look straight at them');
-check(MG.LEVELS.slice(1).filter(function (L) { return L.decor.some(function (d) { return d.type === 'snakeSkin' || d.type === 'footprints'; }); }).length >= 8, 'shed snake skins and scaly footprints near the pests (clues)');
+check(MG.LEVELS.slice(1, 11).filter(function (L) { return L.decor.some(function (d) { return d.type === 'snakeSkin' || d.type === 'footprints'; }); }).length >= 8, 'shed snake skins and scaly footprints near the pests (clues)');
 
 // ---- Wi-Fi: friends see the animals, the world map and the story
 var sent = [], realSend = MG.Net.send;

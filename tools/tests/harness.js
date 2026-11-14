@@ -38,7 +38,8 @@ var Blob = function () {};
 var performance = { now: function () { return now; } };
 var location = { protocol: 'file:', hostname: '', host: '' };
 var navigator = { getGamepads: function () { return []; } };
-var localStorage = { _d: {}, getItem: function (k) { return k in this._d ? this._d[k] : null; }, setItem: function (k, v) { this._d[k] = String(v); }, clear: function () { this._d = {}; } };
+var localStorage = { _d: {}, getItem: function (k) { return k in this._d ? this._d[k] : null; }, setItem: function (k, v) { this._d[k] = String(v); }, removeItem: function (k) { delete this._d[k]; }, clear: function () { this._d = {}; },
+  key: function (i) { return Object.keys(this._d)[i] || null; }, get length() { return Object.keys(this._d).length; } };
 function setInterval() { return 1; }
 function clearInterval() {}
 function fire(n, ev) { (listeners[n] || []).forEach(function (f) { f(ev); }); }

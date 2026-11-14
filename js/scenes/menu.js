@@ -77,8 +77,7 @@
       if (!MG.Net.webOnly()) items.push({ label: 'WI-FI', act: () => MG.Engine.setScene(new MG.WifiScene()) });
       items.push(
         { label: 'CONTROLS', act: () => { this.page = 'controls'; this.pageT = 0; } },
-        { label: () => 'BLOOD: ' + (MG.Settings.blood ? 'ON' : 'OFF'), act: () => MG.toggleBlood() },
-        { label: () => 'SOUND: ' + (MG.Audio.muted ? 'OFF' : 'ON'), act: () => MG.Audio.toggleMute() },
+        { label: 'SETTINGS', act: () => MG.Engine.setScene(new MG.SettingsScene()) },
       );
       this.menu = new MG.MenuList(items, W / 2, 222, { w: 290, h: 30, gap: 5, fontSize: 18 });
     }

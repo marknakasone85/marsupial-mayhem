@@ -113,8 +113,10 @@
             wpn: f.weapon ? f.weapon.id : 0, amx: f.weapon ? f.weapon.max : 0, co: sl.earned || 0, cn: scene.coinsOf(sl),
           }));
         }),
-        en: scene.enemies.map((e) => [e.uid, e.type, r1(e.x), r1(e.y), e.facing, e.flash > 0 ? 1 : 0, e.alive ? 1 : 0,
-          r2(e.spin), e.hurt > 0.5 ? 1 : 0, r2(e.t), e.visualFlags()]),
+        en: scene.enemies.map((e) => { const p = e.pose(); return [e.uid, e.type, r1(e.x), r1(e.y), e.facing, e.flash > 0 ? 1 : 0, e.alive ? 1 : 0,
+          r2(e.spin), e.hurt > 0.5 ? 1 : 0, r2(e.t), e.visualFlags(), p ? p[0] : 0, p ? r2(p[1]) : 0]; }),
+        al: (scene.allies || []).map((f) => compact(Object.assign(f.renderState(), { id: 100 + scene.allies.indexOf(f) }))),
+        fl: scene.flashT > 0 ? r2(scene.flashT / (scene.flashMax || 1)) : 0,
         cr: scene.crates.map((c) => [c.alive ? 1 : 0, r2(c.wobble), c.flash > 0 ? 1 : 0]),
         ga: scene.gates.map((g, i) => [g.opened ? 1 : 0, r2(g.lift), scene.pestsLeft(i)]),
         pk: scene.pickups.map((p) => [p.type, r1(p.x), r1(p.y)]),

@@ -78,6 +78,26 @@
     // Paddles: a strong swimmer (water zones come with the Cane Fields maps).
     swimmer: {}, // faster and stronger strokes in water (read in the fighter)
 
+    // Ghost: every few seconds, a hit passes straight through him
+    phase: {
+      update(f, dt) { f.phaseCool = Math.max(0, (f.phaseCool || 0) - dt); f.phasedT = Math.max(0, (f.phasedT || 0) - dt); },
+      hit(f, hit, world) {
+        if (f.phaseCool > 0 || hit.poison) return hit;
+        f.phaseCool = 5;
+        f.phasedT = 0.6;
+        world.fx.text(f.x, f.y - f.h - 18, 'PHASED!', '#bde0fe', 18);
+        world.fx.burst(f.x, f.y - f.h * 0.5, '#bde0fe', 10, 160);
+        return 'miss';
+      },
+    },
+    // Cousin Cuscus: stand still for a moment and the next slap is a SUPER SLAP (read in the fighter)
+    takeItEasy: {
+      update(f, dt) {
+        const still = f.onGround && Math.abs(f.vx) < 15 && (f.state === 'idle' || f.state === 'block');
+        f.easyT = still ? (f.easyT || 0) + dt : f.state === 'attack' ? f.easyT || 0 : 0;
+      },
+    },
+
     // Benny: double jump.
     doubleJump: {
       jump(f, ctrl, world) {

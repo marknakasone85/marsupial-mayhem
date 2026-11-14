@@ -8,11 +8,14 @@
 //                  late: 'boss' or a gate number: turns up only after that fight is over ("just too late")
 //  * treeKangaroo: Matschie's tree-kangaroo on a branch (y): throws fruit at pests
 //  * quoll:        a northern quoll that runs with the team and bites pests, but keeps away from cane toads
+//  * pygmyPossum:  a mountain pygmy possum guide in the Alps (a fact and a heart)
+//  * wallaby:      a wild red-necked wallaby hopping about (the Isle of Man bonus map)
+//  * sloth:        a sloth who fell through the Time Rift from another game: find it to unlock Cousin Cuscus
 (function () {
   const U = MG.U;
   const W = MG.W;
-  const CODE = { emu: 'e', emus: 'E', cassowary: 'c', croc: 'k', quokka: 'q', treeKangaroo: 't', quoll: 'o' };
-  const KIND = { e: 'emu', E: 'emus', c: 'cassowary', k: 'croc', q: 'quokka', t: 'treeKangaroo', o: 'quoll' };
+  const CODE = { emu: 'e', emus: 'E', cassowary: 'c', croc: 'k', quokka: 'q', treeKangaroo: 't', quoll: 'o', pygmyPossum: 'p', wallaby: 'w', sloth: 's' };
+  const KIND = { e: 'emu', E: 'emus', c: 'cassowary', k: 'croc', q: 'quokka', t: 'treeKangaroo', o: 'quoll', p: 'pygmyPossum', w: 'wallaby', s: 'sloth' };
   const alive = (world) => (world.fighters || []).filter((f) => f.state !== 'ko');
   const near = (world, x, r) => alive(world).filter((f) => Math.abs(f.x - x) < r);
   const QUOKKA_LINES = [
@@ -278,6 +281,43 @@
       }
     }
 
+    // ---------------- mountain pygmy possum ----------------
+    pygmyPossum(dt, world) {
+      this.mode = 1;
+      const f = near(world, this.x, 150)[0];
+      if (f && !this.said) {
+        this.said = true;
+        this.facing = f.x > this.x ? 1 : -1;
+        this.say('G\'day! I\'m a mountain pygmy possum. I hibernate under the snow for months! Take this for the climb.', 5);
+        world.addPickup('heart', this.x + this.facing * 30, MG.GROUND_Y);
+        MG.Audio.pickup();
+      }
+    }
+
+    // ---------------- wild wallabies (Isle of Man) ----------------
+    wallaby(dt, world) {
+      this.mode = 1;
+      if (this.stateT > 1.4) { this.stateT = 0; this.wander = U.rand(-1, 1) * 160; }
+      const tx = this.homeX + (this.wander || 0);
+      if (Math.abs(tx - this.x) > 4) { this.facing = tx > this.x ? 1 : -1; this.x += this.facing * 110 * dt; }
+      this.y = MG.GROUND_Y - Math.abs(Math.sin(this.t * 7)) * (Math.abs(tx - this.x) > 4 ? 30 : 0);
+      if (!this.said && near(world, this.x, 140).length) { this.said = true; this.say('Hello from the Isle of Man! Wallabies like us really do live wild here.', 4.5); }
+    }
+
+    // ---------------- the sloth (a crossover cameo) ----------------
+    sloth(dt, world) {
+      this.mode = 1;
+      if (this.said) return;
+      const f = alive(world).find((p) => Math.abs(p.x - this.x) < 120);
+      if (!f) return;
+      this.said = true;
+      this.say('Whoa, wrong game! I fell through the rift from SLOTH SLAP. My cousin the cuscus wants to join your tournament!', 6);
+      if (MG.Unlocks.unlock('cuscus')) {
+        world.fx.text(this.x, this.y - 150, 'COUSIN CUSCUS UNLOCKED!', '#ffd23f', 28);
+        MG.Audio.powerUp();
+      }
+    }
+
     // ---------------- drawing (also from Wi-Fi snapshots) ----------------
     snap() {
       const a = [CODE[this.kind], Math.round(this.x), Math.round(this.y), this.facing, Math.round(this.a * 100) / 100, this.mode, Math.round(this.t * 100) / 100, this.hidden ? 1 : 0];
@@ -307,7 +347,7 @@
       lines.forEach((ln, i) => UI.text(ctx, ln, bx + w / 2, by + 15 + i * 17, 13, '#2b193d', 'center'));
     }
     static drawState(ctx, kind, x, y, facing, a, mode, t, world, speech) {
-      const HEAD = { cassowary: 150, croc: 40, quokka: 66, treeKangaroo: 80, quoll: 50, emu: 120 };
+      const HEAD = { cassowary: 150, croc: 40, quokka: 66, treeKangaroo: 80, quoll: 50, emu: 120, pygmyPossum: 40, wallaby: 80, sloth: 70 };
       if (speech) MG.NPC.bubble(ctx, x, y - (HEAD[kind] || 70), speech, world);
       const A = MG.Art;
       const o = { t, facing };
@@ -317,6 +357,9 @@
       else if (kind === 'quokka') { A.shadow(ctx, x, MG.GROUND_Y, 18); A.quokka(ctx, x, y, Object.assign(o, { shirt: true, wave: mode === 1, hop: mode === 2 })); }
       else if (kind === 'treeKangaroo') A.treeKangaroo(ctx, x, y, Object.assign(o, { sit: true, throwing: a }));
       else if (kind === 'quoll') { A.shadow(ctx, x, MG.GROUND_Y, 16); A.quoll(ctx, x, y, Object.assign(o, { run: mode === 1, scared: mode === 2, bite: a })); }
+      else if (kind === 'pygmyPossum' && A.pygmyPossum) { A.shadow(ctx, x, y, 10); A.pygmyPossum(ctx, x, y, Object.assign(o, { wave: true })); }
+      else if (kind === 'wallaby') { A.shadow(ctx, x, MG.GROUND_Y, 18); A.character(ctx, MG.charById('benny'), { x, y, facing, scale: 0.5, t, pose: y < MG.GROUND_Y - 4 ? 'jump' : 'idle' }); }
+      else if (kind === 'sloth' && A.sloth) A.sloth(ctx, x, y, Object.assign(o, { hang: true, wave: true }));
     }
   };
 })();

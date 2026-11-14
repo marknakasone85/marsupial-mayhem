@@ -102,7 +102,9 @@
       const startX = (W - (PER_ROW * TILE_W + (PER_ROW - 1) * GAP)) / 2;
       return { x: startX + (i % PER_ROW) * (TILE_W + GAP), y: TOP + row * (TILE_H + GAP), w: TILE_W, h: TILE_H };
     }
-    isSecret(i) { return i >= MG.CHARACTERS.length; }
+    // the 2 secret tiles: locked "?" until found, then playable like the rest
+    isSecret(i) { return i >= MG.CHARACTERS.length && !MG.Unlocks.has(MG.SECRETS[i - MG.CHARACTERS.length].id); }
+    defAt(i) { return i < MG.CHARACTERS.length ? MG.CHARACTERS[i] : MG.SECRETS[i - MG.CHARACTERS.length]; }
 
     move(p, d, vertical) {
       const n = COUNT;
@@ -187,10 +189,10 @@
       }
     }
 
-    pickId(p) { return MG.CHARACTERS[this.cur[p]].id; }
+    pickId(p) { return this.defAt(this.cur[p]).id; }
 
     next() {
-      MG.Save.set('lastPicks', this.cur.map((c) => (c < MG.CHARACTERS.length ? c : 0)));
+      MG.Save.set('lastPicks', this.cur.map((c) => (this.isSecret(c) ? 0 : c)));
       if (this.mode === 'campaign' || this.mode === 'coop') {
         const players = this.mode === 'coop'
           ? [{ id: 0, cid: this.pickId(0), local: 'P1' }, { id: 1, cid: this.pickId(1), local: 'P2' }]
@@ -267,7 +269,7 @@
         UI.outlineText(ctx, '?', r.x + r.w / 2, r.y + 46, 46, 'rgba(255,255,255,0.45)', 'center');
         UI.text(ctx, 'SECRET', r.x + r.w / 2, r.y + r.h - 14, 12, '#aaaaaa', 'center');
       } else {
-        const def = MG.CHARACTERS[i];
+        const def = this.defAt(i);
         ctx.fillStyle = MG.BUILD_COLORS[def.build];
         ctx.fillRect(r.x + 10, r.y + 4, r.w - 20, 4);
         ctx.save();
@@ -289,7 +291,7 @@
     drawDetails(ctx, compact) {
       const y = compact ? 330 : 318, h = compact ? 170 : 190;
       const showTwo = this.twoPickers || this.mode === 'duelCpu' && (this.phase !== 'char');
-      const pick = (p) => (this.isSecret(this.cur[p]) ? null : MG.CHARACTERS[this.cur[p]]);
+      const pick = (p) => (this.isSecret(this.cur[p]) ? null : this.defAt(this.cur[p]));
       if (!showTwo) {
         const def = pick(0);
         if (def) UI.characterDetails(ctx, def, 40, y, W - 80, h, this.t, { ready: this.locked[0] });
