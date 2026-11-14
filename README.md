@@ -2,9 +2,22 @@
 
 ## ▶ [Play it now in your browser](https://marknakasone85.github.io/marsupial-mayhem/)
 
+![The Marsupial Mayhem title screen: the whole cast lined up on the red dirt at sunset, either side of the menu](docs/screenshots/title.jpg)
+
 A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possums and friends battle it out in the Great Pouch Tournament, until uninvited pests crash the party.
 
 **The whole adventure is playable:** 12 marsupials (plus 2 secret ones to find) and all 7 worlds of the **Marsupial World** map (25 maps, plus a bonus trip up to the Top End around Darwin and a secret bonus map). Pick your marsupial and walk the map from the Outback through the Rainforest, the Cane Fields & Coast, Tasmania & the Alps and the City, with a bonus trip through a Time Rift, all the way to the grand finale on Grin Isle. Box, kick, bite and grenade-punt rabbits, feral cats, feral pigs, cane toads and city foxes, dodge emu stampedes, cassowaries and crocodiles, take on the saltwater crocs of Darwin Harbour, swim, and take on a boss at the end of every world. The quokkas' cheerful Smile Squad helps out along the way, and between worlds the story plays out in little cutscenes. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Pests drop coins: spend them at the platypus's shop on silly weapons, armor and upgrades. Or settle who's the champion in a **Tournament Duel**. More worlds are on the way.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![The character select screen with 12 marsupials and 2 secret tiles](docs/screenshots/select.png) | ![Boomer and Tank, two players on one keyboard, in the Outback](docs/screenshots/outback.jpg) |
+| Pick your marsupial: every move comes from something the real animal does | Two players on one keyboard, in the Outback |
+| ![Zip leaping through the Rainforest, with a cassowary nearby](docs/screenshots/rainforest.jpg) | ![Chompers biting a saltwater crocodile in Darwin Harbour](docs/screenshots/darwin.jpg) |
+| Zip in the Rainforest (keep your distance from the cassowary) | Chompers takes on a saltwater croc in Darwin Harbour |
+| ![The platypus's shop, showing the weapons section](docs/screenshots/shop.png) | ![A Tournament Duel between Boomer and Drowsy at Sunset Mesa](docs/screenshots/duel.jpg) |
+| The platypus's shop: weapons, armour, health, grenades and extras | A Tournament Duel at Sunset Mesa |
 
 ## The marsupials
 
