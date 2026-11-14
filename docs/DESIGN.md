@@ -204,7 +204,12 @@ The owner asked for better graphics that keep the game small. Everything stays d
 - **Light and atmosphere in every world** (`MG.Light`, `js/art/light.js`): haze over the far scenery so the action stands out; the sun's glow; a colour grade for each world's mood (warm on the sun's side, cooler on the other); canopy shade and shafts of light in the Rainforest, Tasmania and the lair; lava light from below in the Time Rift; a soft vignette. Sunset maps turn orange with the sun low. Duel stages get the Outback's light.
 - **Settings → Light and haze** switches it off. High contrast keeps only the haze. If the game keeps dropping frames on a device (no graphics chip for the canvas), it switches itself off for that visit, unless the player chose ON in Settings.
 - **Cost:** on a graphics chip it's almost free (about 0.6 ms a frame with or without it on the Mac); drawing without one, it adds about 3 ms, which is why the safety net is there.
-- Still to do, if the owner wants: livelier movement (squash and stretch, follow-through), more detailed ground in the first maps, and backgrounds drawn once and reused.
+- **Livelier movement** (the owner's go-ahead, 14 Nov 2026), for all 14 characters, CPU champions and Wi-Fi friends' views:
+  - squash and stretch: stretched tall by speed in the air, squashed flat on landing with a little rebound (harder landings squash more), a wobble when hit; critters breathe when standing still (the kangaroos already did)
+  - follow-through: ears sweep back when running, flop forward on landing and trail when jumping; tails droop as the body rises and lift as it falls
+  - motion smears as a blow lands: streaks behind the fist for a straight punch, a swoosh arc for haymakers, swipes and slaps, a low arc for kicks and tail sweeps, a full circle for the spin kick, streaks behind the head for bites and headbutts (shoves and hugs don't smear)
+  - speed lines behind anything moving very fast: dashes, sprints, and flying back from a big hit
+- Still to do, if the owner wants: more detailed ground in the first maps, the same squash and stretch for pests, and backgrounds drawn once and reused.
 
 ## Content guardrails
 

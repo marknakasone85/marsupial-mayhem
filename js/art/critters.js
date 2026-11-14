@@ -116,7 +116,8 @@
     // tip position: resting behind, lifted while hopping, swung forward for tail attacks
     const swing = pose.tailSwing || 0;          // 0 = behind, 1 = swung all the way forward
     const high = pose.tailHigh || 0;            // forward swing at chest height (whip) vs low (trip)
-    const back = { x: root.x - T.len, y: root.y + 6 - (pose.air ? 14 : 0) + Math.sin(pose.t * 2) * 2 };
+    // (pose.tailLag: follow-through, + droops as the body rises or lands, - lifts as it falls)
+    const back = { x: root.x - T.len, y: root.y + 6 - (pose.air ? 14 : 0) + Math.sin(pose.t * 2) * 2 + (pose.tailLag || 0) * T.len * 0.35 };
     const front = { x: root.x + T.len * 1.5, y: high ? root.y - 10 : -6 - (root.y + k.L) * 0 };
     const tip = { x: lerp(back.x, front.x, swing), y: lerp(back.y, swing ? lerp(-4, front.y, high) : back.y, swing) };
     const ctrl = { x: (root.x + tip.x) / 2 - 8 * (1 - swing), y: Math.min(root.y, tip.y) - T.len * 0.45 * (1 - swing * 0.7) };
@@ -196,6 +197,7 @@
     }
   }
 
+  const EAR_FLEX = { long: 0.9, pointy: 0.6, erect: 0.45, fluffy: 0.25, round: 0.35, tiny: 0.15 };
   function ears(ctx, k, c, hr, pose) {
     const E = k.ears;
     const flap = pose.earFlap || 0;
@@ -205,6 +207,8 @@
       const back = i === 0;
       ctx.save();
       ctx.translate(ex, ey);
+      // follow-through: ears swing at their base (big ears more, little round ones hardly at all)
+      if (pose.ears) ctx.rotate(pose.ears * (EAR_FLEX[E.type] === undefined ? 0.45 : EAR_FLEX[E.type]) * (back ? 1.15 : 1));
       if (E.type === 'long') {
         // bilby: huge ears, swung forward for the ear-flap slap
         ctx.rotate(-0.35 + (back ? -0.15 : 0.05) + flap * 1.7 + Math.sin(pose.t * 1.4 + i) * 0.04);
@@ -428,7 +432,7 @@
     if (o.glide) lean = 1.15; // stretched out flat, like a little kite
     lean += crouch * 0.35;
     const L = k.L * (1 - crouch * 0.4);
-    const pa = { t, air, flash, tailSwing: 0, tailHigh: 0, ko: pose === 'ko', ground: L };
+    const pa = { t, air, flash, tailSwing: 0, tailHigh: 0, ko: pose === 'ko', ground: L, ears: o.ears || 0, tailLag: o.tailLag || 0 };
     if (gs === 'tailFlick') { pa.tailSwing = big; }
     if (gs === 'tailSlap' || gs === 'tailWhip') { pa.tailSwing = big; pa.tailHigh = 1; }
 
@@ -658,7 +662,7 @@
     head(ctx, k, c, {
       wideJaw: wj,
       t, flash, mouth, grin: gs === 'grinChomp' && big > 0.2, ko: pose === 'ko', dead: !!o.dead, hurt: pose === 'hurt',
-      nap: !!o.nap, tongue: !!o.tongue, earFlap: gs === 'earSlap' ? big : 0,
+      nap: !!o.nap, tongue: !!o.tongue, earFlap: gs === 'earSlap' ? big : 0, ears: o.ears || 0,
     });
     ctx.restore();
     if (o.gun) {

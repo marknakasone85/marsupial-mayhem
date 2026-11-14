@@ -39,6 +39,72 @@
     ctx.fill();
   };
 
+  // Speed lines streaming out behind a fast mover (dir: which way it's going; k 0..1 how strong).
+  A.speedLines = function (ctx, x, y, w, h, dir, k) {
+    if (!(k > 0) || !dir) return;
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,255,255,${(0.7 * Math.min(1, k)).toFixed(3)})`;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const ly = y - h * (0.25 + i * 0.25), lx = x - dir * (w * 0.8 + i * 6);
+      ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - dir * 26 * (0.6 + 0.4 * Math.min(1, k)), ly); ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  // Motion smears: how each attack style smears as it lands. Streaks behind the fist for a straight
+  // punch, an arc up high (haymakers, swipes, slaps), down low (kicks, tail sweeps), all the way round (the spin kick), or streaks behind the
+  // head for a lunge (bites, headbutts). Shoves and hugs don't smear.
+  const SMEAR = {
+    punch: 'jab', haymaker: 'high', swipe: 'high', slap: 'high', megaSlap: 'high', earSlap: 'high', tailWhip: 'high',
+    kick: 'low', doubleKick: 'low', tailFlick: 'low', tailSlap: 'low', spinKick: 'spin',
+    bite: 'lunge', crunch: 'lunge', grinChomp: 'lunge', wideJaw: 'lunge', headbutt: 'lunge',
+  };
+  A.SMEAR = SMEAR;
+  // A swoosh in front of a fighter (feet at x, y; facing f; h tall). k 0..1: how strong; big: the
+  // big attack (a wider, longer swoosh).
+  A.swoosh = function (ctx, x, y, f, h, k, style, big) {
+    const kind = SMEAR[style];
+    if (!kind || !(k > 0)) return;
+    k = Math.min(1, k);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(f || 1, 1);
+    if (kind === 'jab') {
+      // streaks along the arm, behind the fist
+      ctx.strokeStyle = `rgba(255,255,255,${(0.75 * k).toFixed(3)})`;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      for (const [dy, x0, x1] of [[-0.58, 0.14, 0.4], [-0.51, 0.2, 0.36], [-0.65, 0.22, 0.34]]) {
+        ctx.beginPath(); ctx.moveTo(h * x0, h * dy); ctx.lineTo(h * x1, h * dy); ctx.stroke();
+      }
+    } else if (kind === 'lunge') {
+      ctx.strokeStyle = `rgba(255,255,255,${(0.7 * k).toFixed(3)})`;
+      ctx.lineWidth = big ? 3.5 : 2.5;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 3; i++) {
+        const ly = -h * (0.5 + i * 0.13), lx = -h * (0.1 + i * 0.06);
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - h * (big ? 0.4 : 0.28), ly); ctx.stroke();
+      }
+    } else {
+      // a crescent, thin where the swing starts and thick where it lands
+      const spin = kind === 'spin', low = kind === 'low';
+      const cy = spin ? -h * 0.5 : low ? -h * 0.32 : -h * 0.6;
+      const r = h * (spin ? 0.62 : low ? (big ? 0.48 : 0.4) : big ? 0.58 : 0.46);
+      const a0 = spin ? -Math.PI : low ? 0.7 : big ? -1.6 : -0.8;   // (low: starts down by the feet, never under the ground)
+      const a1 = spin ? Math.PI * 0.85 : low ? -0.35 : 0.12;
+      const W = h * (big ? 0.17 : 0.12), N = 16;
+      ctx.fillStyle = `rgba(255,255,255,${(0.62 * k).toFixed(3)})`;
+      ctx.beginPath();
+      for (let i = 0; i <= N; i++) { const u = i / N, a = a0 + (a1 - a0) * u, rr = r + W * u * 0.5; ctx.lineTo(Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+      for (let i = N; i >= 0; i--) { const u = i / N, a = a0 + (a1 - a0) * u, rr = r - W * u * 0.5; ctx.lineTo(Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  };
+
   A.star = function (ctx, x, y, r, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -144,7 +210,9 @@
     const hipX = -6, hipY = -38 + crouch * 12;
 
     // ---- tail: resting on the ground, lifted while hopping, or straight down as a prop in a tail kick
-    const tipX = lerp(lerp(-82, -86, air), -34, kick), tipY = lerp(lerp(-3, -36, air), 0, kick);
+    // follow-through: in the air the tail lags behind the body (o.tailLag: + droops, - lifts)
+    const lagT = (o.tailLag || 0) * (pose === 'jump' ? 1 : 0) * (1 - kick);
+    const tipX = lerp(lerp(-82, -86, air), -34, kick), tipY = lerp(lerp(-3, -36, air), 0, kick) + lagT * 18;
     ctx.fillStyle = c.fur;
     ctx.strokeStyle = c.line;
     ctx.lineWidth = 2.5;
@@ -222,9 +290,13 @@
     ctx.rotate(-lean * 0.7 + (pose === 'hurt' ? -0.2 : 0));
     const twitch = Math.sin(t * 1.3) > 0.97 ? 0.25 : 0;
     if (c.neck && !o.flash) A.oval(ctx, -2, 2, 9, 9, 0, c.neck);
+    // ears swing at their base: o.ears (radians) from the follow-through (+ flop forward, - sweep back)
+    const earLag = (o.ears || 0) * 0.8;
     for (const [ex, ey, er] of [[-7, -36, -0.4 - twitch], [0, -38, -0.12]]) {
-      A.oval(ctx, ex, ey, 6, 16, er, c.fur, c.line, 2.2);
-      A.oval(ctx, ex + 1, ey + 2, 2.8, 10, er, c.ear);
+      const bx = ex - 14 * Math.sin(er), by = ey + 14 * Math.cos(er), a = er + earLag * (ex < 0 ? 1.15 : 1);
+      const cx = bx + 14 * Math.sin(a), cy = by - 14 * Math.cos(a);
+      A.oval(ctx, cx, cy, 6, 16, a, c.fur, c.line, 2.2);
+      A.oval(ctx, cx + 1, cy + 2, 2.8, 10, a, c.ear);
     }
     A.oval(ctx, 4, -14, 14, 12.5, 0, c.fur, c.line, 2.5);
     A.oval(ctx, 18, -10, 13, 8, 0.1, c.muzzle, c.line, 2.2);

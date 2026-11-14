@@ -64,6 +64,8 @@
       this.state = 'idle';
       this.move = null;
       this.onGround = true;
+      this.landT = -9; this.landV = 0;     // when it last landed, and how hard (for squash and stretch)
+      this.hurtAt = -9;                    // when it was last hit
       this.jumping = false;
       this.airJumps = this.has('doubleJump') ? 1 : 0;
       this.hitstun = 0;
@@ -302,6 +304,7 @@
       this.x += this.vx * dt;
       this.y += this.vy * dt;
       const wasGround = this.onGround;
+      const fallV = this.vy;
       this.onGround = false;
       if (this.y >= world.groundY) {
         this.y = world.groundY;
@@ -317,7 +320,7 @@
           }
         }
       }
-      if (this.onGround && !wasGround) this.onLand(world);
+      if (this.onGround && !wasGround) { this.landT = this.t; this.landV = fallV; this.onLand(world); }
       const b = world.bounds(this);
       this.x = U.clamp(this.x, b.min + this.w / 2, b.max - this.w / 2);
       // cube-poo walls block the other side
@@ -578,6 +581,7 @@
       this.burrowed = false;
       this.counterT = 0;
       this.state = 'hurt';
+      this.hurtAt = this.t;
       this.hitstun = hit.stun;
       MG.Audio.hurt();
       if (this.mercy) this.invuln = this.mercy;
@@ -607,6 +611,23 @@
     }
 
     // Everything needed to draw this fighter, as a small plain object (Wi-Fi guests get it too).
+    // Squash and stretch for the art (+ stretches tall, - squashes flat; the art keeps the volume):
+    // stretched by speed in the air, a squash and a little rebound on landing (harder landings squash
+    // more), and a wobble when hit.
+    squash() {
+      if (this.state === 'ko' || this.napping) return 0;
+      let k = 0;
+      if (!this.onGround && !this.swimming && !this.gliding) k = Math.min(0.13, Math.abs(this.vy) / 5500);
+      const land = this.t - this.landT;
+      if (land >= 0 && land < 0.26) {
+        const u = land / 0.26;
+        k -= 0.2 * U.clamp(this.landV / 900, 0.25, 1) * (1 - u) * Math.cos(u * Math.PI * 1.4);
+      }
+      const hurt = this.t - this.hurtAt;
+      if (hurt >= 0 && hurt < 0.3) { const u = hurt / 0.3; k -= 0.13 * (1 - u) * Math.cos(u * Math.PI * 2.2); }
+      return U.clamp(k, -0.24, 0.18);
+    }
+
     renderState() {
       const m = this.move;
       const pose = this.state === 'ko' ? 'ko'
@@ -642,6 +663,7 @@
         ps: r2(this.powers.shield || 0), su: this.powers.super ? 1 : 0, tea: this.powers.tea || this.sprintT > 0 ? 1 : 0,
         vx: Math.round(this.vx), st: this.state, tag: this.tag || 0, tc: this.tagColor || 0, coat: this.coat || 0,
         mk: m ? m.kind : 0, og: this.onGround ? 1 : 0, fi: this.firing ? 1 : 0,
+        sq: r2(this.squash()), vy: Math.round(this.vy / 10), // squash and stretch, and falling speed for ears and tails
         // art hints for specials and traits
         x1: sp ? JSON.stringify(sp) : 0,
         gl: this.gliding ? 1 : 0, np: this.napping ? 1 : 0, cl: this.cling || 0,
@@ -676,15 +698,8 @@
         ctx.ellipse(s.x, s.y - h * 0.5, w * 1.2, h * 0.62, 0, 0, Math.PI * 2);
         ctx.fill();
       }
-      if (s.tea && Math.abs(s.vx) > 40) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-        ctx.lineWidth = 3;
-        for (let i = 0; i < 3; i++) {
-          const ly = s.y - h * (0.25 + i * 0.25);
-          const lx = s.x - Math.sign(s.vx) * (w * 0.8 + i * 6);
-          ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - Math.sign(s.vx) * 26, ly); ctx.stroke();
-        }
-      }
+      // speed lines behind: Billy Tea Rush, sprints, dashes, and flying back from a big hit
+      if ((s.tea && Math.abs(s.vx) > 40) || (Math.abs(s.vx) > 420 && s.pose !== 'ko')) MG.Art.speedLines(ctx, s.x, s.y, w, h, Math.sign(s.vx), s.tea ? 1 : Math.min(1, (Math.abs(s.vx) - 420) / 300));
       // Ghost, the thylacine: a soft pale glow (and see-through while phasing)
       if (s.gh) {
         ctx.save();
@@ -693,6 +708,17 @@
         ctx.restore();
         if (s.gh === 2) ctx.globalAlpha = 0.45;
       }
+      // Squash and stretch around the feet (sq from the fighter; critters also breathe when standing
+      // still), plus ears and tails that lag behind the body's movement (follow-through).
+      const breath = def.art !== 'kangaroo' && s.pose === 'idle' && !s.np ? Math.sin(s.t * 3) * 0.018 : 0;
+      const sq = (s.sq || 0) + breath;
+      if (sq) { ctx.save(); ctx.translate(s.x, s.y); ctx.scale(1 - sq * 0.6, 1 + sq); ctx.translate(-s.x, -s.y); }
+      const lagX = U.clamp((s.vx || 0) * (s.f || 1) / 650, -1, 1), lagY = U.clamp((s.vy || 0) * 10 / 900, -1, 1);
+      const thud = Math.min(0, s.sq || 0); // landing or being hit
+      const follow = {
+        ears: U.clamp(-0.5 * lagX + 0.35 * lagY - 2.2 * thud + (s.pose === 'hurt' ? -0.3 : 0), -0.9, 0.9),
+        tailLag: U.clamp(-0.8 * lagY - 2.5 * thud, -1, 1),
+      };
       const coat = s.coat ? MG.coatFor(def, s.coat) : null;
       const basicStyle = sp.basicStyle || (def.basic && def.basic.style) || 'punch';
       const bigStyle = sp.bigStyle || (def.big && def.big.style) || 'kick';
@@ -702,6 +728,7 @@
         x: s.x, y: s.y, facing: s.f, scale: def.scale, t: s.t, pose: s.np ? 'block' : s.pose, walk: s.walk,
         mouth: s.mo || sp.mouth || undefined, flash: !!s.fl, gun: s.gun === 1 ? 'gatling' : s.gun || null, muzzle: !!s.mz, spin: s.sp,
         holding: s.hold ? 'grenade' : sp.holding || null, crouch: s.cr || 0, colors: coat,
+        ears: follow.ears, tailLag: follow.tailLag,
       };
       if (def.art === 'kangaroo') {
         // kangaroo family: punches use the arms, kicks lean back on the tail
@@ -728,6 +755,12 @@
         }
       }
       if (Array.isArray(s.jy)) MG.Art.joey(ctx, def, s, s.jy);
+      // motion smears: a swoosh where a punch, swipe or kick lands
+      if (s.pose !== 'ko') {
+        if (basicAmt > 0.6) MG.Art.swoosh(ctx, s.x, s.y, s.f, h, (basicAmt - 0.6) / 0.4, basicStyle, false);
+        if (bigAmt > 0.6) MG.Art.swoosh(ctx, s.x, s.y, s.f, h, (bigAmt - 0.6) / 0.4, bigStyle, true);
+      }
+      if (sq) ctx.restore();
       ctx.globalAlpha = 1;
       if (s.ps && (s.ps > 2 || Math.floor(s.t * 8) % 2 === 0)) {
         const r = h * 0.62 + Math.sin(s.t * 6) * 3;

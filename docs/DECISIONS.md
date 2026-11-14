@@ -99,6 +99,7 @@
 - **Polish, not a new style:** the cartoon look stays; light, haze and colour are laid over it. Changing the style would mean redrawing every character and world.
 - **The title screen's line-up:** Boomer and the power characters at the front left, Benny, Drowsy and Bins at the front right, the fast ones at the back. The quokka on the mesa grins for about 2 seconds in every 11 (a hint, not a spoiler: the Smile Squad are friends at the start).
 - **Light and haze is on by default**, with a Settings switch, and switches itself off on slow devices unless the player chose ON.
+- **Livelier movement** has no switch: it's subtle (at most a quarter squash), costs almost nothing, and works the same for Wi-Fi friends (the host sends the squash amount and the falling speed).
 
 ## Open questions for the owner
 
