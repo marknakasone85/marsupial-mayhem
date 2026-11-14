@@ -1,11 +1,12 @@
 // Settings (Milestone 8), saved in this browser: volumes, blood (on / off / gore), difficulty,
-// bigger touch buttons, high contrast, and changing the keys. The Settings page is js/scenes/settings.js.
+// bigger touch buttons, high contrast, light and haze, and changing the keys. The Settings page is js/scenes/settings.js.
 (function () {
   const S = MG.Settings; // (blood was already here, from fx.js)
   S.gore = MG.Save.get('gore', false);               // extra cartoon splatter (only when blood is on)
   S.difficulty = MG.Save.get('difficulty', 'normal'); // easy | normal | hard (the campaign only; duels stay fair)
   S.bigTouch = MG.Save.get('bigTouch', false);        // bigger touch buttons on phones and tablets
   S.contrast = MG.Save.get('contrast', false);        // high contrast: solid panels, outlines under everyone
+  S.lighting = MG.Save.get('lighting', true);         // light and haze in the worlds (off for slow phones)
   S.music = MG.Save.get('musicVol', 1);              // 0..1
   S.effects = MG.Save.get('effectsVol', 1);          // 0..1
 

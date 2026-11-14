@@ -196,6 +196,16 @@ These worked, so keep them:
 6. **A level editor** (in the browser, exporting a `.js` data file), so maps are quicker to make.
 7. **Still tiny:** a 2–3 MB budget, with no images or audio files.
 
+## The look: graphics pass (the owner, 14 Nov 2026)
+
+The owner asked for better graphics that keep the game small. Everything stays drawn in code (no pictures or sound files), so the whole game is still about 1.1 MB (about 330 KB as a zip).
+
+- **Title screen:** the whole cast stands on the red dirt either side of the menu, with their joeys, and does a Mexican wave every 9 seconds (kangaroos hop, the others jump up cheering, red dust where they land). Unlocked secret characters join at the back. The logo drops in letter by letter the first time (with a chunky 3D edge, a gentle wave and a shine that sweeps across), the sun's rays turn slowly behind the mesas, galahs fly past, a kangaroo hops along the horizon, and a Smile Squad quokka waves from the top of a mesa... and grins now and then.
+- **Light and atmosphere in every world** (`MG.Light`, `js/art/light.js`): haze over the far scenery so the action stands out; the sun's glow; a colour grade for each world's mood (warm on the sun's side, cooler on the other); canopy shade and shafts of light in the Rainforest, Tasmania and the lair; lava light from below in the Time Rift; a soft vignette. Sunset maps turn orange with the sun low. Duel stages get the Outback's light.
+- **Settings → Light and haze** switches it off. High contrast keeps only the haze. If the game keeps dropping frames on a device (no graphics chip for the canvas), it switches itself off for that visit, unless the player chose ON in Settings.
+- **Cost:** on a graphics chip it's almost free (about 0.6 ms a frame with or without it on the Mac); drawing without one, it adds about 3 ms, which is why the safety net is there.
+- Still to do, if the owner wants: livelier movement (squash and stretch, follow-through), more detailed ground in the first maps, and backgrounds drawn once and reused.
+
 ## Content guardrails
 
 - **Avoid famous characters and brands:** Taz the Tasmanian Devil (Looney Tunes), Crash Bandicoot, Bluey, Skippy the Bush Kangaroo, Blinky Bill, Kangaroo Jack, the Gumnut Babies. Character designs must not resemble them.

@@ -18,7 +18,7 @@ done
 full=""
 [ "$1" = "--full" ] && full="var FULL_RUN = true;"
 failed=0
-for t in boot settings editor boomer roster joey shop worlds twist topend campaign solo coop duel; do
+for t in boot settings looks editor boomer roster joey shop worlds twist topend campaign solo coop duel; do
   echo ""
   echo "== $t =="
   out=$("$JSC" -e "$full" tools/tests/harness.js "tools/tests/test_$t.js" 2>&1)

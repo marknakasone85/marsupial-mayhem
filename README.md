@@ -101,7 +101,7 @@ Good to know:
 
 Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot), ' (grenade), [ (joey) and ] (pouch) work too. On phones and tablets, touch buttons appear during play (BOOM is the grenade). The title screen's CONTROLS button and the pause menu show this table too.
 
-**Settings** (on the title screen): music and sound-effects volume, blood (on, gore, or confetti), difficulty for the adventure (easy, normal or hard; duels always stay fair), bigger touch buttons, high contrast, the key hints, and **changing the keys** for player 1 and player 2 (the key hints and the Controls page follow your keys).
+**Settings** (on the title screen): music and sound-effects volume, blood (on, gore, or confetti), difficulty for the adventure (easy, normal or hard; duels always stay fair), bigger touch buttons, high contrast, light and haze (switch it off if an older phone feels slow), the key hints, and **changing the keys** for player 1 and player 2 (the key hints and the Controls page follow your keys).
 
 **Tips:** some marsupials (Boomer, Chompers, Bins, Dead Fred) chain their attack: press it three times for a combo. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then kick it with attack (short), big attack (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
 

@@ -27,6 +27,7 @@
         { label: () => 'Difficulty (campaign): ' + MG.difficulty().name, change: (d) => MG.setSetting('difficulty', DIFFS[(DIFFS.indexOf(S.difficulty) + (d || 1) + 3) % 3]) },
         { label: () => 'Touch buttons: ' + (S.bigTouch ? 'BIG' : 'NORMAL'), change: () => MG.setSetting('bigTouch', !S.bigTouch) },
         { label: () => 'High contrast: ' + (S.contrast ? 'ON' : 'OFF'), change: () => MG.setSetting('contrast', !S.contrast) },
+        { label: () => 'Light and haze: ' + (S.lighting ? 'ON' : 'OFF (faster on old phones)'), change: () => MG.setSetting('lighting', !S.lighting) },
         { label: () => 'Key hints at the bottom: ' + (MG.Save.get('keyStrip', true) ? 'ON' : 'OFF'), change: () => MG.Save.set('keyStrip', !MG.Save.get('keyStrip', true)) },
         { label: 'Change keys: player 1', act: () => { this.page = 'keys'; this.player = 'P1'; this.keySel = 0; } },
         { label: 'Change keys: player 2', act: () => { this.page = 'keys'; this.player = 'P2'; this.keySel = 0; } },
@@ -36,7 +37,7 @@
 
     enter() { MG.Audio.playMusic('title'); }
     back() { MG.Engine.setScene(this.opts.back ? this.opts.back() : new MG.MenuScene()); }
-    rect(i) { return { x: W / 2 - 230, y: 76 + i * 37, w: 460, h: 32 }; }
+    rect(i) { return { x: W / 2 - 230, y: 74 + i * 35, w: 460, h: 31 }; }
     keyRect(i) { return { x: W / 2 - 230, y: 86 + i * 33, w: 460, h: 29 }; }
 
     update(dt) {

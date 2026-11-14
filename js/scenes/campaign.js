@@ -810,6 +810,8 @@
     ctx.save();
     v.fx.camera(ctx, v.camX);
     A.background(ctx, v.camX, v.t, v.groundY, v.L.sky, theme);
+    const lit = { theme, sunset: v.L.sky === 'sunset', camX: v.camX, t: v.t, groundY: v.groundY };
+    if (MG.Light) MG.Light.back(ctx, lit);
     ctx.save();
     ctx.translate(-Math.round(v.camX) + sh.x, sh.y);
     const vis = (x, m = 200) => x > v.camX - m && x < v.camX + W + m;
@@ -859,6 +861,7 @@
     ctx.restore();
     ctx.restore();
     if (A.weather) A.weather(ctx, theme, v.camX, v.t);
+    if (MG.Light) MG.Light.front(ctx, lit);
     v.fx.drawFinisher(ctx, v.camX);
   };
 

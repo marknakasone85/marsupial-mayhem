@@ -94,6 +94,12 @@
 
 - **The twist is now shown to the players early** (the owner asked for the alliance to be clearer): "meanwhile" cutscenes after each world. The heroes still only find out at the victory party, so the betrayal stays a surprise for them (the players are in on it, like in a cartoon).
 
+## Chosen in the graphics pass (14 Nov 2026; the owner can change any of these)
+
+- **Polish, not a new style:** the cartoon look stays; light, haze and colour are laid over it. Changing the style would mean redrawing every character and world.
+- **The title screen's line-up:** Boomer and the power characters at the front left, Benny, Drowsy and Bins at the front right, the fast ones at the back. The quokka on the mesa grins for about 2 seconds in every 11 (a hint, not a spoiler: the Smile Squad are friends at the start).
+- **Light and haze is on by default**, with a Settings switch, and switches itself off on slow devices unless the player chose ON.
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.

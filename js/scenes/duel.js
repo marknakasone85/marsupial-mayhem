@@ -525,6 +525,8 @@
     ctx.save();
     v.fx.camera(ctx, 0);
     MG.Art.background(ctx, 0, v.t, v.groundY, v.stage.sky);
+    const lit = { theme: 'outback', sunset: v.stage.sky === 'sunset', camX: 0, t: v.t, groundY: v.groundY };
+    if (MG.Light) MG.Light.back(ctx, lit);
     ctx.save();
     ctx.translate(sh.x, sh.y);
     // a little tournament banner on the back wall
@@ -541,6 +543,7 @@
     v.fx.draw(ctx);
     ctx.restore();
     ctx.restore();
+    if (MG.Light) MG.Light.front(ctx, lit);
     v.fx.drawFinisher(ctx, 0);
   };
 
