@@ -28,7 +28,8 @@ check(worldCounts === '4,3,4' && MG.WORLDS.every(function (w) { return w.levels.
 var problems = [];
 var DECOR = ['mound', 'sign', 'tree', 'vines', 'waterfall', 'cane', 'mangrove', 'shed', 'redrock', 'snakeSkin', 'footprints', 'quokkaGoanna',
   'snowgum', 'hut', 'cliff', 'buttongrass', 'building', 'bin', 'streetlight', 'laneway', 'billboard', 'fern', 'volcano', 'riftCrack',
-  'souvenirShop', 'selfieBoard', 'lighthouse', 'plushies', 'partyBanner', 'stalagmite', 'crystal', 'throne', 'eggs', 'stonewall', 'cottage', 'sheep'];
+  'souvenirShop', 'selfieBoard', 'lighthouse', 'plushies', 'partyBanner', 'stalagmite', 'crystal', 'throne', 'eggs', 'stonewall', 'cottage', 'sheep',
+  'termiteMound', 'pandanus', 'bigMangrove', 'crocSign', 'wharf', 'boatWreck'];
 var NPCS = ['emus', 'cassowary', 'croc', 'quokka', 'treeKangaroo', 'quoll', 'pygmyPossum', 'wallaby', 'sloth'];
 MG.LEVELS.forEach(function (L) {
   if (L.boss && L.length < L.boss.x + 580) problems.push(L.id + ' too short for its boss');

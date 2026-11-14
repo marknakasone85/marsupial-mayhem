@@ -22,7 +22,7 @@ fresh();
 
 // ---- the maps and the map's branches
 var NEW = ['alps-1', 'alps-2', 'alps-3', 'city-1', 'city-2', 'city-3', 'city-4', 'rift-1', 'rift-2', 'rift-3', 'grin-1', 'grin-2', 'grin-3', 'grin-4', 'iom-1'];
-check(NEW.every(function (id) { return lv(id) > 10; }) && MG.LEVELS.length === 26, '15 new maps appended (26 in all): Tasmania & the Alps 3, the City 4, the Time Rift 3, Grin Isle 4, and a secret bonus map');
+check(NEW.every(function (id) { return lv(id) > 10 && lv(id) < 26; }) && MG.LEVELS.length >= 26, '15 new maps appended (maps 12-26): Tasmania & the Alps 3, the City 4, the Time Rift 3, Grin Isle 4, and a secret bonus map');
 check(['quollChamp', 'foxyRoxy', 'diprotodon', 'thylacoleo', 'procoptodon', 'grandGrinner', 'crocEmperor'].every(function (b) { return MG.LEVELS.some(function (L) { return L.boss && L.boss.type === b; }); }),
   'bosses: the quoll champion, Foxy Roxy, Diprotodon, the marsupial lion, Procoptodon, the Grand Grinner and the Croc Emperor');
 check(!MG.LEVELS.slice(lv('alps-1'), lv('alps-3') + 1).some(function (L) { return L.enemies.some(function (e) { return e.type === 'fox'; }); }), 'no foxes in Tasmania (true: they never settled there)');

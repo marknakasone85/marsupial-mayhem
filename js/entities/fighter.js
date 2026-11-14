@@ -171,6 +171,12 @@
       this.t += dt;
       this.flash -= dt;
       this.invuln -= dt;
+      // Gum-Leaf Tonic (shop): heals slowly once you haven't been hurt for 4 seconds
+      if (this.regen) {
+        if (this.hp < (this.lastHp === undefined ? this.hp : this.lastHp)) this.calmT = 0; else this.calmT = (this.calmT || 0) + dt;
+        if (this.calmT > 4 && this.state !== 'ko' && this.hp > 0 && this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
+        this.lastHp = this.hp;
+      }
       this.comboT -= dt;
       if (this.comboT <= 0) this.combo = 0;
       this.jabT -= dt;
@@ -748,7 +754,7 @@
   const PROJ_WORD = {
     gumnut: 'POK!', dust: 'WHUMP!', cube: 'PLOP!', wave: 'SPLOOSH!', wallaby: 'STAMPEDE!', bin: 'CLANG!', tongue: 'SLURP!', stink: 'COUGH!',
     pebble: 'PING!', snag: 'SIZZLE!', cricket: 'HOWZAT!', flame: 'TOASTY!', dropbear: 'DROP BEAR!', maul: 'MAUL!', magpie: 'SWOOP!',
-    claw: 'SLASH!', fruit: 'SPLAT!',
+    claw: 'SLASH!', fruit: 'SPLAT!', thong: 'THWACK!', water: 'SPLOOSH!',
   };
   MG.Projectile = class {
     constructor(kind, x, y, vx, vy, team, hit) {
@@ -846,9 +852,9 @@
         }
         if (!h.tick || Math.random() < 0.15) {
           // rapid-fire shots (gumnuts, flames) only say their word now and then
-          const small = this.kind === 'gumnut' || this.kind === 'flame';
-          world.fx.burst(this.x, this.y, h.poison ? '#9ef01a' : h.fire ? '#ff9f1c' : '#ffd23f', small ? 4 : 10);
-          if (!small || Math.random() < (this.kind === 'flame' ? 0.05 : 0.3)) world.fx.text(target.x, b.y - 10, PROJ_WORD[this.kind] || 'BONK!', '#ffffff', small ? 16 : 22);
+          const small = this.kind === 'gumnut' || this.kind === 'flame' || this.kind === 'water';
+          world.fx.burst(this.x, this.y, h.poison ? '#9ef01a' : h.fire ? '#ff9f1c' : h.wet ? '#9bf6ff' : '#ffd23f', small ? 4 : 10);
+          if (!small || Math.random() < (this.kind === 'gumnut' ? 0.3 : 0.05)) world.fx.text(target.x, b.y - 10, PROJ_WORD[this.kind] || 'BONK!', '#ffffff', small ? 16 : 22);
         }
         if (h.tick || h.pierce === true) continue;
         if (typeof h.pierce === 'number' && ++this.pierced < h.pierce) { if (h.home) this.target = null; continue; }

@@ -30,9 +30,9 @@
       return a;
     },
     PROJ_CODE: { gumnut: 'g', dust: 'd', cube: 'c', stink: 's', wave: 'w', wallaby: 'y', bin: 'b', tongue: 't',
-      pebble: 'p', snag: 'n', cricket: 'k', flame: 'f', dropbear: 'r', maul: 'm', magpie: 'q', claw: 'x', fruit: 'u' },
+      pebble: 'p', snag: 'n', cricket: 'k', flame: 'f', dropbear: 'r', maul: 'm', magpie: 'q', claw: 'x', fruit: 'u', thong: 'h', water: 'o' },
     PROJ_KIND: { g: 'gumnut', d: 'dust', c: 'cube', s: 'stink', w: 'wave', y: 'wallaby', b: 'bin', t: 'tongue',
-      p: 'pebble', n: 'snag', k: 'cricket', f: 'flame', r: 'dropbear', m: 'maul', q: 'magpie', x: 'claw', u: 'fruit' },
+      p: 'pebble', n: 'snag', k: 'cricket', f: 'flame', r: 'dropbear', m: 'maul', q: 'magpie', x: 'claw', u: 'fruit', h: 'thong', o: 'water' },
     capturing: false,
     buffer: { fx: [], au: [] },
     seq: 0,

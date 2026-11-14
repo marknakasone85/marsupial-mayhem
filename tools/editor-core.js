@@ -2,10 +2,11 @@
 // A map is the same plain object as an entry in MG.LEVELS (js/data/levels.js).
 (function () {
   const U = MG.U;
-  const THEMES = ['outback', 'rainforest', 'canefields', 'coast', 'alps', 'tasmania', 'city', 'rift', 'grinisle', 'lair', 'isleofman'];
+  const THEMES = ['outback', 'rainforest', 'canefields', 'coast', 'alps', 'tasmania', 'city', 'rift', 'grinisle', 'lair', 'isleofman', 'topend'];
   const DECOR = ['sign', 'mound', 'tree', 'vines', 'waterfall', 'cane', 'mangrove', 'shed', 'redrock', 'snakeSkin', 'footprints', 'quokkaGoanna',
     'snowgum', 'hut', 'cliff', 'buttongrass', 'building', 'bin', 'streetlight', 'laneway', 'billboard', 'fern', 'volcano', 'riftCrack',
-    'souvenirShop', 'selfieBoard', 'lighthouse', 'plushies', 'partyBanner', 'stalagmite', 'crystal', 'throne', 'eggs', 'stonewall', 'cottage', 'sheep'];
+    'souvenirShop', 'selfieBoard', 'lighthouse', 'plushies', 'partyBanner', 'stalagmite', 'crystal', 'throne', 'eggs', 'stonewall', 'cottage', 'sheep',
+    'termiteMound', 'pandanus', 'bigMangrove', 'crocSign', 'wharf', 'boatWreck'];
   const NPCS = ['quokka', 'emus', 'cassowary', 'croc', 'treeKangaroo', 'quoll', 'pygmyPossum', 'wallaby', 'sloth'];
   const LOOT = ['grenades', 'heart', 'armor', 'gumnuts', 'gatling', 'none'];
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);

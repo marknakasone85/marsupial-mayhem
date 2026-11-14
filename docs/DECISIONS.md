@@ -84,6 +84,14 @@
 - **The level editor** is a developer tool in `tools/` (not part of the game page, and never served on the home network).
 - **itch.io:** `tools/make-itch-zip.sh` makes the zip; uploading it and the price are the owner's decisions.
 
+## Chosen while adding the Top End and the bigger shop (14 Nov 2026; the owner can change any of these)
+
+- **Where the Darwin map sits:** a bonus branch after the Rainforest (Big Tom's Den), so it can be played early and its path runs along the north coast. It doesn't block the main path.
+- **The boss's name:** Old Snapjaw (a placeholder, like the other boss names).
+- **Shop sections:** WEAPONS, ARMOUR, HEALTH, GRENADES, EXTRAS. Selling back gives half of what was paid, and asks "SURE?" first.
+- **The new items and prices** (Thong Flinger, Full-Blast Garden Hose, Roo-Bar Armour, Gum-Leaf Tonic, Bigger Bang, Joey Snacks, Coin Magnet) are placeholders too.
+- **The map's SHOP button** sits top right, over the sea, so it never covers a stop.
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.
@@ -91,4 +99,4 @@
 3. **Trade mark:** registering Marsupial Mayhem is the owner's own step, ideally before release. A trade mark lawyer can advise.
 4. ~~The pouch for male characters~~: answered 13 Nov 2026, their joeys ride on their back.
 5. **Names from Milestone 1 (placeholders):** the mini-boss Big Buck, the Gumnut Gatling, and the power-ups Gumleaf Shield, Billy Tea Rush and Super Wallop.
-6. **Milestone 5 choices** (above): weapon names and prices, one weapon at a time, and whether to add selling back.
+6. **Milestone 5 choices** (above): weapon names and prices, and one weapon at a time. (Selling back was added on 14 Nov 2026.)

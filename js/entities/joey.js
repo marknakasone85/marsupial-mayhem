@@ -161,7 +161,7 @@
     goHome() {
       this.state = 'back';
       this.outT = 0;
-      this.cool = COOL[this.job] || 4;
+      this.cool = (COOL[this.job] || 4) * (this.parent.joeyCool || 1); // Joey Snacks: back sooner
     }
 
     arrive(world) {

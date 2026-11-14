@@ -107,7 +107,7 @@
       this.guest = !!opts.guest;
       this.net = !!opts.net;
       this.players = opts.players || [{ id: 0, cid: MG.CHARACTERS[(MG.Save.get('lastPicks', [0])[0] || 0) % MG.CHARACTERS.length].id, local: 'SOLO' }];
-      this.stops = ['shop'].concat(MG.LEVELS.map((l) => l.id).filter((id) => has(MG.MAP_STOPS, id)));
+      this.stops = ['shop'].concat(MG.WorldMapScene.walkOrder());
       this.t = 0;
       this.sendT = 0;
       this.msg = '';
@@ -119,7 +119,22 @@
       this.storyChecked = false;
     }
 
+    // The order the arrow keys walk through the stops: each map right after the one that opens it,
+    // so a branch added later (the Top End after the Rainforest) is next to where its path starts.
+    static walkOrder() {
+      const order = [];
+      for (let i = 0; i < MG.LEVELS.length; i++) {
+        const L = MG.LEVELS[i];
+        if (!has(MG.MAP_STOPS, L.id)) continue;
+        const opener = i === 0 ? null : L.after || MG.LEVELS[i - 1].id;
+        const at = opener ? order.indexOf(opener) : -1;
+        if (at >= 0 && at < order.length - 1) order.splice(at + 1, 0, L.id); else order.push(L.id);
+      }
+      return order;
+    }
     levelIndex(stop) { return MG.LEVELS.findIndex((l) => l.id === stop); }
+    // a stop in a bonus world (the Time Rift, the Top End, the Isle of Man)
+    isBonus(i) { const w = MG.WORLDS.find((x) => x.levels.includes(this.stops[i])); return !!(w && w.bonus); }
     isOpen(i) { const s = this.stops[i]; return s === 'shop' || MG.Progress.isOpen(this.levelIndex(s)); }
     // a secret stop (the Isle of Man) only shows once it's been found
     isShown(i) { const s = this.stops[i]; if (s === 'shop') return true; const L = MG.LEVELS[this.levelIndex(s)]; return !L.secret || MG.Unlocks.has(L.secret); }
@@ -134,10 +149,10 @@
     startStop(at) {
       if (at === 'shop') return 0;
       if (typeof at === 'number' && MG.LEVELS[at]) { const i = this.stops.indexOf(MG.LEVELS[at].id); if (i >= 0) return i; }
-      // the first open map that isn't cleared yet (or the last open one)
+      // the first open map on the main path that isn't cleared yet (or the last open one)
       let best = 1;
       for (let i = 1; i < this.stops.length; i++) {
-        if (!this.isOpen(i)) break;
+        if (!this.isShown(i) || !this.isOpen(i) || this.isBonus(i)) continue;
         best = i;
         if (!MG.Progress.isCleared(this.stops[i])) break;
       }
@@ -215,6 +230,7 @@
         return;
       }
       if (MG.Menu.back()) { MG.Audio.select(); this.leave(); return; }
+      if (I.anyHit(['KeyB', 'Pad0Y'])) { this.openShop(); return; }
       if (MG.Menu.left() || MG.Menu.up()) this.step(-1);
       else if (MG.Menu.right() || MG.Menu.down()) this.step(1);
       else if (MG.Menu.confirm()) this.choose();
@@ -228,8 +244,9 @@
           else if (this.isOpen(i)) this.goTo(i);
           else this.say('Clear the map before it first!');
         }
-        const r = this.playRect();
+        const r = this.playRect(), sr = this.shopRect();
         if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) this.choose();
+        else if (p.x >= sr.x && p.x <= sr.x + sr.w && p.y >= sr.y && p.y <= sr.y + sr.h) this.openShop();
       }
     }
     say(msg) { this.msg = msg; this.msgT = 2; MG.Audio.emptyClick(); }
@@ -253,11 +270,7 @@
     choose() {
       const stop = this.stops[this.cur];
       MG.Audio.confirm();
-      if (stop === 'shop') {
-        const next = Math.max(0, this.startStop() - 1);
-        MG.Engine.setScene(new MG.ShopScene({ net: this.net, level: next, players: this.players, toMap: true, gid: null, earned: [] }));
-        return;
-      }
+      if (stop === 'shop') { this.openShop(true); return; }
       const i = this.levelIndex(stop), L = MG.LEVELS[i];
       const go = () => {
         if (this.net) MG.Net.send({ t: 'start', mode: 'campaign', level: i }, 'all', true);
@@ -276,7 +289,42 @@
       }
       MG.Engine.setScene(new MG.MenuScene());
     }
+    // The platypus's shop, from any stop (the SHOP button or B). Afterwards you're back at the same stop.
+    openShop(quiet) {
+      if (!quiet) MG.Audio.confirm();
+      const stop = this.stops[this.cur];
+      const at = stop === 'shop' ? 'shop' : this.levelIndex(stop);
+      const level = at === 'shop' ? Math.max(0, this.levelIndex(this.stops[this.startStop()])) : at;
+      MG.Engine.setScene(new MG.ShopScene({ net: this.net, level, players: this.players, toMap: true, mapAt: at, gid: null, earned: [] }));
+    }
     playRect() { return { x: W - 196, y: H - 74, w: 180, h: 54 }; }
+    // top right, over the sea (the bottom of the map has Tasmania's stops)
+    shopRect() { return { x: W - 186, y: this.net || this.guest ? 64 : 40, w: 170, h: 54 }; }
+    // the SHOP button: the platypus, everyone's coins here, and a "!" when there's something new to afford
+    drawShopButton(ctx) {
+      const r = this.shopRect();
+      const pids = this.players.filter((p) => p.local).map((p) => (p.local === 'P2' ? 'p2' : 'p1'));
+      const news = pids.some((pid) => MG.Gear.canBuySomething(pid));
+      const bob = news ? Math.sin(this.t * 4) * 2 : 0;
+      ctx.fillStyle = '#2ec4b6';
+      ctx.beginPath(); ctx.roundRect(r.x, r.y + bob, r.w, r.h, 14); ctx.fill();
+      ctx.strokeStyle = '#2b193d'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.save(); ctx.beginPath(); ctx.roundRect(r.x, r.y + bob, r.w, r.h, 14); ctx.clip();
+      MG.Art.platypus(ctx, r.x + 30, r.y + r.h + 4 + bob, 0.42, this.t, {});
+      ctx.restore();
+      UI.text(ctx, 'SHOP', r.x + 104, r.y + 19 + bob, 22, '#2b193d', 'center');
+      const coins = pids.length ? pids.map((pid) => MG.Gear.coins(pid)).join(' / ') : '';
+      if (coins) {
+        UI.text(ctx, coins, r.x + 112, r.y + 41 + bob, 14, '#2b193d', 'center');
+        ctx.font = `bold 14px ${UI.FONT}`;
+        MG.Art.coinIcon(ctx, r.x + 112 - ctx.measureText(coins).width / 2 - 10, r.y + 41 + bob, 6);
+      }
+      if (news) {
+        ctx.fillStyle = '#ff4d6d'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(r.x + r.w - 6, r.y + 4 + bob, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        UI.text(ctx, '!', r.x + r.w - 6, r.y + 5 + bob, 15, '#ffffff', 'center');
+      }
+    }
 
     // ---------------- draw ----------------
     draw(ctx) {
@@ -371,7 +419,8 @@
         ctx.fillStyle = '#ffd23f';
         ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, 14); ctx.fill();
         UI.text(ctx, stop === 'shop' ? 'SHOP' : 'PLAY ▶', r.x + r.w / 2, r.y + r.h / 2 + 1, 22, '#2b193d', 'center');
-        const hint = MG.Touch.enabled ? 'Tap a stop to walk there, tap again (or PLAY) to go' : 'Arrows / A D: walk     Enter / F: go     Esc: ' + (this.net ? 'back to the lobby' : 'title screen');
+        this.drawShopButton(ctx);
+        const hint = MG.Touch.enabled ? 'Tap a stop to walk there, tap again (or PLAY) to go' : 'Arrows / A D: walk     Enter / F: go     B: shop     Esc: ' + (this.net ? 'lobby' : 'title screen');
         UI.text(ctx, hint, W - 16, top, 12, '#ffffff', 'right');
       } else {
         UI.outlineText(ctx, 'The host picks the next map...', W - 110, H - 46, 15, '#ffffff', 'center');

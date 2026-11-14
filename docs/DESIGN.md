@@ -72,6 +72,13 @@ Tell the story with simple in-engine panels between worlds and on the world map:
 - **Secrets:** Ghost the thylacine (Fast; wide-jaw bite breaks blocks; Phase trait: a hit passes through him every 5 s; special Phantom Dash) unlocks by clearing the Time Rift. Cousin Cuscus (Power; slaps; Take It Easy trait: stand still a second for a SUPER SLAP; special Slap Storm) unlocks by finding the sloth who fell through the rift from Sloth Slap, or automatically if Sloth Slap has saved anything in the same browser (same website, e.g. both on GitHub Pages).
 - **Allies and guests:** a mountain pygmy possum guide in the Alps (a fact and a heart), wild red-necked wallabies on the Isle of Man.
 
+### The Top End (the owner, 14 Nov 2026)
+
+The owner asked for a map at Darwin where the good marsupials fight saltwater crocodiles.
+- **Darwin Harbour** (map 27, `darwin-1`, the bonus world THE TOP END) opens after Big Tom's Den, on its own branch along the north coast (the arrow keys walk to it straight after the Rainforest). A wharf, croc warning signs, pandanus, magnetic termite mounds, mangroves and two stretches of harbour water with crocs lurking; salties charging on the mud with feral pigs and cats; a Smile Squad quokka who says the salties "never bother us quokkas" (a clue). Theme `topend` (`js/art/topend.js`).
+- **Boss: Old Snapjaw**, a huge old saltie in a tour-boat captain's cap: chomp, tail sweep, death roll and a **croc jump** (real salties push themselves up out of the water with their tails). A native: beaten, he swims off in a huff.
+- **Story:** a panel before the first visit (the salties have gone grumpy and teamed up with the pigs and cats; a real fact about where salties live).
+
 ## The signature mechanic: the pouch (details agreed with the owner, 13 Nov 2026)
 
 Every playable marsupial has a **joey** (a baby of its own kind) and a **pouch slot** for one saved item.
@@ -127,6 +134,15 @@ Details below were chosen in the build to fit a brawler; the owner can change an
 - **Wallets:** per player, not per character: `p1` (this device's player, also on Wi-Fi) and `p2` (the second player on this keyboard). Saved in the browser.
 - **The shop:** SHOP on the title screen, and **Shop** after a map (win, or knocked out). 2 players on one keyboard shop on one screen with their own cursors. **Wi-Fi: Shop Together** after a map: everyone shops on their own device with their own coins, sees everybody's wallets and presses I'M READY; the host presses START. Friends' gear goes to the host with their character pick, and the coins they pick up in the host's game are added to their own wallet.
 - **Duels:** shop gear is ignored. Supply drops now also bring a weapon to borrow (any of the 7) or armor.
+
+### More items, sections and selling back (the owner, 14 Nov 2026)
+
+The owner asked for the shop to be easier to find, sorted by kind with explanations, for selling back, and for more items.
+- **Sections (tabs):** WEAPONS, ARMOUR, HEALTH, GRENADES, EXTRAS (`MG.SHOP_CATS`; each item has a `cat`). Each section has a line saying what that kind of gear is for (with the player's own keys), and the cards of the smaller sections show each item's explanation. Keyboard: up from the top row reaches the tabs; left/right at the end of a section goes into the next one. Taps work on tabs, cards and buttons.
+- **New items:** Thong Flinger 110 (three flip-flops in a spread), Full-Blast Garden Hose 250 (low damage, big push back), Roo-Bar Armour 650 (170), Gum-Leaf Tonic 120/260 (heals 1.5 or 3 health a second after 4 s without being hurt), Bigger Bang 90/200 (grenade blasts 25% bigger per level, pushing further), Joey Snacks 80/180 (the joey's waits 20% shorter per level), Coin Magnet 120 (lying coins come from 2.2x as far). 19 items in all. Upgrades carry a short `key` in the loadout (hp, rg, gb, bb, js, mg), so Wi-Fi friends' upgrades reach the host (checked by `MG.Gear.clean`).
+- **Selling back** for half of what was paid (`MG.SELL_BACK`): a weapon with all its levels, an armour set, or one level of an upgrade. The first press of SELL asks "SURE?", the second sells. A sold weapon or armour comes off.
+- **Easier to find:** a big SHOP button on the world map (top right, with your coins and a "!" when there's something new you can afford; B or the gamepad's Y opens it) that brings you back to the same stop; the shop stop stays on the map. After every map the Shop line comes second, coloured, with your coins (also after a knock-out: "Shop, then try again"). The shop after a map has PLAY (the next map, or this one again) and WORLD MAP (back to that map's stop); after a bonus map, whose next map isn't on the same path, it leads back to the map.
+- **More coins later on:** pests not in `MG.COINS` pay by toughness (score / 60, a saltie 10) and world bosses drop a pile (score / 150, up to 100).
 
 ## Characters
 

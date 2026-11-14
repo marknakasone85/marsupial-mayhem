@@ -82,6 +82,13 @@
       scale: 2.3, weight: 8, name: 'THE CROC EMPEROR', emperor: true, minions: ['perentie', 'taipan', 'frilledLizard', 'thornyDevil'],
       moves: ['chomp', 'roll', 'tail', 'spawn', 'chomp', 'roll', 'tail'], defeatText: 'THE CROC EMPEROR IS OFF TO SUNBAKE... FOREVER!',
     },
+    // the Top End's boss: a huge old saltie in a tour-boat captain's cap he "found". His leap is a
+    // croc jump (real salties can push themselves up out of the water with their tails).
+    snapjaw: {
+      art: 'crocLand', behavior: 'boss', boss: true, native: true, hp: 560, speed: 180, w: 250, h: 92, dmg: 14, score: 9000,
+      scale: 1.9, weight: 7, name: 'OLD SNAPJAW', captain: true,
+      moves: ['chomp', 'tail', 'leap', 'chomp', 'roll', 'tail', 'leap'], defeatText: 'OLD SNAPJAW SWIMS OFF IN A HUFF!',
+    },
   };
   MG.ENEMY_TYPES = TYPES;
 
@@ -553,6 +560,7 @@
           const SAY = { leapWind: 'HUP!', hopWind: 'RIBBIT!', dashWind: '!', pounceWind: '!', burrowWind: 'DIG DIG DIG!', swipeWind: 'HISSS!', yowlWind: d.minion === 'fox' ? 'OI, GANG!' : 'MROWWWL!', hideWind: '...', tongueWind: 'SLURP?', poisonWind: 'PUFF!',
             spawnWind: d.minion === 'toad' ? 'CROAK CROAK!' : 'MINIONS!', flashWind: 'SAY CHEESE!', summonWind: 'OLD FRIENDS, RISE!', stompWind: 'STOMP!', kickWind: 'HI-YA!', biteWind: 'ROAR!', chompWind: 'CHOMP TIME!', rollWind: 'DEATH ROLL!', tailWind: 'WATCH THE TAIL!', binThrowWind: 'CATCH!' };
           const loud = this.state === 'dashWind' || this.state === 'pounceWind';
+          if (this.state === 'leapWind' && d.art === 'crocLand') SAY.leapWind = 'CROC JUMP!';
           if (SAY[this.state]) world.fx.text(this.x, this.y - d.h - 20, SAY[this.state], loud ? '#ff4d6d' : '#ffd23f', loud ? 40 : 26);
         }
       } else if (this.state === 'leapWind' || this.state === 'hopWind') {
@@ -820,7 +828,7 @@
         t: this.t, facing: this.facing, flash: this.flash > 0, scale: d.scale || 1, colors: d.colors, bandana: d.bandana,
         crouch: !!(vf & 1), charging: !!(vf & 2), air: !!(vf & 8), moving: Math.abs(this.vx) > 10,
         warlord: d.warlord, bigTom: d.bigTom, crown: d.crown,
-        roxy: d.roxy, emperor: d.emperor, spottedTail: d.spottedTail, champ: d.champ, evil: d.evil, hypno: d.hypno && this.alive,
+        roxy: d.roxy, emperor: d.emperor, captain: d.captain, spottedTail: d.spottedTail, champ: d.champ, evil: d.evil, hypno: d.hypno && this.alive,
         // the Grand Grinner: once the smile drops he's off his throne for good (it stays where it was)
         angry: !!(vf & 256) && d.art === 'grandGrinner', jump: !!(vf & 256) && d.art === 'grandGrinner',
         confused: !!d.confused,

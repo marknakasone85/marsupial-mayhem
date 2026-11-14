@@ -37,6 +37,14 @@
       rate: 0.5, mag: 5, reload: 2.5, pickupAmmo: 15, sound: 'plop',
       fire(f, w, k) { shot(f, w, 'snag', 560, -330, { dmg: 11 * k, stun: 0.45, kbx: 420, kby: -260, gravity: 1100, bounce: 0.55, friction: 0.6, life: 1.5, ground: true }); },
     },
+    thongs: {
+      name: 'THONG FLINGER', short: 'THONGS', price: 110, bars: [2, 3, 2],
+      desc: 'Flings three rubber thongs (Aussie flip-flops) at once in a spread. Great for a crowd up close.',
+      rate: 0.6, mag: 6, reload: 2.4, pickupAmmo: 15, sound: 'plop',
+      fire(f, w, k) {
+        for (const vy of [-260, -90, 80]) shot(f, w, 'thong', 640, vy, { dmg: 6 * k, stun: 0.3, kbx: 300, kby: -200, gravity: 700, life: 0.75 });
+      },
+    },
     gatling: {
       name: 'GUMNUT GATLING', short: 'GATLING', price: 140, bars: [1, 5, 3],
       desc: 'Three spinning barrels of hard gumnuts. Hold SHOOT for a storm of them.',
@@ -48,6 +56,12 @@
       desc: 'A bowling machine for one. A rock-hard ball that goes straight through three pests.',
       rate: 0.85, mag: 4, reload: 3, pickupAmmo: 10, sound: 'thwack',
       fire(f, w, k) { shot(f, w, 'cricket', 1150, -40, { dmg: 20 * k, stun: 0.6, kbx: 560, kby: -300, gravity: 150, life: 1.1, pierce: 3, big: true }); },
+    },
+    hose: {
+      name: 'FULL-BLAST GARDEN HOSE', short: 'HOSE', price: 250, bars: [1, 5, 2],
+      desc: 'A garden hose on full blast. It hardly hurts, but it shoves pests right back and knocks them off their feet.',
+      rate: 0.05, mag: 50, reload: 3, pickupAmmo: 100, sound: 'whoosh',
+      fire(f, w, k) { shot(f, w, 'water', 700 + U.rand(-40, 40), U.rand(-70, 10), { dmg: 0.9 * k, stun: 0.22, kbx: 330, kby: -150, gravity: 650, life: 0.5, wet: true }, U.rand(-3, 3)); },
     },
     flamer: {
       name: 'EUCALYPTUS FLAMETHROWER', short: 'FLAMER', price: 300, bars: [4, 4, 1],
@@ -81,16 +95,36 @@
     bark: { name: 'BARK VEST', price: 60, armor: 25, desc: 'A vest of stringybark. Better than nothing!' },
     billy: { name: 'BILLYCAN PLATING', price: 180, armor: 60, desc: 'Old billycans hammered flat into a chest plate. CLANK!' },
     iron: { name: 'CORRUGATED-IRON SUIT', price: 380, armor: 110, desc: 'Built like an outback shed. Pests bounce right off.' },
+    roobar: { name: 'ROO-BAR ARMOUR', price: 650, armor: 170, desc: 'A truck\'s bull bar (Aussies call it a roo bar) bolted on the front. The toughest there is!' },
   });
   MG.ARMOR_IDS = Object.keys(MG.ARMORS);
   MG.ARMOR_PICKUP = 20;   // a bark patch found in a map: +20 armor (up to at least 30)
 
-  // Upgrades that last for good.
+  // Upgrades that last for good. cat: the shop's section; key: the short name in a loadout
+  // (it travels to the Wi-Fi host); per: how much each level adds.
   MG.UPGRADES = table({
-    heart: { name: 'BIGGER HEART', prices: [100, 220, 400], desc: '+20 health for every marsupial you play, for good.', per: 20 },
-    belt: { name: 'GRENADE BELT', prices: [70, 150], desc: 'Start every map with an extra grenade.', per: 1 },
+    heart: { name: 'BIGGER HEART', cat: 'health', key: 'hp', prices: [100, 220, 400], desc: '+20 health for every marsupial you play, for good.', per: 20 },
+    tonic: { name: 'GUM-LEAF TONIC', cat: 'health', key: 'rg', prices: [120, 260], desc: 'Heals you slowly once you haven\'t been hit for 4 seconds. Level 2 heals twice as fast.', per: 1.5 },
+    belt: { name: 'GRENADE BELT', cat: 'grenades', key: 'gb', prices: [70, 150], desc: 'Start every map with an extra grenade.', per: 1 },
+    bang: { name: 'BIGGER BANG', cat: 'grenades', key: 'bb', prices: [90, 200], desc: 'Your grenades blow up bigger and send pests flying further.', per: 0.25 },
+    snacks: { name: 'JOEY SNACKS', cat: 'extras', key: 'js', prices: [80, 180], desc: 'Your joey is ready to help again sooner: 20% faster for each level.', per: 0.2 },
+    magnet: { name: 'COIN MAGNET', cat: 'extras', key: 'mg', prices: [120], desc: 'Coins lying around fly to you from more than twice as far away.', per: 1.2 },
   });
+  MG.UPGRADE_IDS = Object.keys(MG.UPGRADES);
+  // The shop's sections, in order (weapons and armour are their own kinds of item).
+  MG.SHOP_CATS = [
+    { id: 'weapons', name: 'WEAPONS' }, { id: 'armour', name: 'ARMOUR' }, { id: 'health', name: 'HEALTH' },
+    { id: 'grenades', name: 'GRENADES' }, { id: 'extras', name: 'EXTRAS' },
+  ];
+  // Selling back to the platypus gives half of what you paid.
+  MG.SELL_BACK = 0.5;
 
   // Coins dropped by each pest (the boss drops a pile).
   MG.COINS = { rabbit: 2, cat: 5, pig: 8, bigBuck: 40, crate: 3 };
+  // Pests not in the list pay by how tough they are; world bosses drop a big pile.
+  MG.coinsFor = (e) => {
+    if (Object.prototype.hasOwnProperty.call(MG.COINS, e.type)) return MG.COINS[e.type];
+    if (e.echo) return 0;
+    return e.isBoss ? Math.min(100, Math.round(e.d.score / 150)) : Math.max(2, Math.round(e.d.score / 60));
+  };
 })();

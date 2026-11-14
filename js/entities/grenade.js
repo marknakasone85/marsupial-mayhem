@@ -85,7 +85,8 @@
     explode(world) {
       if (this.dead) return;
       this.dead = true;
-      const R = MG.GRENADE.radius;
+      const big = (this.owner && this.owner.blastK) || 1; // Bigger Bang (shop upgrade)
+      const R = MG.GRENADE.radius * big;
       const cy = this.y - 12;
       for (const tg of world.targets(this.team)) {
         if (!tg.alive) continue;
@@ -94,7 +95,7 @@
         if (d > R) continue;
         const dir = tg.x >= this.x ? 1 : -1;
         const k = U.clamp(1 - Math.max(0, d) / (R * 1.6), 0.4, 1);
-        tg.takeHit({ dmg: MG.GRENADE.dmg * k, kbx: 620 * dir, kby: -580, stun: 0.8, big: true, blast: true, from: this, dir }, world);
+        tg.takeHit({ dmg: MG.GRENADE.dmg * k * (1 + (big - 1) * 0.5), kbx: 620 * dir * big, kby: -580 * big, stun: 0.8, big: true, blast: true, from: this, dir }, world);
       }
       // friendly blasts just bounce players (cartoon rules)
       for (const f of world.fighters || []) {

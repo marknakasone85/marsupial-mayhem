@@ -304,15 +304,23 @@
         const r = this.rect(i);
         const on = i === this.sel;
         const bob = on ? Math.sin(this.t * 6) * 3 : 0;
-        ctx.fillStyle = on ? '#ffd23f' : 'rgba(43,25,61,0.85)';
+        // item.accent: a colour that makes a line stand out (the shop); item.badge: coins shown on the right
+        ctx.fillStyle = on ? '#ffd23f' : item.accent || 'rgba(43,25,61,0.85)';
         ctx.beginPath();
         ctx.roundRect(r.x, r.y + bob, r.w, r.h, 14);
         ctx.fill();
-        ctx.strokeStyle = on ? '#2b193d' : 'rgba(255,255,255,0.3)';
+        ctx.strokeStyle = on ? '#2b193d' : item.accent ? '#ffd23f' : 'rgba(255,255,255,0.3)';
         ctx.lineWidth = 3;
         ctx.stroke();
         const label = typeof item.label === 'function' ? item.label() : item.label;
-        UI.text(ctx, label, r.x + r.w / 2, r.y + r.h / 2 + bob + 1, this.fontSize, on ? '#2b193d' : '#ffffff', 'center');
+        const badge = typeof item.badge === 'function' ? item.badge() : item.badge;
+        UI.text(ctx, label, r.x + r.w / 2 - (badge ? 18 : 0), r.y + r.h / 2 + bob + 1, this.fontSize, on ? '#2b193d' : '#ffffff', 'center');
+        if (badge) {
+          const fs = Math.max(11, this.fontSize - 4);
+          UI.text(ctx, badge, r.x + r.w - 12, r.y + r.h / 2 + bob + 1, fs, on ? '#2b193d' : '#ffd23f', 'right');
+          ctx.font = `bold ${fs}px ${UI.FONT}`;
+          MG.Art.coinIcon(ctx, r.x + r.w - 20 - ctx.measureText(badge).width, r.y + r.h / 2 + bob, Math.min(8, r.h * 0.22));
+        }
       });
     }
   };

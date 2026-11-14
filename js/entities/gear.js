@@ -5,13 +5,14 @@
   const U = MG.U;
   const has = (o, k) => o !== null && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k);
   const int = (v, lo, hi) => U.clamp(Math.floor(Number(v) || 0), lo, hi);
-  const blank = () => ({ coins: 0, weapons: {}, weapon: null, armors: {}, armor: null, heart: 0, belt: 0 });
+  const blank = () => { const b = { coins: 0, weapons: {}, weapon: null, armors: {}, armor: null }; for (const id of MG.UPGRADE_IDS) b[id] = 0; return b; };
+  const maxLv = (id) => MG.UPGRADES[id].prices.length;
 
-  // The shop's items, in the order shown.
+  // The shop's items, in the order shown, each with its section (MG.SHOP_CATS).
   const ITEMS = [].concat(
-    MG.WEAPON_IDS.map((id) => ({ kind: 'weapon', id })),
-    MG.ARMOR_IDS.map((id) => ({ kind: 'armor', id })),
-    Object.keys(MG.UPGRADES).map((id) => ({ kind: 'upgrade', id })),
+    MG.WEAPON_IDS.map((id) => ({ kind: 'weapon', id, cat: 'weapons' })),
+    MG.ARMOR_IDS.map((id) => ({ kind: 'armor', id, cat: 'armour' })),
+    MG.UPGRADE_IDS.map((id) => ({ kind: 'upgrade', id, cat: MG.UPGRADES[id].cat })),
   );
 
   MG.Gear = {
@@ -26,38 +27,49 @@
       const weapons = {}, armors = {};
       for (const id of MG.WEAPON_IDS) if (has(p.weapons, id)) weapons[id] = int(p.weapons[id], 1, MG.MAX_WEAPON_LEVEL);
       for (const id of MG.ARMOR_IDS) if (has(p.armors, id)) armors[id] = 1;
-      return {
+      const prof = {
         coins: int(p.coins, 0, 9999999), weapons, armors,
         weapon: has(weapons, p.weapon) ? p.weapon : null, armor: has(armors, p.armor) ? p.armor : null,
-        heart: int(p.heart, 0, MG.UPGRADES.heart.prices.length), belt: int(p.belt, 0, MG.UPGRADES.belt.prices.length),
       };
+      for (const id of MG.UPGRADE_IDS) prof[id] = int(p[id], 0, maxLv(id));
+      return prof;
     },
     set(pid, prof) { const a = this.all(); a[pid] = prof; MG.Save.set('gear', a); },
     coins(pid) { return this.get(pid).coins; },
     addCoins(pid, n) { const p = this.get(pid); p.coins = Math.max(0, Math.round(p.coins + n)); this.set(pid, p); return p.coins; },
 
-    // What a player brings into a map: { w: weapon, wl: its level, a: armor, hp: heart level, gb: belt level }
+    // What a player brings into a map: { w: weapon, wl: its level, a: armor, and each upgrade's
+    // level by its short key: hp (bigger heart), rg (tonic), gb (grenade belt), bb (bigger bang),
+    // js (joey snacks), mg (coin magnet) }
     loadout(pid) {
       const p = this.get(pid);
-      return { w: p.weapon, wl: p.weapon ? p.weapons[p.weapon] : 0, a: p.armor, hp: p.heart, gb: p.belt };
+      const lo = { w: p.weapon, wl: p.weapon ? p.weapons[p.weapon] : 0, a: p.armor };
+      for (const id of MG.UPGRADE_IDS) lo[MG.UPGRADES[id].key] = p[id];
+      return lo;
     },
     // A Wi-Fi friend's loadout, checked: only real items, levels in range.
     clean(lo) {
       lo = lo && typeof lo === 'object' ? lo : {};
       const w = typeof lo.w === 'string' && has(MG.WEAPONS, lo.w) ? lo.w : null;
-      return {
+      const out = {
         w, wl: w ? int(lo.wl, 1, MG.MAX_WEAPON_LEVEL) : 0,
         a: typeof lo.a === 'string' && has(MG.ARMORS, lo.a) ? lo.a : null,
-        hp: int(lo.hp, 0, MG.UPGRADES.heart.prices.length), gb: int(lo.gb, 0, MG.UPGRADES.belt.prices.length),
       };
+      for (const id of MG.UPGRADE_IDS) { const k = MG.UPGRADES[id].key; out[k] = int(lo[k], 0, maxLv(id)); }
+      return out;
     },
     // Gives a fighter its gear at the start of a map (or a checkpoint).
     apply(f, lo) {
       if (!lo) return;
-      if (lo.hp) { f.maxHp += MG.UPGRADES.heart.per * lo.hp; f.hp = f.maxHp; }
+      const U8 = MG.UPGRADES;
+      if (lo.hp) { f.maxHp += U8.heart.per * lo.hp; f.hp = f.maxHp; }
       if (lo.a && has(MG.ARMORS, lo.a)) { f.armorMax = MG.ARMORS[lo.a].armor; f.armor = f.armorMax; f.armorId = lo.a; }
       if (lo.gb) f.grenades = Math.min(MG.MAX_GRENADES, f.grenades + lo.gb);
       if (lo.w && has(MG.WEAPONS, lo.w)) f.equip(lo.w, lo.wl || 1);
+      f.regen = (lo.rg || 0) * U8.tonic.per;                 // health per second, after 4 s without a hit
+      f.blastK = 1 + (lo.bb || 0) * U8.bang.per;             // grenade blast size and push
+      f.joeyCool = Math.max(0.4, 1 - (lo.js || 0) * U8.snacks.per); // the joey's wait between jobs
+      f.coinReach = 1 + (lo.mg || 0) * U8.magnet.per;        // how far lying coins come from
     },
 
     // ---- the shop: what the button on an item does for this player
@@ -106,6 +118,45 @@
       }
       this.set(pid, p);
       return { said, action: o.action };
+    },
+
+    // ---- selling back to the platypus: half of everything you paid for it
+    //  weapons: the weapon and its levels; armour: the set; upgrades: one level at a time
+    sellValue(pid, item) {
+      const p = this.get(pid);
+      let paid = 0;
+      if (item.kind === 'weapon') {
+        const lv = p.weapons[item.id] || 0;
+        if (lv) { paid = MG.WEAPONS[item.id].price; for (let l = 2; l <= lv; l++) paid += MG.upgradePrice(item.id, l); }
+      } else if (item.kind === 'armor') paid = p.armors[item.id] ? MG.ARMORS[item.id].price : 0;
+      else { const lv = p[item.id] || 0; paid = lv ? MG.UPGRADES[item.id].prices[lv - 1] : 0; }
+      return Math.floor(paid * MG.SELL_BACK);
+    },
+    // Sells it. Returns { said, coins } or null when there's nothing to sell.
+    sell(pid, item) {
+      const value = this.sellValue(pid, item);
+      if (!value) return null;
+      const p = this.get(pid);
+      let said;
+      if (item.kind === 'weapon') {
+        delete p.weapons[item.id];
+        if (p.weapon === item.id) p.weapon = null;
+        said = 'SOLD ' + MG.WEAPONS[item.id].short;
+      } else if (item.kind === 'armor') {
+        delete p.armors[item.id];
+        if (p.armor === item.id) p.armor = null;
+        said = 'SOLD ' + MG.ARMORS[item.id].name;
+      } else {
+        p[item.id] -= 1;
+        said = MG.UPGRADES[item.id].name + (p[item.id] ? ' NOW LEVEL ' + p[item.id] : ' SOLD');
+      }
+      p.coins += value;
+      this.set(pid, p);
+      return { said: said + ' +' + value, coins: value };
+    },
+    // Is there something new this player could buy right now? (the map's SHOP button says so)
+    canBuySomething(pid) {
+      return ITEMS.some((it) => { const o = this.offer(pid, it); return (o.action === 'buy' || o.action === 'upgrade') && o.can; });
     },
 
     // ---- Wi-Fi: the host remembers each friend's gear and coins from their messages
@@ -189,10 +240,12 @@
     pickTarget(world) {
       const alive = world.aliveFighters();
       if (this.owner && alive.includes(this.owner)) return this.owner;
-      let best = null, bd = this.lying ? 150 : 260;
+      // (the Coin Magnet pulls lying coins from further away)
+      let best = null, bd = Infinity;
       for (const f of alive) {
         const d = Math.hypot(f.x - this.x, f.y - f.h * 0.5 - this.y);
-        if (d < bd) { bd = d; best = f; }
+        const reach = (this.lying ? 150 : 260) * (this.lying ? f.coinReach || 1 : 1);
+        if (d < reach && d < bd) { bd = d; best = f; }
       }
       return best;
     }

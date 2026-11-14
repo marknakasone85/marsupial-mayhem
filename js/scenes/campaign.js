@@ -304,7 +304,7 @@
     }
     onEnemyKilled(e, hit) {
       this.score += e.d.score;
-      this.dropCoins(e.x, e.y - e.d.h * 0.6, MG.COINS[e.type] || 2, hit);
+      this.dropCoins(e.x, e.y - e.d.h * 0.6, MG.coinsFor(e), hit);
       // Chompers eats almost anything a pest leaves behind (bones included)
       if (!e.isBoss && this.fighters.some((f) => f.has('scavenger')) && Math.random() < 0.5) this.addPickup('scrap', e.x, this.groundY);
       if (e === this.boss) {
@@ -501,7 +501,7 @@
         const items = [];
         if (this.checkpoint) items.push({ label: 'Continue from Checkpoint', act: () => this.respawn() });
         items.push({ label: 'Restart Map', act: () => this.restart() });
-        items.push({ label: this.net ? 'Shop Together' : 'Shop, then try again', act: () => this.openShop() });
+        items.push(this.shopItem('then try again'));
         items.push({ label: 'World Map', act: () => this.toWorldMap() });
         if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
         items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
@@ -635,9 +635,10 @@
       // coins everyone picked up on this map
       this.coinLine = this.slots.map((s) => (this.coop ? `P${s.id + 1} ` : '') + '+' + (s.earned || 0)).join('   ') + ' coins';
       const items = [];
-      if (this.levelIndex + 1 < MG.LEVELS.length) items.push({ label: 'Next Map', act: () => this.goLevel(this.levelIndex + 1) });
+      const next = MG.Progress.next(this.levelIndex);
+      if (next >= 0) items.push({ label: 'Next Map', act: () => this.goLevel(next) });
+      items.push(this.shopItem());
       items.push({ label: 'World Map', act: () => this.toWorldMap() });
-      items.push({ label: this.net ? 'Shop Together' : 'Shop', act: () => this.openShop() });
       items.push({ label: 'Play Again', act: () => this.restart() });
       if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
       items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
@@ -649,14 +650,22 @@
       MG.Engine.setScene(new MG.WorldMapScene({ net: this.net, players: this.currentPlayers(), at: this.levelIndex }));
     }
 
-    // The platypus's shop. Afterwards: the next map (or this one again), same players.
+    // The platypus's shop. Afterwards: PLAY goes to the next map (or this one again), and WORLD MAP
+    // back to this map's stop on the map. After a bonus or the last map there's no next one: back to the map.
     openShop() {
-      const level = this.state === 'won' && this.levelIndex + 1 < MG.LEVELS.length ? this.levelIndex + 1 : this.levelIndex;
+      const next = this.state === 'won' ? MG.Progress.next(this.levelIndex) : this.levelIndex;
       const players = this.currentPlayers();
       MG.Engine.setScene(new MG.ShopScene({
-        net: this.net, level, players, gid: this.gid,
+        net: this.net, level: next >= 0 ? next : this.levelIndex, players, gid: this.gid, mapAt: this.levelIndex, toMap: next < 0,
         earned: this.slots.map((s) => [s.id, s.earned || 0]),
       }));
+    }
+    // The menu's shop line stands out (and says how many coins you have to spend).
+    shopItem(then) {
+      const local = this.slots.filter((s) => s.local);
+      const coins = local.length === 1 ? MG.Gear.coins(this.pidOf(local[0])) : null;
+      const label = this.net ? 'Shop Together' : then ? 'Shop, ' + then : 'Shop: spend your coins';
+      return { label, act: () => this.openShop(), accent: '#1f8a80', badge: coins !== null ? String(coins) : null };
     }
 
     pause() {
@@ -878,5 +887,12 @@
       return this.isCleared(L.after || MG.LEVELS[i - 1].id); // `after`: the map that opens it (branches)
     },
     best(id) { return (MG.Save.get('best', {}) || {})[id] || 0; },
+    // The map that comes next on the path after map i (for "Next Map"), or -1: the following map
+    // in the list, unless it starts a branch from somewhere else (a bonus world, a secret).
+    next(i) {
+      const L = MG.LEVELS[i], N = MG.LEVELS[i + 1];
+      if (!L || !N || (N.after && N.after !== L.id) || !this.isOpen(i + 1)) return -1;
+      return i + 1;
+    },
   };
 })();

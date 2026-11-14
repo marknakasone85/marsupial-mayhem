@@ -2160,6 +2160,16 @@
       const a = t * 1.5 + i * 1.26;
       A.star(ctx, 330 + Math.cos(a) * 34, 180 + Math.sin(a) * 18, 3 + Math.sin(t * 5 + i), '#f3d9ff');
     }
+    // the Top End: green floodplains with wetland pools, dark mangroves along the north coast and a few
+    // little magnetic termite mounds (its map stop sits at (466, 116))
+    softBlob(ctx, 468, 114, 58, 30, 81, 12); ctx.fillStyle = '#6fae5a'; ctx.fill();
+    for (const [px, py, rx, ry] of [[434, 125, 9, 4.2], [500, 130, 9, 4], [508, 112, 7, 3.2], [446, 137, 6, 2.6]]) A.oval(ctx, px, py, rx, ry, 0, '#74c6dc', 'rgba(30,70,90,0.55)', 1.2);
+    ctx.fillStyle = '#2b6a3e';
+    ctx.beginPath(); for (let i = 0; i < 14; i++) circ(ctx, 412 + i * 9 + hash(i + 900) * 4, 95 + Math.abs(i - 6.5) * 0.9 + hash(i + 910) * 3, 5 + hash(i + 920) * 2); ctx.fill();
+    ctx.fillStyle = '#3f8a50';
+    ctx.beginPath(); for (let i = 0; i < 14; i++) circ(ctx, 411 + i * 9 + hash(i + 900) * 4, 93 + Math.abs(i - 6.5) * 0.9 + hash(i + 910) * 3, 2.4); ctx.fill();
+    ctx.fillStyle = '#9a8c78'; ctx.strokeStyle = 'rgba(43,25,61,0.7)'; ctx.lineWidth = 1;
+    for (const [mx, mh] of [[418, 9], [425, 6.5], [431, 8]]) { ctx.beginPath(); ctx.moveTo(mx - 2.2, 112); ctx.lineTo(mx - 1.6, 112 - mh); ctx.lineTo(mx + 0.6, 112 - mh - 1); ctx.lineTo(mx + 2.2, 112); ctx.closePath(); ctx.fill(); ctx.stroke(); }
     ctx.restore();
     smooth(ctx, LAND);
     ctx.strokeStyle = '#f2dfa0'; ctx.lineWidth = 6; ctx.stroke();
@@ -2174,6 +2184,16 @@
     for (const [rx, ry] of [[880, 188], [893, 210], [904, 234], [900, 258], [906, 278]]) { ctx.moveTo(rx - 5 + Math.sin(t * 2 + ry) * 1.5, ry - 6); ctx.quadraticCurveTo(rx + 1, ry, rx - 2, ry + 7); }
     ctx.stroke();
     for (let i = 0; i < 12; i++) A.oval(ctx, 862 + hash(i + 800) * 34, 192 + i * 7.5, 2, 1.6, 0, ['#ff8fab', '#ffb703', '#c77dff'][i % 3]);
+    // a saltwater croc lurking off the Top End: just its eyes and snout above the water, and a ripple
+    const cb = Math.sin(t * 1.4) * 0.8;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5;
+    for (let j = 0; j < 2; j++) { const k = (t * 0.45 + j / 2) % 1; ctx.globalAlpha = 1 - k; ctx.beginPath(); ctx.ellipse(474, 52, 18 + k * 16, 4 + k * 3, 0, 0, TAU); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#4f7a3a'; ctx.strokeStyle = '#2b193d'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.ellipse(489, 52 + cb, 5, 3, 0, Math.PI, TAU); ctx.closePath(); ctx.fill(); ctx.stroke();
+    for (const ex of [462, 470]) { ctx.beginPath(); ctx.ellipse(ex, 53 + cb, 4.2, 5, 0, Math.PI, TAU); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    for (const ex of [462, 470]) { A.oval(ctx, ex + 0.6, 50.4 + cb, 2.2, 1.7, 0, '#d4e157'); A.oval(ctx, ex + 1.2, 50.4 + cb, 0.6, 1.5, 0, '#1b1430'); }
+    A.oval(ctx, 488, 50.6 + cb, 0.8, 0.6, 0, '#2b193d'); A.oval(ctx, 491, 50.6 + cb, 0.8, 0.6, 0, '#2b193d');
     // Tasmania-ish island with a snowy peak
     island(ctx, 690, 490, 38, 27, 61, '#5fa860');
     ctx.fillStyle = '#8a9aa8'; ctx.strokeStyle = '#2b193d'; ctx.lineWidth = 1.4;
@@ -2227,6 +2247,7 @@
     label(ctx, 'THE ALPS', 560, 458);
     label(ctx, 'TASMANIA', 690, 528);
     label(ctx, 'TIME RIFT', 330, 146);
+    label(ctx, 'TOP END', 390, 126);
     label(ctx, 'GRIN ISLE', 90, 362);
     // the bonus Isle of Man: a little green island with a hill, a stone wall, a cottage and sheep
     if (o && o.isleOfMan) {

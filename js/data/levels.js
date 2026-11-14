@@ -624,4 +624,37 @@ MG.LEVELS = [
     ],
     npcs: [{ kind: 'wallaby', x: 1250 }, { kind: 'wallaby', x: 2750 }, { kind: 'wallaby', x: 4200 }],
   },
+
+  // ======================================================== BONUS: THE TOP END (around Darwin), after the Rainforest
+  // Saltwater crocodiles in the harbour and on the mud, with feral pigs and cats. Real facts: salties live in
+  // rivers, swamps and the sea; they can push themselves up out of the water with their tails; the magnetic
+  // termite mounds near Darwin are flat slabs that all face the same way.
+  {
+    id: 'darwin-1', world: 'THE TOP END (BONUS)', name: 'DARWIN HARBOUR', theme: 'topend', music: 'coast', after: 'rainforest-3', storyBefore: 'topend',
+    tip: 'Salties live in rivers, swamps and the sea. Swim fast, and stay out of the water near the croc signs!',
+    length: 5400,
+    platforms: [{ x: 930, y: 352, w: 140 }, { x: 1110, y: 352, w: 130 }, { x: 2240, y: 352, w: 160 }, { x: 2470, y: 352, w: 150 }, { x: 2680, y: 268, w: 150 }, { x: 3300, y: 352, w: 170 }, { x: 4050, y: 362, w: 160 }],
+    grass: [{ x: 1500, w: 240 }, { x: 3050, w: 240 }],
+    water: [{ x: 880, w: 380, depth: 110 }, { x: 2440, w: 420, depth: 110 }],
+    enemies: [
+      { type: 'pig', x: 650 }, { type: 'crocLand', x: 1400 }, { type: 'cat', x: 1560 }, { type: 'pig', x: 1800 },
+      { type: 'crocLand', x: 2150 }, { type: 'pig', x: 2950 }, { type: 'cat', x: 3100 }, { type: 'crocLand', x: 3400 },
+      { type: 'pig', x: 3950 }, { type: 'cat', x: 4250 },
+    ],
+    crates: [{ x: 560, loot: 'grenades', label: 'GRIN ISLE' }, { x: 2050, loot: 'heart' }, { x: 3750, loot: 'armor' }, { x: 3950, loot: 'grenades' }],
+    pickups: [{ type: 'w:hose', x: 2750, y: 268 }],
+    gates: [{ x: 1950 }, { x: 3650 }],
+    boss: { type: 'snapjaw', x: 4800 },
+    decor: [
+      { type: 'wharf', x: 300, w: 300 }, { type: 'crocSign', x: 820, text: 'CROCS! KEEP CLEAR' }, { type: 'pandanus', x: 1480, h: 200 },
+      { type: 'termiteMound', x: 1740, h: 170 }, { type: 'termiteMound', x: 1830, h: 140 }, { type: 'bigMangrove', x: 2330, w: 240 },
+      { type: 'crocSign', x: 2920, text: 'NO SWIMMING!' }, { type: 'boatWreck', x: 3170 }, { type: 'termiteMound', x: 3560, h: 190 },
+      { type: 'pandanus', x: 4000, h: 220 }, { type: 'crocSign', x: 4330, text: 'BIG SALTIE AHEAD' }, { type: 'bigMangrove', x: 5200, w: 260 },
+    ],
+    coins: [
+      { x: 980, y: 330 }, { x: 1010, y: 330 }, { x: 1060, y: 410, v: 5 }, { x: 2290, y: 330 }, { x: 2600, y: 410, v: 5 },
+      { x: 2740, y: 244, v: 5 }, { x: 3350, y: 330 }, { x: 3390, y: 330 }, { x: 4100, y: 340 },
+    ],
+    npcs: [{ kind: 'croc', x: 1060 }, { kind: 'croc', x: 2640 }, { kind: 'quokka', x: 3500, gives: 'supply', line: 'Salties? Nah, they never bother us quokkas! Here, take this, champs!' }],
+  },
 ];

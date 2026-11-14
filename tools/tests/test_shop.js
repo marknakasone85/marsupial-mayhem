@@ -25,7 +25,9 @@ localStorage.clear();
 
 // ---- the wallet and the shop's rules
 var G = MG.Gear;
-check(wallet().coins === 0 && !wallet().weapon && G.ITEMS.length === 12, 'a fresh wallet: no coins, no weapon; the shop has 12 items (7 weapons, 3 armors, 2 upgrades)');
+check(wallet().coins === 0 && !wallet().weapon && G.ITEMS.length === 19, 'a fresh wallet: no coins, no weapon; the shop has 19 items (9 weapons, 4 armour sets, 6 upgrades)');
+var counts = MG.SHOP_CATS.map(function (c) { return G.ITEMS.filter(function (it) { return it.cat === c.id; }).length; }).join(',');
+check(counts === '9,4,2,2,2' && G.ITEMS.every(function (it) { return MG.SHOP_CATS.some(function (c) { return c.id === it.cat; }); }), 'every item is in a section: weapons 9, armour 4, health 2, grenades 2, extras 2');
 var sling = { kind: 'weapon', id: 'shanghai' }, snag = { kind: 'weapon', id: 'snag' };
 check(!G.offer('p1', sling).can && G.act('p1', sling) === null, 'can\'t buy without coins');
 G.addCoins('p1', 100);
@@ -164,7 +166,7 @@ press('Comma', 140);
 check(!bun2.alive && wallet('p2').coins === MG.COINS.rabbit && wallet('p1').coins === 0, '2 players: each has their own coins');
 check(sc.hudModel().players[1].coins === MG.COINS.rabbit, 'the HUD shows each player\'s coins');
 sc.camX = sc.L.length - MG.W; sc.slots.forEach(function (s, i) { s.f.x = sc.goalX + i * 30; }); frames(5);
-check(sc.state === 'won' && /\+0 .*P2 \+2/.test(sc.coinLine) && menuItem(sc.menu, 'Shop'), 'STAGE CLEAR shows the coins each player picked up, and a Shop button');
+check(sc.state === 'won' && /\+0 .*P2 \+2/.test(sc.coinLine) && menuItem(sc.menu, 'Shop: spend your coins'), 'STAGE CLEAR shows the coins each player picked up, and a Shop button');
 
 // ---- the shop screen
 localStorage.clear();
@@ -180,7 +182,7 @@ check(scene().shoppers[0].cur === MG.Gear.ITEMS.length, 'down from the bottom ro
 press('KeyF');
 check(sceneName() === 'Menu', '...which goes back to the title screen');
 sc = arena('bins', 500); sc.slots[0].f.x = sc.goalX; frames(70);
-menuItem(sc.menu, 'Shop').act(); frames(2);
+menuItem(sc.menu, 'Shop: spend your coins').act(); frames(2);
 check(sceneName() === 'Shop' && !scene().opts.fromMenu, 'after a map: Shop');
 press('Escape', 3);
 check(sceneName() === 'Campaign' && scene().player.weapon && scene().player.weapon.id === 'shanghai', 'PLAY (or Esc) starts the map with your new slingshot');
@@ -193,9 +195,10 @@ check(sceneName() === 'Campaign' && scene().slots[1].f.weapon.id === 'snag', 'P2
 // tapping
 MG.Engine.setScene(new MG.ShopScene({ fromMenu: true })); frames(2);
 G.addCoins('p1', 700);
-var cr2 = scene().cardRect(6);
+var magI = MG.Gear.ITEMS.findIndex(function (it) { return it.id === 'magpie'; });
+var cr2 = scene().cardRect(magI);
 MG.Input.pointer.x = cr2.x + 10; MG.Input.pointer.y = cr2.y + 10; MG.Input.pointer.pressed = true; frames(1);
-check(scene().shoppers[0].cur === 6, 'tap an item to look at it');
+check(scene().shoppers[0].cur === magI, 'tap an item to look at it');
 var br = scene().buyRect(0);
 MG.Input.pointer.x = br.x + 10; MG.Input.pointer.y = br.y + 10; MG.Input.pointer.pressed = true; frames(1);
 check(wallet().weapon === 'magpie', '...and tap the button under your coins to buy it');
@@ -203,12 +206,82 @@ check(wallet().weapon === 'magpie', '...and tap the button under your coins to b
 errs = [];
 [{ fromMenu: true }, { level: 0, players: [{ id: 0, cid: 'boomer', local: 'P1' }, { id: 1, cid: 'zip', local: 'P2' }] }].forEach(function (opts) {
   var s = new MG.ShopScene(opts);
-  for (var i = 0; i <= MG.Gear.ITEMS.length; i++) {
-    s.shoppers.forEach(function (sh) { sh.cur = i; });
+  for (var i = -1; i <= MG.Gear.ITEMS.length + 1; i++) {
+    s.shoppers.forEach(function (sh) { sh.cur = i; sh.tab = i >= 0 && i < MG.Gear.ITEMS.length ? MG.SHOP_CATS.findIndex(function (c) { return c.id === MG.Gear.ITEMS[i].cat; }) : 2; });
     try { s.draw(MG.Engine.ctx); } catch (e) { errs.push(i + ': ' + e); }
   }
 });
-check(!errs.length, 'every shop card and cursor draws' + (errs.length ? ' ' + errs[0] : ''));
+check(!errs.length, 'every shop section, card, cursor and button draws' + (errs.length ? ' ' + errs[0] : ''));
+
+// ---- the sections (tabs) and what each is for
+localStorage.clear();
+MG.Engine.setScene(new MG.ShopScene({ fromMenu: true })); frames(2);
+var shop = scene(), me = shop.shoppers[0], C = MG.ShopScene.CURSOR;
+check(shop.shownCat() === 0 && me.cur === 0, 'the shop opens on WEAPONS');
+press('KeyW');
+check(me.cur === C.TABS, 'up from the top row: the tabs');
+press('KeyD'); press('KeyS');
+check(shop.shownCat() === 1 && MG.Gear.ITEMS[me.cur].id === 'bark', '...right to ARMOUR, down to its first item');
+press('KeyD'); press('KeyD'); press('KeyD'); press('KeyD');
+check(shop.shownCat() === 2 && MG.Gear.ITEMS[me.cur].id === 'heart', 'right past the last armour: into HEALTH');
+var notes = MG.SHOP_CATS.map(function (c, i) { return shop.catNote(i, me); });
+check(notes.every(function (n) { return n.length > 30; }) && /SHOOT/.test(notes[0]) && /blue bar/.test(notes[1]) && /GRENADE/.test(notes[3]), 'each section says what its gear is for');
+var tr = shop.tabRect(4);
+MG.Input.pointer.x = tr.x + 10; MG.Input.pointer.y = tr.y + 10; MG.Input.pointer.pressed = true; frames(1);
+check(shop.shownCat() === 4 && MG.Gear.ITEMS[me.cur].cat === 'extras', 'tap a tab to open that section');
+
+// ---- selling back for half price
+localStorage.clear();
+G.addCoins('p1', 100);
+MG.Engine.setScene(new MG.ShopScene({ fromMenu: true })); frames(2);
+shop = scene(); me = shop.shoppers[0];
+press('KeyF');
+check(wallet().weapon === 'shanghai' && wallet().coins === 60 && G.sellValue('p1', sling) === 20, 'bought the slingshot (40): it sells back for 20');
+press('KeyX');
+check(wallet().weapons.shanghai && me.sellArm === me.cur, 'X once asks "SURE?" (nothing sold yet)');
+press('KeyX');
+check(!wallet().weapons.shanghai && !wallet().weapon && wallet().coins === 80 && /SOLD/.test(me.msg), '...X again sells it: +20 coins, the weapon is gone');
+press('KeyX');
+check(/Nothing/.test(me.msg), 'nothing left to sell');
+setWallet('p1', { coins: 0, weapons: { bowler: 3 }, weapon: 'bowler', armors: { iron: 1 }, armor: 'iron', heart: 2 });
+check(G.sellValue('p1', { kind: 'weapon', id: 'bowler' }) === (200 + 100 + 200) / 2, 'a level-3 weapon sells for half of everything paid (250)');
+G.sell('p1', { kind: 'armor', id: 'iron' });
+check(!wallet().armors.iron && !wallet().armor && wallet().coins === 190, 'armour sells for half (190) and comes off');
+G.sell('p1', { kind: 'upgrade', id: 'heart' });
+check(wallet().heart === 1 && wallet().coins === 190 + 110, 'upgrades sell back one level at a time (half of 220)');
+check(G.sell('p1', { kind: 'armor', id: 'bark' }) === null, 'you can\'t sell what you don\'t have');
+var sr = null; me.cur = MG.Gear.ITEMS.findIndex(function (it) { return it.id === 'bowler'; }); me.tab = 0; sr = shop.sellRect(0, me);
+MG.Input.pointer.x = sr.x + 5; MG.Input.pointer.y = sr.y + 5; MG.Input.pointer.pressed = true; frames(1);
+MG.Input.pointer.x = sr.x + 5; MG.Input.pointer.y = sr.y + 5; MG.Input.pointer.pressed = true; frames(1);
+check(!wallet().weapons.bowler, 'tap SELL twice to sell on a phone');
+
+// ---- the new items do what they say
+localStorage.clear();
+sc = arena('boomer', 500); p = sc.player; p.equip('thongs', 1);
+press('KeyR', 1);
+check(sc.projectiles.filter(function (q) { return q.kind === 'thong'; }).length === 3, 'the THONG FLINGER throws three thongs at once');
+sc = arena('boomer', 500); p = sc.player; p.equip('hose', 1);
+var wet = dummy(sc, 'pig', 650, 5000); var wx = wet.x;
+wet.think = function () {};
+hold('KeyR', 40);
+check(wet.x > wx + 60 && wet.maxHp - wet.hp < 40, 'the GARDEN HOSE shoves pests back without hurting them much (' + Math.round(wet.x - wx) + ' px)');
+setWallet('p1', { roobar: 0, armors: { roobar: 1 }, armor: 'roobar', tonic: 2, bang: 2, snacks: 2, magnet: 1 });
+sc = arena('boomer', 500); p = sc.player;
+check(p.armorMax === 170 && p.regen === 3 && p.blastK === 1.5 && Math.abs(p.joeyCool - 0.6) < 1e-9 && p.coinReach > 2, 'ROO-BAR ARMOUR, GUM-LEAF TONIC, BIGGER BANG, JOEY SNACKS and COIN MAGNET reach the fighter');
+p.hp = 50; frames(60 * 3);
+check(p.hp === 50, 'the tonic waits until you haven\'t been hit for 4 seconds...');
+frames(60 * 3);
+check(p.hp > 52, '...then heals you slowly (' + p.hp.toFixed(1) + ')');
+var far = dummy(sc, 'pig', p.x + 175, 5000);
+var gr = new MG.Grenade(p.x + 20, MG.GROUND_Y - 10, 0, 0, p); gr.owner = p; gr.explode(sc);
+check(far.hp < far.maxHp, 'BIGGER BANG: the blast reaches further (a pig ' + 175 + ' px away is hit)');
+sc.coins.push(new MG.Coin(p.x + 300, MG.GROUND_Y - 20, 1, null, true)); frames(90);
+check(sc.coins.filter(function (c) { return !c.taken; }).length === 0 || G.coins('p1') > 0, 'COIN MAGNET: a coin lying 300 px away flies over');
+if (p.joey) { p.joey.job = 'rush'; p.joey.goHome(); }
+check(p.joey && Math.abs(p.joey.cool - 8 * 0.6) < 1e-9, 'JOEY SNACKS: the joey is ready again sooner (Joey Rush 8 s -> ' + (p.joey ? p.joey.cool.toFixed(1) : '?') + ' s)');
+check(MG.coinsFor({ type: 'crocLand', d: MG.ENEMY_TYPES.crocLand }) === 10 && MG.coinsFor({ type: 'snapjaw', isBoss: true, d: MG.ENEMY_TYPES.snapjaw }) === 60 && MG.coinsFor({ type: 'rabbit', d: MG.ENEMY_TYPES.rabbit }) === 2, 'tougher pests and world bosses drop more coins (saltie 10, Old Snapjaw 60)');
+var lo2 = G.loadout('p1'), cl2 = G.clean(Object.assign({}, lo2, { rg: 9, bb: -1, js: '2', mg: 5 }));
+check(lo2.rg === 2 && lo2.bb === 2 && lo2.js === 2 && lo2.mg === 1 && cl2.rg === 2 && cl2.bb === 0 && cl2.js === 2 && cl2.mg === 1, 'the new upgrades travel in the loadout (and a Wi-Fi friend\'s are checked)');
 
 // ---- duels stay fair
 localStorage.clear();

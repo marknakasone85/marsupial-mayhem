@@ -10,6 +10,7 @@ MG.WORLDS = [
   { id: 'rift', name: 'TIME RIFT (BONUS)', levels: ['rift-1', 'rift-2', 'rift-3'], story: 'rift', bonus: true },
   { id: 'grinisle', name: 'GRIN ISLE', levels: ['grin-1', 'grin-2', 'grin-3', 'grin-4'] },
   { id: 'isleofman', name: 'SECRET BONUS', levels: ['iom-1'], bonus: true },
+  { id: 'topend', name: 'THE TOP END (BONUS)', levels: ['darwin-1'], bonus: true }, // around Darwin, after the Rainforest
 ];
 MG.WORLDS_SOON = []; // every world is open now (Milestone 7)
 // Where each map's stop sits on the 960x540 world map, and the platypus's shop.
@@ -23,6 +24,7 @@ MG.MAP_STOPS = {
   'rift-1': [272, 206], 'rift-2': [322, 166], 'rift-3': [374, 192],
   'grin-1': [56, 302], 'grin-2': [94, 272], 'grin-3': [130, 304], 'grin-4': [92, 336],
   'iom-1': [150, 95],
+  'darwin-1': [466, 116],
 };
 
 // Story panels: a title, a few lines, and who's in the picture (cast: char, quokka, platypus, pest, ...).
@@ -86,6 +88,12 @@ MG.STORY = {
   lair: [
     { theme: 'lair', title: 'THE REPTILIANS\' LAIR', lines: ['Under Grin Isle: a cave full of eggs, crystals and very cross reptiles.', 'On a stone throne waits their leader: THE CROC EMPEROR.', 'Real fact: the saltwater crocodile is the largest living reptile.'],
       cast: [{ who: 'pest', type: 'crocLand', x: 480, emperor: true, s: 0.9 }] },
+  ],
+  topend: [
+    { theme: 'topend', title: 'BONUS: THE TOP END', lines: ['Up north around Darwin, the saltwater crocodiles have gone very grumpy.', 'They\'ve teamed up with feral pigs and cats and taken over the harbour!', 'Real fact: salties live in rivers, swamps and the sea, and can swim a long way along the coast.'],
+      cast: [{ who: 'pest', type: 'crocLand', x: 250, s: 0.7 }, { who: 'pest', type: 'pig', x: 470 }, { who: 'char', cid: 'paddles', x: 700, f: -1 }] },
+    { theme: 'topend', title: 'THE SMILE SQUAD SAYS...', lines: ['"Salties? Nah, they never bother us quokkas!"', '"Off you go, champs. Mind the snappy end!"'],
+      cast: [{ who: 'quokka', shirt: true, x: 360, s: 1.5 }, { who: 'char', cid: 'boomer', x: 620, f: -1 }] },
   ],
   isleofman: [
     { theme: 'isleofman', title: 'BENNY\'S SECRET ISLAND', lines: ['"Psst! I know a place far, far away where my cousins live wild."', 'Real fact: a small colony of feral red-necked wallabies lives on the Isle of Man.', 'A bonus map full of coins!'],

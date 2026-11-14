@@ -915,7 +915,9 @@
   // About 50 px tall and 170 long (60 tall with the crown). o.chomp 0..1 (jaws open at 0.5, snap shut at 1), o.roll 0..1 (a death
   // roll: one full spin round its long axis, belly up halfway), o.tail 0..1 (the tail lifts, then sweeps
   // down and out behind, along the ground). o.emperor: the Croc Emperor (scale ~2.4): crown, royal cape
-  // with ermine trim, a gold tooth and a bigger, meaner grin.
+  // with ermine trim, a gold tooth and a bigger, meaner grin. o.captain: the Top End boss (scale ~2): a
+  // white tour-boat captain's cap with a black peak and a gold anchor badge (he "found" it after eating a
+  // tour boat's lunch), and a couple of stitched-up scars on his snout.
   const CROC = { hide: '#5d7a3a', dark: '#3e5426', belly: '#d8d49a', scute: '#4a6630' };
   A.crocLand = function (ctx, x, y, o) {
     o = o || {};
@@ -1027,6 +1029,16 @@
     if (!o.flash) {
       ctx.fillStyle = c.dark;
       ctx.beginPath(); circ(ctx, 24, -9, 1.4); circ(ctx, 30, -8, 1.2); circ(ctx, 35, -7.5, 1.2); circ(ctx, 2, -10, 1.6); circ(ctx, 12, -11, 1.3); ctx.fill();
+      if (o.captain) {
+        // two old scars on the snout, stitched up (comically badly)
+        ctx.strokeStyle = '#e9b4a4'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(25.5, -10.2); ctx.lineTo(31.5, -3); ctx.moveTo(36.5, -9.4); ctx.quadraticCurveTo(39, -7, 42, -7.2); ctx.stroke();
+        ctx.strokeStyle = LINE; ctx.lineWidth = 0.75;
+        ctx.beginPath();
+        for (const k of [0.25, 0.5, 0.75]) { const sx = lerp(25.5, 31.5, k), sy = lerp(-10.2, -3, k); ctx.moveTo(sx - 1.6, sy + 1.2); ctx.lineTo(sx + 1.6, sy - 1.2); }
+        ctx.moveTo(38, -9.6); ctx.lineTo(37.6, -6.6); ctx.moveTo(40.2, -8.6); ctx.lineTo(40.4, -5.8);
+        ctx.stroke();
+      }
     }
     // the grin: the jaw line curls up at the back (bigger and meaner for the Emperor)
     ctx.strokeStyle = LINE; ctx.lineWidth = 1.6;
@@ -1051,6 +1063,30 @@
       if (!o.flash) {
         A.oval(ctx, -1, -2, 1.7, 1.7, 0, '#e63946'); A.oval(ctx, -5.5, -1.6, 1.1, 1.1, 0, '#3a86ff'); A.oval(ctx, 3.6, -1.6, 1.1, 1.1, 0, '#52b788');
         ctx.fillStyle = '#ffffff'; ctx.beginPath(); circ(ctx, -1, -12, 1.1); circ(ctx, -9.5, -9, 0.9); circ(ctx, 7.5, -9, 0.9); ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (o.captain) {
+      // the captain's cap, pulled down over his brow at a jaunty angle (its peak points along the snout)
+      ctx.save(); ctx.translate(-3, -19); ctx.rotate(-0.12);
+      ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
+      ctx.fillStyle = f('#fbfbf6');
+      ctx.beginPath(); ctx.moveTo(-9.5, -2.5); ctx.quadraticCurveTo(-13, -10.5, -3, -12.2); ctx.quadraticCurveTo(9, -13.4, 11.5, -6.5); ctx.quadraticCurveTo(11, -4, 7.5, -2.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (!o.flash) { ctx.fillStyle = 'rgba(150,160,175,0.35)'; ctx.beginPath(); ctx.moveTo(-9, -3.5); ctx.quadraticCurveTo(0, -6.5, 10.5, -5); ctx.quadraticCurveTo(10, -3.2, 7.5, -2.8); ctx.lineTo(-9, -2.8); ctx.closePath(); ctx.fill(); }
+      ctx.fillStyle = f('#1d2433');
+      ctx.beginPath(); ctx.roundRect(-9.5, -3.6, 17.5, 5.6, 1.2); ctx.fill(); ctx.stroke();
+      // the black peak, with a gold braid along its top
+      ctx.fillStyle = f('#141418');
+      ctx.beginPath(); ctx.moveTo(4, -0.6); ctx.quadraticCurveTo(11, -1.6, 16.5, 1.6); ctx.quadraticCurveTo(11, 3, 3.5, 1.6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (!o.flash) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(6.5, -0.2); ctx.quadraticCurveTo(11, -0.6, 14.5, 1); ctx.stroke();
+        ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(-8.6, -0.8); ctx.lineTo(7.2, -0.8); ctx.stroke();
+      }
+      // the gold anchor badge on the front
+      A.oval(ctx, 2.6, -7.2, 3, 2.7, 0, f('#ffd23f'), '#8a5a00', 0.9);
+      if (!o.flash) {
+        ctx.strokeStyle = '#6a4400'; ctx.lineWidth = 0.7;
+        ctx.beginPath(); ctx.moveTo(2.6, -9.2); ctx.lineTo(2.6, -5.4); ctx.moveTo(1.3, -8.4); ctx.lineTo(3.9, -8.4); ctx.moveTo(1, -6.6); ctx.quadraticCurveTo(2.6, -4.6, 4.2, -6.6); ctx.stroke();
       }
       ctx.restore();
     }
