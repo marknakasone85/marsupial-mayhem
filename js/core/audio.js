@@ -293,6 +293,25 @@
         bass: [43, null, 50, 43, null, 47, 50, null, 48, null, 55, 48, null, 50, 52, null],
         lead: [71, null, 74, 79, 78, null, 74, null, 76, 74, 72, null, 71, null, 67, null],
       },
+      // The Rainforest: mellow and mysterious in A minor, rolling marimba-style broken chords
+      // with high "bird call" chirps.
+      rainforest: {
+        bpm: 124,
+        bass: [45, null, null, 52, null, null, 45, null, 41, null, null, 48, null, 43, null, 50],
+        lead: [69, 72, 76, null, 74, 72, 69, 88, 65, 69, 72, null, 71, 67, 86, null],
+      },
+      // Cane Fields & Coast: bouncy and sunny in C major, a syncopated steel-drum calypso.
+      coast: {
+        bpm: 136,
+        bass: [36, null, 43, 36, null, 43, 48, null, 41, null, 48, 41, null, 43, 47, null],
+        lead: [76, null, 79, 76, null, 72, 74, 76, 77, null, 81, 77, null, 74, 79, null],
+      },
+      // The world map: a light, adventurous march in F major (a short loop).
+      map: {
+        bpm: 128,
+        bass: [41, null, 48, null, 46, null, 53, null, 43, null, 50, null, 48, null, 52, null],
+        lead: [65, 69, 72, null, 70, 74, 77, null, 74, 72, 70, null, 72, null, 69, null],
+      },
     },
 
     playMusic(name) {

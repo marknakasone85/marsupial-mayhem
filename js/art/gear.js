@@ -184,6 +184,21 @@
       ctx.restore();
     },
   };
+  // the tree-kangaroo's fruit (drawn in worlds.js)
+  SHOT.fruit = function (ctx, x, y, t) { if (A.fruit) A.fruit(ctx, x, y, t); else A.oval(ctx, x, y, 6, 6, 0, '#7b2cbf', LINE, 1.5); };
+  // Big Tom's claw swipe: three white slashes flying forward
+  SHOT.claw = function (ctx, x, y, t, dir) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const oy = -18 + i * 18;
+      ctx.strokeStyle = 'rgba(255,77,109,0.5)'; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.moveTo(-24, oy - 10); ctx.quadraticCurveTo(4, oy - 4, 18, oy + 12); ctx.stroke();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.moveTo(-24, oy - 10); ctx.quadraticCurveTo(4, oy - 4, 18, oy + 12); ctx.stroke();
+    }
+    ctx.restore();
+  };
   const baseProjectile = A.projectile;
   A.projectile = function (ctx, kind, x, y, t, dir, p) {
     if (has(SHOT, kind)) SHOT[kind](ctx, x, y, t, dir, p);

@@ -25,7 +25,7 @@
 
   MG.CPU_NAMES = ['JOEY (easy)', 'CHAMPION (medium)', 'LEGEND (hard)'];
 
-  const P1 = { left: ['KeyA', 'Pad0Left'], right: ['KeyD', 'Pad0Right'], up: ['KeyW', 'Pad0Up'], down: ['KeyS', 'Pad0Down'], ok: ['KeyF', 'Space', 'Pad0A'], back: ['KeyG', 'Pad0B'] };
+  const P1 = { left: ['KeyA', 'Pad0Left'], right: ['KeyD', 'Pad0Right'], up: ['KeyW', 'Pad0Up'], down: ['KeyS', 'Pad0Down'], ok: ['KeyF', 'Space', 'Pad0A'], back: ['KeyE', 'Pad0B'] };
   const P2 = { left: ['ArrowLeft', 'Pad1Left'], right: ['ArrowRight', 'Pad1Right'], up: ['ArrowUp', 'Pad1Up'], down: ['ArrowDown', 'Pad1Down'], ok: ['Comma', 'Enter', 'Numpad1', 'Pad1A'], back: ['Period', 'Pad1B'] };
 
   UI.buildChip = function (ctx, build, x, y) {
@@ -195,13 +195,8 @@
         const players = this.mode === 'coop'
           ? [{ id: 0, cid: this.pickId(0), local: 'P1' }, { id: 1, cid: this.pickId(1), local: 'P2' }]
           : [{ id: 0, cid: this.pickId(0), local: 'SOLO' }];
-        if (MG.LEVELS.length < 2) { MG.Engine.setScene(new MG.CampaignScene({ level: 0, players })); return; }
-        const best = MG.Save.get('best', {});
-        this.phase = 'level';
-        this.menu = new MG.MenuList(MG.LEVELS.map((lv, i) => ({
-          label: `${i + 1}. ${lv.name}${best[lv.id] ? '  ✓' : ''}`,
-          act: () => MG.Engine.setScene(new MG.CampaignScene({ level: i, players })),
-        })), W / 2, 150, { w: 400, h: 40, gap: 8 });
+        // the champions set off on the Marsupial World map (story panels play there)
+        MG.Engine.setScene(new MG.WorldMapScene({ players }));
         return;
       }
       if (this.mode === 'duelCpu' && this.phase !== 'cpuLevel') {

@@ -61,7 +61,7 @@ Details agreed with the owner on 13 Nov 2026 (`DESIGN.md`, "The signature mechan
 - Follow Zombie Survival's weapons, grenades, armor and shop (`TECH_PLAN.md`), including everyone shopping together with their own coins on Wi-Fi.
 - **Done when:** buying, upgrading and every weapon are tested, duels stay fair, and the owner likes it.
 
-## Milestone 6: campaign, worlds 1–3
+## Milestone 6: campaign, worlds 1–3 (built 13 Nov 2026, waiting for the owner to try it)
 
 - **The Marsupial World map:** level stops along paths, your champion walking between them, ✓ and best scores, the shop, and story panels on the map.
 - Outback (4 maps), Rainforest (3) and Cane Fields & Coast (4), with water zones.

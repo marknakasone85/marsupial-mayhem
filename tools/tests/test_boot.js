@@ -18,15 +18,19 @@ check(m.page === 'controls', 'CONTROLS opens the controls page');
 tap('Escape'); frames(2);
 check(!m.page, 'a key press closes the controls page');
 
-// PLAY starts Boomer's first map, 2 PLAYERS starts it for two on one keyboard
+// PLAY: pick Boomer, walk the Marsupial World map, start the first map; 2 PLAYERS: the same for two
+MG.Story.markSeen('opening'); // (the opening story is tested in test_worlds.js)
 menuItem(m.menu, 'PLAY').act(); frames(10);
 check(sceneName() === 'Select' && scene().mode === 'campaign', 'PLAY opens the character select');
 tap('Enter'); frames(10);
-check(sceneName() === 'Campaign' && scene().slots.length === 1 && scene().player.def.id === 'boomer', '...Enter picks Boomer and starts the first map');
+check(scene() instanceof MG.WorldMapScene && scene().players[0].cid === 'boomer', '...Enter picks Boomer and opens the Marsupial World map');
+tap('Enter'); frames(5);
+check(sceneName() === 'Campaign' && scene().slots.length === 1 && scene().player.def.id === 'boomer', '...and Enter there starts the first map');
 menuItem(new MG.MenuScene().menu, '2 PLAYERS').act(); frames(10);
 tap('KeyD'); tap('KeyF'); tap('ArrowLeft'); tap('Comma'); frames(5);
+tap('Enter'); frames(5);
 check(sceneName() === 'Campaign' && scene().slots.map(function (s) { return s.local + ':' + s.cid; }).join() === 'P1:stinker,P2:paddles',
-  '2 PLAYERS: each player picks (P1 Stinker, P2 Paddles) and the map starts');
+  '2 PLAYERS: each player picks (P1 Stinker, P2 Paddles), then the map starts');
 menuItem(new MG.MenuScene().menu, 'TOURNAMENT DUEL').act(); frames(2);
 check(sceneName() === 'DuelMenu', 'TOURNAMENT DUEL opens the duel menu');
 MG.Engine.setScene(m); frames(2);

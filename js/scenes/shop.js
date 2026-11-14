@@ -108,6 +108,7 @@
           scene.onNet(m);
           return;
         }
+        if (m.t === 'wmap') { const map = new MG.WorldMapScene({ guest: true }); MG.Engine.setScene(map); map.onNet(m); return; }
         if (m.t === 'shop') {
           this.view = m;
           const mine = (m.pl || []).find((p) => p.id === MG.Net.id);
@@ -216,6 +217,7 @@
         return;
       }
       if (this.opts.fromMenu) { MG.Engine.setScene(new MG.MenuScene()); return; }
+      if (this.opts.toMap) { MG.Engine.setScene(new MG.WorldMapScene({ net: this.net, players: this.players, at: 'shop' })); if (this.net) MG.Engine.scene.broadcast(); return; }
       if (this.net) MG.Net.send({ t: 'start', mode: 'campaign', level: this.level }, 'all', true);
       MG.Engine.setScene(new MG.CampaignScene({ level: this.level, net: this.net, players: this.players }));
     }
@@ -364,7 +366,7 @@
       const r = PLAY_RECT;
       const on = this.shoppers.some((s) => s.cur === PLAY);
       const bob = on ? Math.sin(this.t * 6) * 3 : 0;
-      let label = this.opts.fromMenu ? 'BACK' : 'PLAY ▶';
+      let label = this.opts.fromMenu ? 'BACK' : this.opts.toMap ? 'MAP ▶' : 'PLAY ▶';
       let sub = '';
       if (this.guest) { label = this.ready ? 'READY!' : 'I\'M READY'; sub = 'The host starts the map'; }
       else if (this.net) {

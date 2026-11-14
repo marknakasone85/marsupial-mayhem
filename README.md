@@ -4,7 +4,7 @@
 
 A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possums and friends battle it out in the Great Pouch Tournament, until uninvited pests crash the party.
 
-**Early days:** 12 marsupials and the first map are playable. Pick your marsupial, then box, kick, bite and grenade-punt your way along the Tournament Trail past rabbits, feral cats and feral pigs to a showdown with Big Buck. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Pests drop coins: spend them at the platypus's shop on silly weapons, armor and upgrades. Or settle who's the champion in a **Tournament Duel**. More maps are on the way.
+**Now playable:** 12 marsupials and 3 worlds of the **Marsupial World** map (11 maps). Pick your marsupial and walk the map from the Outback through the Rainforest to the Cane Fields & Coast. Box, kick, bite and grenade-punt rabbits, feral cats, feral pigs and cane toads, dodge emu stampedes, cassowaries and crocodiles, swim, and take on the Warren Warlord, Big Tom and the Cane Toad King. The quokkas' cheerful Smile Squad helps out along the way. Every marsupial brings its joey along, and its pouch saves a spare power-up for later. Pests drop coins: spend them at the platypus's shop on silly weapons, armor and upgrades. Or settle who's the champion in a **Tournament Duel**. More worlds are on the way.
 
 ## The marsupials
 
@@ -48,9 +48,10 @@ Knocked-out pests and smashed crates drop **coins**, and they fly straight to wh
 
 ## Ways to play
 
-- **PLAY:** pick a marsupial and play the map. **2 PLAYERS:** two players on one keyboard, each picking their own.
+- **PLAY:** pick a marsupial, then walk the Marsupial World map (arrows or A/D) and press Enter at a stop. Clearing a map opens the next one; cleared maps show a tick and your best score, and you can replay any of them. The platypus's shop is a stop on the map too. **2 PLAYERS:** two players on one keyboard, each picking their own.
+- **Worlds:** The Outback (4 maps), The Rainforest (3) and Cane Fields & Coast (4), each ending with a big boss. In the water, press jump to swim up (Paddles, the water opossum, swims fastest).
 - **TOURNAMENT DUEL:** you against the CPU (JOEY, CHAMPION or LEGEND) or 2 players on one keyboard. First to win 2 rounds. Fair fights: everyone starts equal, and grenades, the gatling and power-ups only come from supply drops.
-- **WI-FI:** co-op on the map, or a battle for 2-4 players with CPU fighters to fill the gaps (see below).
+- **WI-FI:** co-op through the maps (the host picks the map, and everyone sees the world map), or a battle for 2-4 players with CPU fighters to fill the gaps (see below).
 
 ## Play it
 
@@ -84,10 +85,10 @@ Good to know:
 | Jump | W | ↑ | A |
 | Block (hold) | S | ↓ | Down / LB |
 | Attack | F | , (comma) | X |
-| Big attack | G | . (period) | Y |
+| Big attack | E | . (period) | Y |
 | Special | H | / (slash) | B |
 | Shoot (hold) | R | ; (semicolon) | RB |
-| Grenade | E | ' (quote) | LT |
+| Grenade | G | ' (quote) | LT |
 | Joey (send it out) | Q | [ | Back / View |
 | Pouch (use the saved item) | T | ] | RT |
 | Pause | Esc / P | Esc / P | Start |

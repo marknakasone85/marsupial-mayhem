@@ -42,7 +42,7 @@ check(hp0 - d.hp > 20 * P, 'mashing attack lands a quick jab-jab-hook (' + (hp0 
 // ---- tail kick: big damage and knockback
 sc = arena(600); p = sc.player; p.facing = 1;
 d = dummy(sc, 'pig', 680, 500);
-hp0 = d.hp; key('KeyG', true); frames(1); key('KeyG', false);
+hp0 = d.hp; key('KeyE', true); frames(1); key('KeyE', false);
 var maxVx = 0; for (var i = 0; i < 30; i++) { frames(1); maxVx = Math.max(maxVx, Math.abs(d.vx)); }
 check(Math.abs((hp0 - d.hp) - 16 * P) < 0.5, 'tail kick hits for ' + (hp0 - d.hp).toFixed(1));
 check(maxVx > 400, 'tail kick sends a pig flying (speed ' + Math.round(maxVx) + ')');
@@ -84,32 +84,32 @@ check(MG.GROUND_Y - top < bigJump - 60, 'tapping jump: a smaller hop (' + Math.r
 // ---- the kick grenade: pull the pin and drop it, then kick it
 sc = arena(600); p = sc.player; p.facing = 1;
 check(p.grenades === MG.START_GRENADES, 'Boomer starts with ' + MG.START_GRENADES + ' grenades');
-press('KeyE', 25);
-check(p.grenades === MG.START_GRENADES - 1 && sc.grenades.length === 1, 'E pulls the pin and drops a grenade');
+press('KeyG', 25);
+check(p.grenades === MG.START_GRENADES - 1 && sc.grenades.length === 1, 'G pulls the pin and drops a grenade');
 var g = sc.grenades[0], gx0 = g.x;
 check(Math.abs(g.x - p.x) < 70 && g.fuse > 2, 'it lands at Boomer\'s feet with a few seconds on the fuse');
-press('KeyG', 5);
+press('KeyE', 5);
 check(g.vx > 900, 'big attack kicks it long (kangaroos kick furthest: speed ' + Math.round(g.vx) + ')');
 for (i = 0; i < 200 && !g.dead; i++) frames(1);
 check(g.dead && g.x - gx0 > 300, 'the kicked grenade flies ' + Math.round(g.x - gx0) + ' px and explodes');
 // a kicked grenade that hits a pest in the air goes off right away and knocks it out
 sc = arena(600); p = sc.player; p.facing = 1;
 var target = dummy(sc, 'pig', 820);
-press('KeyE', 25); g = sc.grenades[0]; press('KeyF', 1);
+press('KeyG', 25); g = sc.grenades[0]; press('KeyF', 1);
 for (i = 0; i < 60 && !g.dead; i++) frames(1);
 check(g.dead && g.fuse > 1 && target.hp < target.maxHp, 'a kicked grenade blows up on the pest it hits');
 // the blast never hurts players
 sc = arena(600); p = sc.player; p.facing = 1;
 var hpBefore = p.hp;
-press('KeyE', 25);
+press('KeyG', 25);
 for (i = 0; i < 260 && sc.grenades.length; i++) frames(1);
 check(sc.grenades.length === 0 && p.hp === hpBefore, 'standing on your own grenade only bounces you');
-p.grenades = 0; press('KeyE', 25);
-check(sc.grenades.length === 0, 'no grenades left: E does nothing (and says so)');
+p.grenades = 0; press('KeyG', 25);
+check(sc.grenades.length === 0, 'no grenades left: G does nothing (and says so)');
 // any player can kick any grenade, and crates break in the blast
 sc = arena(600); p = sc.player; p.facing = 1;
 var crate = new MG.Crate(1010, 'grenades'); sc.crates.push(crate);
-press('KeyE', 25); press('KeyF', 1);
+press('KeyG', 25); press('KeyF', 1);
 for (i = 0; i < 240 && sc.grenades.length; i++) frames(1);
 check(!crate.alive && sc.pickups.some(function (k) { return k.type === 'grenades'; }), 'grenade blasts smash crates (which drop more grenades)');
 

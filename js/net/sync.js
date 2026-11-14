@@ -30,9 +30,9 @@
       return a;
     },
     PROJ_CODE: { gumnut: 'g', dust: 'd', cube: 'c', stink: 's', wave: 'w', wallaby: 'y', bin: 'b', tongue: 't',
-      pebble: 'p', snag: 'n', cricket: 'k', flame: 'f', dropbear: 'r', maul: 'm', magpie: 'q' },
+      pebble: 'p', snag: 'n', cricket: 'k', flame: 'f', dropbear: 'r', maul: 'm', magpie: 'q', claw: 'x', fruit: 'u' },
     PROJ_KIND: { g: 'gumnut', d: 'dust', c: 'cube', s: 'stink', w: 'wave', y: 'wallaby', b: 'bin', t: 'tongue',
-      p: 'pebble', n: 'snag', k: 'cricket', f: 'flame', r: 'dropbear', m: 'maul', q: 'magpie' },
+      p: 'pebble', n: 'snag', k: 'cricket', f: 'flame', r: 'dropbear', m: 'maul', q: 'magpie', x: 'claw', u: 'fruit' },
     capturing: false,
     buffer: { fx: [], au: [] },
     seq: 0,
@@ -121,6 +121,7 @@
         pr: scene.projectiles.map(S.projState),
         gn: scene.grenades.map((g) => [r1(g.x), r1(g.y), r2(g.spin), r2(g.fuse), r2(g.t)]),
         cs: scene.coins.slice(0, 30).map((c) => [Math.round(c.x), Math.round(c.y), c.v, c.lying && !c.target ? 1 : 0]),
+        np: scene.npcs.filter((n) => n.kind !== 'emus' && !n.hidden).map((n) => n.snap()),
         fx: b.fx, au: b.au,
       };
     },

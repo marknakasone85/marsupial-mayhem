@@ -35,7 +35,7 @@ MG.CHARACTERS.forEach(function (c) {
   var sc = arena(c.id), p = sc.player, d = dummy(sc, 'pig', 600 + 50, 800);
   var hp0 = d.hp; press('KeyF', 25); var basic = hp0 - d.hp;
   d.x = 650; d.vx = 0; frames(30);
-  hp0 = d.hp; press('KeyG', 45); var big = hp0 - d.hp;
+  hp0 = d.hp; press('KeyE', 45); var big = hp0 - d.hp;
   var err = null;
   try {
     ['idle', 'walk', 'jump', 'block', 'hurt', 'ko', 'win'].forEach(function (pose) {

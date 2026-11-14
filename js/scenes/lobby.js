@@ -211,7 +211,12 @@
 
     change(d) {
       if (this.battle) this.stage = (this.stage + d + MG.STAGES.length) % MG.STAGES.length;
-      else if (MG.LEVELS.length > 1) this.level = (this.level + d + MG.LEVELS.length) % MG.LEVELS.length;
+      else if (MG.LEVELS.length > 1) {
+        // only maps this computer has opened on the Marsupial World map
+        let i = this.level;
+        for (let k = 0; k < MG.LEVELS.length; k++) { i = (i + d + MG.LEVELS.length) % MG.LEVELS.length; if (MG.Progress.isOpen(i)) break; }
+        this.level = i;
+      }
       else return;
       MG.Audio.select();
       this.broadcast();

@@ -76,7 +76,7 @@
     rabbitBane: {},
 
     // Paddles: a strong swimmer (water zones come with the Cane Fields maps).
-    swimmer: {},
+    swimmer: {}, // faster and stronger strokes in water (read in the fighter)
 
     // Benny: double jump.
     doubleJump: {

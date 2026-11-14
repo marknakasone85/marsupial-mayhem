@@ -10,11 +10,30 @@
     cat: { art: 'cat', behavior: 'ambusher', hp: 26, speed: 170, w: 56, h: 40, dmg: 9, score: 250 },
     // feral pigs: snort, then charge
     pig: { art: 'pig', behavior: 'charger', hp: 46, speed: 95, w: 80, h: 56, dmg: 13, score: 350, weight: 2 },
-    // mini-boss: a giant buck rabbit (the world boss, Warren Warlord, comes in Milestone 6)
+    // cane toads (world 3): slow high hops; poisonous, so touching one stings and a knocked-out
+    // toad leaves a little poison puff (Dead Fred doesn't mind)
+    toad: { art: 'toad', behavior: 'hopper', hp: 18, speed: 120, w: 36, h: 30, dmg: 6, score: 150, poison: true },
+    // mini-boss of the first map: a giant buck rabbit
     bigBuck: {
       art: 'rabbit', behavior: 'boss', boss: true, hp: 320, speed: 210, w: 96, h: 100, dmg: 14, score: 3000,
       scale: 3, weight: 3.5, name: 'BIG BUCK', colors: { fur: '#7d6a5a', dark: '#574739' }, bandana: true,
       moves: ['leap', 'thump', 'dash', 'leap', 'dash'], defeatText: 'BIG BUCK IS OUT FOR THE COUNT!',
+    },
+    // ---- world bosses (Milestone 6). minion = what they call in.
+    warrenWarlord: {
+      art: 'rabbit', behavior: 'boss', boss: true, hp: 520, speed: 220, w: 112, h: 118, dmg: 15, score: 6000,
+      scale: 3.6, weight: 4, name: 'WARREN WARLORD', colors: { fur: '#8a8278', dark: '#5f574e' }, warlord: true, minion: 'rabbit',
+      moves: ['leap', 'thump', 'dash', 'burrow', 'leap', 'dash', 'burrow'], defeatText: 'THE WARREN WARLORD IS DETHRONED!',
+    },
+    bigTom: {
+      art: 'cat', behavior: 'boss', boss: true, hp: 560, speed: 230, w: 150, h: 108, dmg: 16, score: 7000,
+      scale: 2.7, weight: 4, name: 'BIG TOM', bigTom: true, minion: 'cat',
+      moves: ['pounce', 'swipe', 'yowl', 'hide', 'pounce', 'swipe', 'hide'], defeatText: 'BIG TOM USED UP ALL NINE LIVES!',
+    },
+    toadKing: {
+      art: 'toad', behavior: 'boss', boss: true, hp: 640, speed: 160, w: 118, h: 96, dmg: 15, score: 8000,
+      scale: 3.2, weight: 5, name: 'CANE TOAD KING', crown: true, minion: 'toad', poison: true,
+      moves: ['hop', 'tongue', 'poison', 'spawn', 'hop', 'tongue', 'poison'], defeatText: 'THE CANE TOAD KING HAS CROAKED!',
     },
   };
   MG.ENEMY_TYPES = TYPES;
@@ -24,6 +43,7 @@
     rabbit: { blood: '#d62828', sound: 'squeak', word: 'EEP!' },
     cat: { blood: '#d62828', sound: 'yowl', word: 'MROWR!' },
     pig: { blood: '#d62828', sound: 'oink', word: 'OINK?!' },
+    toad: { blood: '#d62828', sound: 'bloop', word: 'CROAK!' },
   };
 
   MG.Enemy = class {
@@ -66,7 +86,7 @@
     }
 
     takeHit(hit, world) {
-      if (!this.alive) return 'miss';
+      if (!this.alive || this.burrowed || this.lurking) return 'miss'; // a boss underground or hiding can't be hit
       if (this.hidden) this.wake(world);
       if (hit.scare && !this.isBoss) { this.fleeT = hit.scare; this.fleeFrom = hit.from ? hit.from.x : this.x; }
       if (hit.poison && this.hp - hit.dmg > 0) {
@@ -102,6 +122,10 @@
           const r = Math.random();
           if (r < 0.07) world.addPickup('heart', this.x, world.groundY);
           else if (r < 0.13) world.addPickup('grenades', this.x, world.groundY);
+        }
+        // a cane toad's poison: a little cloud where it fell
+        if (this.d.poison && !this.isBoss && world.spawn) {
+          world.spawn(new MG.Projectile('stink', this.x, this.y - 20, 0, 0, 'enemy', { dmg: 2, poison: true, radius: 55, tick: 0.5, life: 1.8, still: true, pierce: true }));
         }
         this.alive = false;
         this.dying = 1.2;
@@ -163,7 +187,8 @@
     }
 
     onLand(world) {
-      if (this.d.behavior === 'swarmer' || this.d.behavior === 'ambusher') this.vx *= 0.25;
+      if (this.d.behavior === 'swarmer' || this.d.behavior === 'ambusher' || this.d.behavior === 'hopper') this.vx *= 0.25;
+      if (this.isBoss && this.state === 'pounce') { this.state = 'idle'; this.stateT = 0; this.vx = 0; this.cool = this.enraged ? 0.5 : 0.9; world.fx.shake(8); return; }
       if (this.isBoss && this.state === 'leap') {
         // Big Buck lands: shockwave
         this.state = 'idle';
@@ -190,7 +215,7 @@
     contact(world, player, mult = 1) {
       if (this.touchT > 0 || player.state === 'ko' || this.hidden) return;
       if (U.overlap(this.box, player.box)) {
-        const res = player.takeHit({ dmg: this.d.dmg * mult, kbx: Math.sign(player.x - this.x || 1) * 320, kby: -260, stun: 0.4, from: this }, world);
+        const res = player.takeHit({ dmg: this.d.dmg * mult, kbx: Math.sign(player.x - this.x || 1) * 320, kby: -260, stun: 0.4, from: this, poison: !!this.d.poison && !this.isBoss }, world);
         if (res !== 'miss') this.touchT = 0.9;
         // running into a block stops a charge or pounce dead (and sets up Boomer's Tail Counter)
         if (res === 'blocked' && ['charge', 'dash', 'pounce'].includes(this.state)) {
@@ -230,6 +255,17 @@
           this.vx = tdir * d.speed * U.rand(0.8, 1.2);
           this.onGround = false;
           this.hopT = U.rand(0.15, 0.4);
+        }
+        this.contact(world, player);
+      } else if (d.behavior === 'hopper') {
+        // cane toads: big slow hops toward the player
+        this.facing = dir;
+        this.hopT = (this.hopT === undefined ? U.rand(0, 0.6) : this.hopT) - dt;
+        if (this.onGround && this.hopT <= 0 && (dist < 600 || this.aggro)) {
+          this.vy = -U.rand(360, 460);
+          this.vx = dir * d.speed * U.rand(0.8, 1.3);
+          this.onGround = false;
+          this.hopT = U.rand(0.6, 1.1);
         }
         this.contact(world, player);
       } else if (d.behavior === 'ambusher') {
@@ -297,7 +333,7 @@
       const d = this.d;
       if (!this.enraged && this.hp < this.maxHp * 0.4) {
         this.enraged = true;
-        world.fx.text(this.x, this.y - d.h - 40, 'BIG BUCK IS FURIOUS!', '#ff4d6d', 30);
+        world.fx.text(this.x, this.y - d.h - 40, d.name + ' IS FURIOUS!', '#ff4d6d', 30);
         MG.Audio.thump();
       }
       const fast = this.enraged ? 1.25 : 1;
@@ -316,10 +352,11 @@
           this.state = d.moves[this.moveI] + 'Wind';
           this.stateT = 0;
           this.vx = 0;
-          if (this.state === 'leapWind') world.fx.text(this.x, this.y - d.h - 20, 'HUP!', '#ffd23f', 26);
-          if (this.state === 'dashWind') world.fx.text(this.x, this.y - d.h - 20, '!', '#ff4d6d', 40);
+          const SAY = { leapWind: 'HUP!', hopWind: 'RIBBIT!', dashWind: '!', pounceWind: '!', burrowWind: 'DIG DIG DIG!', swipeWind: 'HISSS!', yowlWind: 'MROWWWL!', hideWind: '...', tongueWind: 'SLURP?', poisonWind: 'PUFF!', spawnWind: 'CROAK CROAK!' };
+          const loud = this.state === 'dashWind' || this.state === 'pounceWind';
+          if (SAY[this.state]) world.fx.text(this.x, this.y - d.h - 20, SAY[this.state], loud ? '#ff4d6d' : '#ffd23f', loud ? 40 : 26);
         }
-      } else if (this.state === 'leapWind') {
+      } else if (this.state === 'leapWind' || this.state === 'hopWind') {
         this.vx = 0;
         if (this.stateT > 0.45 / fast) {
           this.state = 'leap';
@@ -344,7 +381,7 @@
         if (this.stateT > 1.0) {
           this.beat = -1;
           const n = this.enraged ? 4 : 3;
-          const made = world.spawnWarren ? world.spawnWarren(n) : 0;
+          const made = world.spawnMinions ? world.spawnMinions(d.minion || 'rabbit', n) : world.spawnWarren ? world.spawnWarren(n) : 0;
           if (made) world.fx.text(this.x, this.y - d.h - 30, 'THE WARREN ANSWERS!', '#ffd23f', 24);
           this.state = 'idle';
           this.cool = this.enraged ? 0.8 : 1.4;
@@ -362,22 +399,127 @@
         if (this.stateT > 1.1 || (b && (this.x <= b.min + 1 || this.x >= b.max - 1))) {
           this.state = 'idle'; this.stateT = 0; this.vx = 0; this.cool = this.enraged ? 0.6 : 1.1;
         }
-      } else {
+      } else if (!this.worldBossMove(dt, world, player, dx, dist, dir, fast)) {
         this.state = 'idle';
       }
+    }
+
+    // The world bosses' own moves (Milestone 6). Returns false when the state isn't one of them.
+    worldBossMove(dt, world, player, dx, dist, dir, fast) {
+      const d = this.d, s = this.state;
+      const players = (world.fighters || []).filter((f) => f.state !== 'ko');
+      if (s === 'burrowWind' || s === 'hideWind') {
+        // dig in (the Warlord) or slink into the undergrowth (Big Tom)
+        this.vx = 0;
+        if (this.stateT > 0.4 / fast) {
+          this.state = s === 'burrowWind' ? 'burrow' : 'hide';
+          this.stateT = 0;
+          if (s === 'burrowWind') this.burrowed = true; else this.lurking = true;
+          world.fx.burst(this.x, this.y - 10, s === 'burrowWind' ? '#9c4a2a' : '#2d6a4f', 20, 300);
+        }
+      } else if (s === 'burrow') {
+        // tunnels toward the player, then bursts up underneath
+        this.vx = Math.sign(dx) * Math.min(dist * 3, 320 * fast);
+        if (this.stateT > 1.4 || (this.stateT > 0.5 && dist < 30)) {
+          this.burrowed = false;
+          this.state = 'leap';
+          this.stateT = 0;
+          this.vy = -820; this.vx = 0; this.onGround = false;
+          MG.Audio.thump();
+          world.fx.burst(this.x, this.y, '#9c4a2a', 30, 420);
+          world.fx.text(this.x, this.y - d.h - 30, 'SURPRISE!', '#ff4d6d', 30);
+          for (const f of players) if (Math.abs(f.x - this.x) < 110) f.takeHit({ dmg: d.dmg * 1.2, kbx: (f.x >= this.x ? 1 : -1) * 300, kby: -900, stun: 0.7, big: true, from: this }, world);
+        }
+      } else if (s === 'hide') {
+        // only glowing eyes in the dark... then he's right next to you
+        this.vx = 0;
+        if (this.stateT > 1.1 / fast) {
+          const b = world.enemyBounds ? world.enemyBounds(this) : { min: this.x - 400, max: this.x + 400 };
+          const side = Math.random() < 0.5 ? -1 : 1;
+          this.x = U.clamp(player.x + side * 260, b.min, b.max);
+          this.lurking = false;
+          this.state = 'pounceWind';
+          this.stateT = 0.2;
+          world.fx.text(this.x, this.y - d.h - 20, 'GOTCHA!', '#ff4d6d', 30);
+          MG.Audio.hiss();
+        }
+      } else if (s === 'pounceWind') {
+        this.vx = 0; this.facing = dir;
+        if (this.stateT > 0.45 / fast) {
+          this.state = 'pounce'; this.stateT = 0;
+          this.vy = -640; this.vx = U.clamp(dx / 0.7, -820, 820); this.onGround = false;
+          MG.Audio.whiff();
+        }
+      } else if (s === 'pounce') {
+        this.contact(world, player, 1.3);
+        if (this.stateT > 2.5) this.state = 'idle';
+      } else if (s === 'swipeWind') {
+        this.vx = 0; this.facing = dir;
+        if (this.stateT > 0.35 / fast) {
+          for (const dy of this.enraged ? [-30, 10] : [-10]) {
+            world.spawn(new MG.Projectile('claw', this.x + dir * d.w * 0.4, this.y - d.h * 0.45 + dy, dir * 560, 0, 'enemy',
+              { dmg: 11, stun: 0.45, kbx: 420, kby: -300, pierce: true, fly: true, life: 0.7, big: true }));
+          }
+          MG.Audio.whiff();
+          this.state = 'idle'; this.cool = this.enraged ? 0.6 : 1.0;
+        }
+      } else if (s === 'yowlWind' || s === 'spawnWind') {
+        this.vx = 0;
+        if (this.stateT > 0.9) {
+          const n = s === 'yowlWind' ? (this.enraged ? 3 : 2) : (this.enraged ? 4 : 3);
+          const made = world.spawnMinions ? world.spawnMinions(d.minion, n) : 0;
+          if (made) world.fx.text(this.x, this.y - d.h - 30, s === 'yowlWind' ? 'THE CATS COME RUNNING!' : 'TOADLETS!', '#ffd23f', 24);
+          MG.Audio.thump();
+          this.state = 'idle'; this.cool = this.enraged ? 0.8 : 1.3;
+        }
+      } else if (s === 'tongueWind') {
+        this.vx = 0; this.facing = dir;
+        if (this.stateT > 0.5 / fast) { this.state = 'tongue'; this.stateT = 0; this.tongueHit = new Set(); }
+      } else if (s === 'tongue') {
+        // a long sticky tongue: hits and drags you in
+        const reach = 360, out = this.stateT < 0.25 ? this.stateT / 0.25 : Math.max(0, 1 - (this.stateT - 0.35) / 0.3);
+        this.tongueAmt = out;
+        const mouthY = this.y - d.h * 0.45, tipX = this.x + this.facing * (d.w * 0.4 + reach * out);
+        const box = { x: Math.min(this.x, tipX), y: mouthY - 18, w: Math.abs(tipX - this.x), h: 36 };
+        for (const f of players) {
+          if (this.tongueHit.has(f) || !U.overlap(box, f.box)) continue;
+          this.tongueHit.add(f);
+          const res = f.takeHit({ dmg: 12, kbx: -this.facing * 520, kby: -200, stun: 0.6, from: this }, world);
+          if (res === 'hit') world.fx.text(f.x, f.y - f.h - 20, 'SLURRRP!', '#ff8fab', 22);
+        }
+        if (this.stateT > 0.7) { this.state = 'idle'; this.tongueAmt = 0; this.cool = this.enraged ? 0.6 : 1.0; }
+      } else if (s === 'poisonWind') {
+        this.vx = 0; this.puff = Math.min(1, this.stateT / 0.6);
+        if (this.stateT > 0.6 / fast) {
+          for (const ox of [-150, 0, 150]) {
+            world.spawn(new MG.Projectile('stink', this.x + ox, this.y - 40, 0, 0, 'enemy', { dmg: 3, poison: true, radius: 85, tick: 0.5, life: 3, still: true, pierce: true }));
+          }
+          world.fx.text(this.x, this.y - d.h - 30, 'POISON PUFF!', '#9ef01a', 26);
+          MG.Audio.hiss();
+          this.puff = 0;
+          this.state = 'idle'; this.cool = this.enraged ? 0.8 : 1.4;
+        }
+      } else return false;
+      return true;
     }
 
     // Pose bits for drawing (and for Wi-Fi guests later): 1 crouching, 2 charging, 4 hidden, 8 in the air.
     visualFlags() {
       const s = this.state;
-      return (s === 'crouch' || s === 'windup' || s === 'leapWind' || s === 'thumpWind' || s === 'dashWind' ? 1 : 0)
-        | (s === 'charge' || s === 'dash' ? 2 : 0) | (this.hidden ? 4 : 0) | (!this.onGround ? 8 : 0);
+      return (s === 'crouch' || s === 'windup' || /Wind$/.test(s) ? 1 : 0)
+        | (s === 'charge' || s === 'dash' || s === 'pounce' ? 2 : 0) | (this.hidden ? 4 : 0) | (!this.onGround ? 8 : 0)
+        | (s === 'tongue' ? 16 : 0) | (s === 'poisonWind' ? 32 : 0) | (this.burrowed ? 64 : 0) | (this.lurking ? 128 : 0);
     }
 
     draw(ctx, world) {
       const d = this.d;
       // pose bits: from the host's snapshot on Wi-Fi guests, or worked out here
       const vf = this.remoteFlags !== undefined ? this.remoteFlags : this.visualFlags();
+      if (vf & 64) { MG.Art.burrowMound(ctx, this.x, world.groundY, this.t); return; } // the Warlord, underground
+      if (vf & 128) { // Big Tom in the undergrowth: just two big eyes
+        ctx.save(); ctx.translate(this.x, this.y - 50); ctx.scale(2, 2); MG.Art.catEyes(ctx, 0, 0, this.t, this.facing); ctx.restore();
+        return;
+      }
       if (vf & 4) {
         if (world.radar) { ctx.save(); ctx.globalAlpha = 0.35; MG.Art[d.art](ctx, this.x, this.y, { t: this.t, facing: this.facing, crouch: true }); ctx.restore(); }
         MG.Art.catEyes(ctx, this.x, this.y - 30, this.t, this.facing);
@@ -393,6 +535,9 @@
       const o = {
         t: this.t, facing: this.facing, flash: this.flash > 0, scale: d.scale || 1, colors: d.colors, bandana: d.bandana,
         crouch: !!(vf & 1), charging: !!(vf & 2), air: !!(vf & 8), moving: Math.abs(this.vx) > 10,
+        warlord: d.warlord, bigTom: d.bigTom, crown: d.crown,
+        tongue: vf & 16 ? (this.remoteFlags !== undefined ? 0.9 : this.tongueAmt || 0) : 0,
+        puff: vf & 32 ? (this.remoteFlags !== undefined ? 0.8 : this.puff || 0) : 0,
       };
       MG.Art[d.art](ctx, this.x, this.y, o);
       if (this.alive && this.hurt > 0.5 && !this.isBoss) {

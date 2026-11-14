@@ -33,6 +33,7 @@
       this.proj = [];
       this.nades = [];
       this.coins = [];
+      this.npcs = [];
       this.fx = new MG.FX();
       this.camX = this.camTarget = 0;
       MG.Audio.playMusic(this.L.music);
@@ -55,6 +56,7 @@
       }
       if (m.t === 'toLobby') { MG.Engine.setScene(new MG.JoinScene({ rejoin: true })); return; }
       if (m.t === 'shop') { const shop = new MG.ShopScene({ guest: true }); MG.Engine.setScene(shop); shop.onNet(m); return; }
+      if (m.t === 'wmap') { const map = new MG.WorldMapScene({ guest: true }); MG.Engine.setScene(map); map.onNet(m); return; }
       if (m.t === 'snap' && m.k === 'duel') { // the host switched to a battle
         const scene = new MG.RemoteDuelScene();
         MG.Engine.setScene(scene);
@@ -102,6 +104,10 @@
         return p;
       });
       this.nades = (m.gn || []).map(([x, y, spin, fuse, t]) => ({ draw: (ctx) => MG.Grenade.drawState(ctx, x, y, spin, fuse, t) }));
+      this.npcs = (m.np || []).map((a) => {
+        const n = MG.NPC.fromSnap(a);
+        return n.kind ? { kind: n.kind, x: n.x, draw: (ctx) => MG.NPC.drawState(ctx, n.kind, n.x, n.y, n.facing, n.a, n.mode, this.t, this, n.speech) } : null;
+      }).filter(Boolean);
       this.coins = (m.cs || []).map(([x, y, v, lying]) => ({ x, draw: (ctx) => MG.Art.coin(ctx, x, y + (lying ? Math.sin(this.t * 3 + x) * 3 : 0), this.t + x * 0.01, v) }));
       this.camTarget = m.cam;
       MG.Sync.replay(this.fx, m);
@@ -191,7 +197,7 @@
       MG.drawCampaignWorld(ctx, {
         L: this.L, t: this.t, camX: this.camX, groundY: this.groundY, fx: this.fx, platforms: this.platforms,
         gates: this.gates, crates: this.crates, pickups: this.pickups, enemies: [...this.enemies.values()],
-        players: Object.values(this.players), grenades: this.nades, projectiles: proj, coins: this.coins,
+        players: Object.values(this.players), grenades: this.nades, projectiles: proj, coins: this.coins, npcs: this.npcs,
         goalOpen: !(s.bo && s.bo[3]), world: this,
       });
 

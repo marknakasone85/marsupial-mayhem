@@ -59,6 +59,13 @@
 - **Coins and gear belong to the player, not the character**, and are kept between games (as in Zombie Survival). No selling back yet.
 - **No boomerang weapon:** boomerangs are Aboriginal tools, so it's left out to stay well clear of the guardrail about Aboriginal culture.
 
+## Chosen while building Milestone 6 (13 Nov 2026; the owner can change any of these)
+
+- **Map names** (placeholders): Emu Crossing, Red Rock Run, The Warren, Canopy Creek, Vine Valley, Big Tom's Den, Sugar Cane Scramble, Irrigation Ditch, Mangrove Mud, Toad King's Beach.
+- **Player 1's keys:** the grenade moved to G and the big attack to E (the owner asked for the grenade on G, 13 Nov 2026).
+- **Wi-Fi co-op:** the lobby still picks the first map (only maps this computer has opened); after that the host can take everyone to the shared world map.
+- **Story panels play once** each and can be skipped with Esc.
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.

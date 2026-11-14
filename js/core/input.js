@@ -109,10 +109,10 @@
     up: ['KeyW', 'Pad0Up', 'Pad0A', 'TouchJump'],
     down: ['KeyS', 'Pad0Down', 'TouchDown'],
     attack: ['KeyF', 'Pad0X', 'TouchAttack'],
-    big: ['KeyG', 'Pad0Y', 'TouchBig'],
+    big: ['KeyE', 'Pad0Y', 'TouchBig'],
     special: ['KeyH', 'Pad0B', 'TouchSpecial'],
     shoot: ['KeyR', 'Pad0R', 'TouchShoot'],
-    grenade: ['KeyE', 'Pad0L', 'TouchGrenade'],
+    grenade: ['KeyG', 'Pad0L', 'TouchGrenade'],
     joey: ['KeyQ', 'Pad0Back', 'TouchJoey'],
     pouch: ['KeyT', 'Pad0RT', 'TouchPouch'],
   };

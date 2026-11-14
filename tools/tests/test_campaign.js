@@ -83,8 +83,8 @@ MG.toggleBlood();
 // pause menu and controls are always there
 sc = fresh(); sc.t = 5; frames(2);
 tap('Escape'); frames(2);
-check(sc.state === 'paused' && ['Resume', 'Controls', 'Blood: ON', 'Restart Map', 'Quit to Menu'].every(function (t) { return !!menuItem(sc.menu, t); }),
-  'pause menu: Resume, Controls, Blood, Restart, Quit');
+check(sc.state === 'paused' && ['Resume', 'Controls', 'Blood: ON', 'Restart Map', 'Quit to World Map'].every(function (t) { return !!menuItem(sc.menu, t); }),
+  'pause menu: Resume, Controls, Blood, Restart, Quit to World Map');
 menuItem(sc.menu, 'Controls').act(); frames(2);
 check(sc.showControls, 'Pause -> Controls opens the controls page');
 tap('Escape'); frames(2); tap('Escape'); frames(2);

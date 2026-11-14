@@ -48,6 +48,18 @@ Tell the story with simple in-engine panels between worlds and on the world map:
 - Grin Isle is on the horizon from the start, sunny and smiling.
 - In co-op everyone sees the same map, and the host picks the level.
 
+### As built in Milestone 6 (13 Nov 2026)
+
+- The world map (`js/scenes/worldmap.js`, stops in `js/data/worldmap.js`): stops on curved paths, a shop stop, ticks and best scores, locked stops, a BOSS tag on the world finales, and "coming soon" tags for worlds 4-7. Arrows walk, Enter plays; tapping a stop walks there. 2 local players walk together. On Wi-Fi the host walks (lobby, then after any map via **World Map**), and friends see the same map and story panels.
+- Story panels (`MG.STORY`): the opening (4 panels) the first time, the invasion and the Smile Squad after the first map, an intro for the Rainforest and the Cane Fields, and a "three worlds cleared" panel with the Grin Isle party invitation (a tease for world 7, no twist yet). Each plays once; Esc skips.
+- Progress is saved per browser (`cleared` + best scores). A best score from before Milestone 6 counts as cleared.
+- The maps: Outback: Tournament Trail, Emu Crossing, Red Rock Run, The Warren (boss: Warren Warlord). Rainforest: Canopy Creek, Vine Valley, Big Tom's Den (boss: Big Tom). Cane Fields & Coast: Sugar Cane Scramble, Irrigation Ditch, Mangrove Mud, Toad King's Beach (boss: Cane Toad King).
+- New pest: the cane toad (slow high hops, poison contact without a knockdown, a little poison puff when knocked out; Dead Fred is immune).
+- Bosses: the Warren Warlord (leaps, thumps for rabbits, dashes, burrows under you), Big Tom (pounces, claw swipes, yowls for cats, hides in the shadows with only his eyes showing), the Cane Toad King (hop slams, a long tongue lash, poison puffs, toadlets). Big Buck stays as the first map's mini-boss.
+- Hazards and allies (`js/entities/hazards.js`): emu stampedes, cassowaries (can't be hit; keep your distance), crocodiles in the water (eyes that follow you; they snap at swimmers but never bother the pests), Smile Squad quokkas (hearts, supply drops, tips; some arrive "just too late"), Matschie's tree-kangaroo (throws fruit at pests from a branch), and a northern quoll (bites pests, runs from cane toads).
+- Water zones: slow and floaty; JUMP swims up; Paddles is fastest.
+- Clues: shed snake skins and scaly footprints near the pests, GRIN ISLE crates, the croc that ignores pests, a quokka chatting with a goanna that freezes when the camera looks at them, a quokka saying crocs "never bother us quokkas", and late quokkas.
+
 ## The signature mechanic: the pouch (details agreed with the owner, 13 Nov 2026)
 
 Every playable marsupial has a **joey** (a baby of its own kind) and a **pouch slot** for one saved item.

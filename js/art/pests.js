@@ -7,6 +7,52 @@
 
   // ---------------------------------------------------------------- European rabbit
   const RABBIT = { fur: '#9c8a78', dark: '#6f5f52', belly: '#d9cbb8', ear: '#e8a9a0' };
+  // Warren Warlord (world 1 boss, o.warlord): a tattered red cape over the back...
+  function warlordCape(ctx, o, crouch) {
+    const w = Math.sin((o.t || 0) * 6) * 2.5, d = crouch * 3;
+    ctx.fillStyle = white(o, '#b5172b');
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(9, -27 + d);
+    ctx.quadraticCurveTo(-4, -32 + d, -18, -25 + d);
+    ctx.quadraticCurveTo(-26, -21 + d, -32, -14 + w);
+    ctx.lineTo(-27, -12 + w * 0.8); ctx.lineTo(-29, -5 + w * 0.6); ctx.lineTo(-22, -9 + w * 0.4);
+    ctx.lineTo(-19, -3 + d); ctx.lineTo(-13, -10 + d); ctx.lineTo(-8, -6 + d); ctx.lineTo(-3, -13 + d);
+    ctx.lineTo(4, -14 + d);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    if (!o.flash) {
+      ctx.strokeStyle = '#7a0f1c';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(-6, -26 + d); ctx.quadraticCurveTo(-12, -18 + d, -11, -11 + d); ctx.moveTo(-17, -23 + d); ctx.quadraticCurveTo(-22, -15 + d, -24, -9 + w * 0.5); ctx.stroke();
+    }
+  }
+  // ...and a dented battle helmet with horns and a spike, plus a furious brow.
+  function warlordHelmet(ctx, o, hx, hy) {
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = white(o, '#f1e3c6');
+    A.taper(ctx, hx - 8, hy - 9, hx - 16, hy - 9, hx - 17, hy - 20, 4.5, 0.8); ctx.fill(); ctx.stroke();
+    A.taper(ctx, hx + 7, hy - 10, hx + 15, hy - 11, hx + 15, hy - 21, 4.5, 0.8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = white(o, '#8d99ae');
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.ellipse(hx - 0.5, hy - 7, 10.4, 7.4, 0, Math.PI, Math.PI * 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hx - 2, hy - 14); ctx.lineTo(hx, hy - 20); ctx.lineTo(hx + 2, hy - 14.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = white(o, '#5c677d');
+    ctx.beginPath(); ctx.roundRect(hx - 12, hy - 9, 23, 3.6, 1.8); ctx.fill(); ctx.stroke();
+    if (!o.flash) {
+      ctx.fillStyle = '#d9dee5';
+      for (const rx of [-8, -3, 2, 7]) { ctx.beginPath(); ctx.arc(hx + rx, hy - 7.2, 0.8, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeStyle = 'rgba(43,26,20,0.6)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(hx + 3, hy - 12.5, 2, 0.3, 2.4); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(hx - 1, hy - 7, 6.5, 3.6, 4.4); ctx.stroke();
+    }
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(hx - 0.5, hy - 6.6); ctx.lineTo(hx + 7, hy - 3.8); ctx.stroke();
+  }
   A.rabbit = function (ctx, x, y, o) {
     const c = Object.assign({}, RABBIT, o.colors || {});
     const s = o.scale || 1;
@@ -22,6 +68,7 @@
     A.oval(ctx, -2, -15 + crouch * 3, air ? 18 : 16, air ? 10 : 12.5, air ? -0.35 : -0.15, white(o, c.fur), LINE, 2);
     A.oval(ctx, 4, -11 + crouch * 3, 8, 7, 0, white(o, c.belly));
     A.oval(ctx, air ? 16 : 10, air ? -10 : -3, 4.5, 3, 0, white(o, c.dark), LINE, 1.4);
+    if (o.warlord) warlordCape(ctx, o, crouch);
     // head and long ears (flattened back mid-hop)
     const hx = 12, hy = -25 + crouch * 4;
     const earTilt = air ? -0.9 : -0.35;
@@ -45,6 +92,7 @@
     ctx.moveTo(hx + 9, hy + 2); ctx.lineTo(hx + 17, hy);
     ctx.moveTo(hx + 9, hy + 3); ctx.lineTo(hx + 17, hy + 4);
     ctx.stroke();
+    if (o.warlord) warlordHelmet(ctx, o, hx, hy);
     if (o.bandana) {
       // Big Buck's red bandana
       ctx.fillStyle = '#d62828';
@@ -64,8 +112,27 @@
 
   // ---------------------------------------------------------------- feral cat
   const CAT = { fur: '#7d6e5d', stripe: '#4f4337', belly: '#b9aa94' };
+  // Big Tom (world 2 boss, o.bigTom): a battle-scarred ginger tom with a torn ear, a scar over
+  // the eye, a spiked collar and a big mean grin.
+  const BIG_TOM = { fur: '#d2803c', stripe: '#97501f', belly: '#efc993' };
+  function tomCollar(ctx, o, low) {
+    ctx.save();
+    ctx.translate(15, -26 + low);
+    ctx.rotate(-0.35);
+    ctx.fillStyle = white(o, '#c0c8d2');
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 1.2;
+    for (const sy of [-9, -4, 1, 6]) {
+      ctx.beginPath(); ctx.moveTo(-2.5, sy - 2); ctx.lineTo(-8, sy); ctx.lineTo(-2.5, sy + 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(-2, 10); ctx.lineTo(-1, 15); ctx.lineTo(2, 10.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = white(o, '#2b2d42');
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.roundRect(-3.5, -12, 7, 24, 3); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
   A.cat = function (ctx, x, y, o) {
-    const c = Object.assign({}, CAT, o.colors || {});
+    const c = Object.assign({}, CAT, o.bigTom && !o.colors ? BIG_TOM : null, o.colors || {});
     const s = o.scale || 1;
     const low = o.crouch ? 7 : 0;
     const air = o.air ? 1 : 0;
@@ -103,6 +170,7 @@
         ctx.stroke();
       }
     }
+    if (o.bigTom) tomCollar(ctx, o, low);
     // head, ears, glaring eyes
     const hx = 25, hy = -30 + low * 1.2;
     ctx.fillStyle = white(o, c.fur);
@@ -110,7 +178,13 @@
     ctx.lineWidth = 1.8;
     for (const ex of [-6, 4]) {
       ctx.beginPath();
-      ctx.moveTo(hx + ex - 4, hy - 6); ctx.lineTo(hx + ex, hy - 17); ctx.lineTo(hx + ex + 5, hy - 6);
+      if (o.bigTom && ex === 4) {
+        // a torn ear with a notch bitten out of it
+        ctx.moveTo(hx + ex - 4, hy - 6); ctx.lineTo(hx + ex - 1.5, hy - 13); ctx.lineTo(hx + ex + 1.2, hy - 10.5);
+        ctx.lineTo(hx + ex + 2.2, hy - 15.5); ctx.lineTo(hx + ex + 5, hy - 6);
+      } else {
+        ctx.moveTo(hx + ex - 4, hy - 6); ctx.lineTo(hx + ex, hy - 17); ctx.lineTo(hx + ex + 5, hy - 6);
+      }
       ctx.closePath(); ctx.fill(); ctx.stroke();
     }
     A.oval(ctx, hx, hy, 11.5, 10, 0, white(o, c.fur), LINE, 2);
@@ -125,7 +199,26 @@
     ctx.moveTo(hx + 10, hy + 4); ctx.lineTo(hx + 19, hy + 2);
     ctx.moveTo(hx + 10, hy + 5); ctx.lineTo(hx + 19, hy + 7);
     ctx.stroke();
-    if (o.crouch || air) {
+    if (o.bigTom) {
+      // a scar across the eye, a heavier scowl and a wide, toothy grin
+      ctx.strokeStyle = white(o, '#f08a9a');
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(hx + 1, hy - 9); ctx.lineTo(hx + 7.5, hy + 3);
+      ctx.moveTo(hx + 2, hy - 5.5); ctx.lineTo(hx + 4.5, hy - 6.5); ctx.moveTo(hx + 4, hy - 1.5); ctx.lineTo(hx + 6.5, hy - 2.5);
+      ctx.stroke();
+      ctx.strokeStyle = LINE;
+      ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.moveTo(hx - 2, hy - 8); ctx.lineTo(hx + 8, hy - 3.5); ctx.stroke();
+      ctx.fillStyle = '#5a1a1a';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(hx + 1, hy + 4); ctx.quadraticCurveTo(hx + 6, hy + 5.5, hx + 12, hy + 4);
+      ctx.quadraticCurveTo(hx + 7, hy + 11.5, hx + 1, hy + 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      for (const tx of [2.5, 5.5, 8.5]) { ctx.moveTo(tx + hx, hy + 4.4); ctx.lineTo(tx + hx + 1.2, hy + 7.4); ctx.lineTo(tx + hx + 2.4, hy + 4.6); }
+      ctx.fill();
+    }
+    if ((o.crouch || air) && !o.bigTom) {
       // hissing mouth with fangs
       A.oval(ctx, hx + 7, hy + 6, 3.5, 2.5, 0, '#5a1a1a');
       ctx.fillStyle = '#ffffff';

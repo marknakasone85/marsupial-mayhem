@@ -34,6 +34,8 @@
       this.syncT = 0;
       this.gid = Math.random().toString(36).slice(2, 10); // this game, for Wi-Fi friends' coin totals
       this.coins = (this.L.coins || []).map((c) => new MG.Coin(c.x, c.y, c.v || 1, null, true));
+      this.water = MG.waterZones(this.L);
+      this.npcs = (this.L.npcs || []).map((o) => new MG.NPC(o));
 
       this.slots = [];
       const players = opts.players || [{ id: 0, cid: opts.charId || 'boomer', local: 'SOLO' }];
@@ -263,6 +265,7 @@
       return best;
     }
     floorBelow(x, y) { return MG.floorBelow(this.platforms, this.groundY, x, y); }
+    waterAt(x) { return MG.waterAt(this.water, x); }
     onHit(attacker, target, hit, result) {
       if (result === 'hit' && !target.isProp && this.fighters.includes(attacker)) this.score += 10;
     }
@@ -320,14 +323,18 @@
       this.fx.text(pk.x, pk.y - 50, 'MUNCH! A rabbit ate it!', '#ffffff', 18);
       this.fx.burst(pk.x, pk.y - 20, '#52e07a', 10, 160);
     }
-    // Big Buck's foot thump: rabbits pop out of burrows at the edges of the arena.
-    spawnWarren(n) {
-      const living = this.enemies.filter((e) => e.alive && e.type === 'rabbit').length;
+    // A boss calls in help: rabbits from burrows (Big Buck, the Warren Warlord), cats (Big Tom),
+    // toadlets (the Cane Toad King). They come in at the edges of the arena.
+    spawnMinions(type, n) {
+      if (!MG.ENEMY_TYPES[type]) return 0;
+      const living = this.enemies.filter((e) => e.alive && e.type === type).length;
       const count = Math.min(n, 7 - living);
       for (let i = 0; i < count; i++) {
         const left = i % 2 === 0;
         const x = left ? this.arenaX + 60 + i * 20 : this.arenaX + W - 60 - i * 20;
-        const r = this.addEnemy('rabbit', x);
+        const r = this.addEnemy(type, x);
+        r.hidden = false;
+        r.aggro = true;
         r.vy = -500;
         r.onGround = false;
         this.enemies.push(r);
@@ -335,6 +342,7 @@
       }
       return count;
     }
+    spawnWarren(n) { return this.spawnMinions('rabbit', n); }
 
     // ---------------- update ----------------
     update(dt) {
@@ -404,6 +412,8 @@
       this.pickups = this.pickups.filter((pk) => !pk.taken);
       for (const c of this.coins) c.update(dt, this);
       this.coins = this.coins.filter((c) => !c.taken);
+      if (this.state === 'play') for (const n of this.npcs) n.update(dt, this);
+      this.npcs = this.npcs.filter((n) => !n.gone);
 
       this.updateGates(dt);
 
@@ -440,9 +450,10 @@
         if (this.checkpoint) items.push({ label: 'Continue from Checkpoint', act: () => this.respawn() });
         items.push({ label: 'Restart Map', act: () => this.restart() });
         items.push({ label: this.net ? 'Shop Together' : 'Shop, then try again', act: () => this.openShop() });
+        items.push({ label: 'World Map', act: () => this.toWorldMap() });
         if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
         items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
-        this.menu = new MG.MenuList(items, W / 2, 262, { w: 340, h: 42, gap: 8 });
+        this.menu = new MG.MenuList(items, W / 2, 244, { w: 340, h: 36, gap: 6, fontSize: 20 });
       }
     }
 
@@ -560,6 +571,7 @@
         if (lv) this.joeyGrew.push(`${MG.charById(cid).name}'S JOEY GREW! (level ${lv})`);
       }
       this.score += this.hpBonus;
+      MG.Progress.clear(this.L.id); // opens the next stop on the Marsupial World map
       const best = MG.Save.get('best', {});
       if (!best[this.L.id] || this.score > best[this.L.id]) {
         best[this.L.id] = this.score;
@@ -570,11 +582,17 @@
       this.coinLine = this.slots.map((s) => (this.coop ? `P${s.id + 1} ` : '') + '+' + (s.earned || 0)).join('   ') + ' coins';
       const items = [];
       if (this.levelIndex + 1 < MG.LEVELS.length) items.push({ label: 'Next Map', act: () => this.goLevel(this.levelIndex + 1) });
+      items.push({ label: 'World Map', act: () => this.toWorldMap() });
       items.push({ label: this.net ? 'Shop Together' : 'Shop', act: () => this.openShop() });
       items.push({ label: 'Play Again', act: () => this.restart() });
       if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
       items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
-      this.menu = new MG.MenuList(items, W / 2, 330, { w: 320, h: 34, gap: 6, fontSize: 19 });
+      this.menu = new MG.MenuList(items, W / 2, 330, { w: 320, h: 30, gap: 5, fontSize: 18 });
+    }
+
+    // Back to the Marsupial World map (same players). Story panels play there.
+    toWorldMap() {
+      MG.Engine.setScene(new MG.WorldMapScene({ net: this.net, players: this.currentPlayers(), at: this.levelIndex }));
     }
 
     // The platypus's shop. Afterwards: the next map (or this one again), same players.
@@ -599,7 +617,7 @@
         { label: () => 'Sound: ' + (MG.Audio.muted ? 'OFF' : 'ON'), act: () => MG.Audio.toggleMute() },
       ];
       if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
-      items.push({ label: this.net ? 'End Wi-Fi Game' : 'Quit to Menu', act: () => this.quit() });
+      items.push({ label: this.net ? 'End Wi-Fi Game' : 'Quit to World Map', act: () => (this.net ? this.quit() : this.toWorldMap()) });
       this.menu = new MG.MenuList(items, W / 2, this.net ? 168 : 180, { w: 340, h: 36, gap: 6 });
     }
     resume() { this.state = 'play'; this.menu = null; }
@@ -688,7 +706,7 @@
         gates: this.gates.map((g, i) => ({ x: g.x, lift: g.lift, left: this.pestsLeft(i) })),
         crates: this.crates, pickups: this.pickups, enemies: this.enemies,
         players: this.slots.map((s) => s.f.renderState()),
-        grenades: this.grenades, projectiles: this.projectiles, coins: this.coins,
+        grenades: this.grenades, projectiles: this.projectiles, coins: this.coins, npcs: this.npcs,
         goalOpen: !this.boss || !this.boss.alive, world: this,
       });
       MG.CampaignHUD.draw(ctx, this.hudModel());
@@ -715,40 +733,75 @@
   //       players: [fighter renderState], grenades: [{ draw }], projectiles: [{ draw }], goalOpen, world }
   MG.drawCampaignWorld = function (ctx, v) {
     const W = MG.W;
+    const A = MG.Art;
+    const theme = v.L.theme || 'outback';
     const sh = v.fx.offset();
     ctx.save();
     v.fx.camera(ctx, v.camX);
-    MG.Art.background(ctx, v.camX, v.t, v.groundY);
+    A.background(ctx, v.camX, v.t, v.groundY, v.L.sky, theme);
     ctx.save();
     ctx.translate(-Math.round(v.camX) + sh.x, sh.y);
     const vis = (x, m = 200) => x > v.camX - m && x < v.camX + W + m;
     for (const d of v.L.decor || []) {
-      if (!vis(d.x)) continue;
-      if (d.type === 'mound') MG.Art.termiteMound(ctx, d.x, v.groundY, d.h);
-      else if (d.type === 'sign') MG.Art.signpost(ctx, d.x, v.groundY, d.text);
+      if (!vis(d.x, (d.w || 0) + 260)) continue;
+      if (d.type === 'mound') A.termiteMound(ctx, d.x, v.groundY, d.h);
+      else if (d.type === 'sign') A.signpost(ctx, d.x, v.groundY, d.text);
+      else if (A.decor) {
+        // a quokka and a goanna chatting in the background... who freeze when you look straight at them
+        if (d.type === 'quokkaGoanna') d.frozen = Math.abs(d.x - (v.camX + W / 2)) < 260;
+        A.decor(ctx, d, v.groundY, v.t);
+      }
     }
     for (let x = Math.floor(v.camX / 170) * 170; x < v.camX + W + 170; x += 170) {
       const r = Math.sin(x * 3.7) * 0.5 + 0.5;
-      MG.Art.spinifex(ctx, x + r * 90, v.groundY + 4 + r * 30, 0.8 + r * 0.6);
+      if (MG.waterAt(v.water || MG.waterZones(v.L), x + r * 90)) continue;
+      if (theme === 'outback' || !A.groundPlant) A.spinifex(ctx, x + r * 90, v.groundY + 4 + r * 30, 0.8 + r * 0.6);
+      else A.groundPlant(ctx, theme, x + r * 90, v.groundY + 4 + r * 30, 0.8 + r * 0.6);
     }
-    for (const p of v.platforms) if (vis(p.x, p.w + 100)) MG.Art.platform(ctx, p, v.groundY);
-    for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) MG.Art.grass(ctx, gr.x, gr.w, v.groundY, v.t, false);
+    for (const p of v.platforms) if (vis(p.x, p.w + 100)) A.platform(ctx, p, v.groundY, theme);
+    const water = v.water || MG.waterZones(v.L);
+    if (A.water) for (const z of water) if (vis(z.x, z.w + 100)) A.water(ctx, z.x, z.w, z.surface, v.groundY, v.t, false);
+    for (const n of v.npcs || []) if (n.kind === 'croc' && vis(n.x)) n.draw(ctx, v.world);
+    for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) A.grass(ctx, gr.x, gr.w, v.groundY, v.t, false);
     v.fx.drawDecals(ctx);
     const goalX = v.L.length - 160;
-    if (v.goalOpen || vis(goalX)) MG.Art.finish(ctx, goalX + 60, v.groundY, v.t);
-    for (const g of v.gates) if (vis(g.x)) MG.Art.gate(ctx, g.x, v.groundY, { open: g.lift, t: v.t, left: g.left });
+    if (v.goalOpen || vis(goalX)) A.finish(ctx, goalX + 60, v.groundY, v.t);
+    for (const g of v.gates) if (vis(g.x)) A.gate(ctx, g.x, v.groundY, { open: g.lift, t: v.t, left: g.left });
     for (const c of v.crates) if (vis(c.x)) c.draw(ctx);
     for (const pk of v.pickups) if (vis(pk.x)) pk.draw(ctx);
+    for (const n of v.npcs || []) if (n.kind !== 'croc' && vis(n.x)) n.draw(ctx, v.world);
     for (const e of v.enemies) if (vis(e.x) || !e.alive) e.draw(ctx, v.world);
     const order = v.players.slice().sort((a, b) => (b.st === 'ko') - (a.st === 'ko'));
     for (const s of order) MG.Fighter.drawState(ctx, s, v.world);
     for (const g of v.grenades) g.draw(ctx);
     for (const pr of v.projectiles) pr.draw(ctx);
     for (const c of v.coins || []) if (vis(c.x, 60)) c.draw(ctx);
-    for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) MG.Art.grass(ctx, gr.x - 6, gr.w + 12, v.groundY + 4, v.t, true);
+    if (A.water) for (const z of water) if (vis(z.x, z.w + 100)) A.water(ctx, z.x, z.w, z.surface, v.groundY, v.t, true);
+    for (const gr of v.L.grass || []) if (vis(gr.x, gr.w + 100)) A.grass(ctx, gr.x - 6, gr.w + 12, v.groundY + 4, v.t, true);
     v.fx.draw(ctx);
     ctx.restore();
     ctx.restore();
     v.fx.drawFinisher(ctx, v.camX);
+  };
+
+  // Water zones in a map: { x, w, depth } -> { x, w, surface }.
+  MG.waterZones = function (L) {
+    if (!L.water) return [];
+    if (!L._water) L._water = L.water.map((z) => ({ x: z.x, w: z.w, surface: MG.GROUND_Y - (z.depth || 100) }));
+    return L._water;
+  };
+  MG.waterAt = function (zones, x) {
+    for (const z of zones || []) if (x > z.x && x < z.x + z.w) return z;
+    return null;
+  };
+
+  // Campaign progress, saved in this browser: which maps are cleared. A map is open when it's the
+  // first one or the one before it is cleared (and any map you've cleared can be replayed).
+  MG.Progress = {
+    cleared() { const c = MG.Save.get('cleared', {}); return c && typeof c === 'object' ? c : {}; },
+    isCleared(id) { return !!this.cleared()[id] || this.best(id) > 0; }, // (a best score from before Milestone 6 counts too)
+    clear(id) { const c = this.cleared(); if (!c[id]) { c[id] = 1; MG.Save.set('cleared', c); } },
+    isOpen(i) { return i === 0 || (i > 0 && i < MG.LEVELS.length && (this.isCleared(MG.LEVELS[i].id) || this.isCleared(MG.LEVELS[i - 1].id))); },
+    best(id) { return (MG.Save.get('best', {}) || {})[id] || 0; },
   };
 })();

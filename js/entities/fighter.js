@@ -221,14 +221,20 @@
         } else {
           this.state = 'idle';
           const firing = ctrl.shoot && this.weapon;
-          const speed = this.def.speed * tea * (firing ? 0.55 : 1) * MG.Abilities.speed(this);
+          const swim = this.swimming ? (this.has('swimmer') ? 1.35 : 0.6) : 1; // Paddles is at home in the water
+          const speed = this.def.speed * tea * (firing ? 0.55 : 1) * swim * MG.Abilities.speed(this);
           const accel = (this.onGround ? 2400 : 1500) * tea * (this.sprintT > 0 ? 2 : 1);
           this.vx = approach(this.vx, dir * speed, accel * dt);
           if (dir && !firing && !this.autoFace) this.facing = dir;
           else if (dir && firing && !this.onGround && !this.autoFace) this.facing = dir;
         }
         if (ctrl.jumpP && this.state !== 'block') {
-          if (this.onGround) {
+          if (this.swimming) {
+            // a swimming stroke upward (strong enough to jump out at the surface)
+            this.vy = -(this.has('swimmer') ? 560 : 470);
+            this.onGround = false;
+            MG.Audio.hop();
+          } else if (this.onGround) {
             this.vy = -this.def.jump * (this.powers.tea ? 1.06 : 1);
             this.onGround = false;
             this.jumping = true;
@@ -263,7 +269,13 @@
 
     physics(dt, world) {
       const prevY = this.y;
-      this.vy += GRAV * (world.gravity || 1) * dt;
+      // water (world 3): floaty and slow; jump to swim up
+      const zone = world.waterAt ? world.waterAt(this.x) : null;
+      const wasSwimming = this.swimming;
+      this.swimming = !!zone && this.y > zone.surface + 24;
+      if (this.swimming && !wasSwimming) { world.fx.burst(this.x, zone.surface, '#9bd0ff', 12, 220); if (this.vy > 120) MG.Audio.splash(); }
+      this.vy += GRAV * (world.gravity || 1) * (this.swimming ? 0.22 : 1) * dt;
+      if (this.swimming) this.vy = Math.min(this.vy, 210);
       MG.Abilities.physics(this, dt, this.ctrl || {}, world);
       this.x += this.vx * dt;
       this.y += this.vy * dt;
@@ -700,6 +712,7 @@
   const PROJ_WORD = {
     gumnut: 'POK!', dust: 'WHUMP!', cube: 'PLOP!', wave: 'SPLOOSH!', wallaby: 'STAMPEDE!', bin: 'CLANG!', tongue: 'SLURP!', stink: 'COUGH!',
     pebble: 'PING!', snag: 'SIZZLE!', cricket: 'HOWZAT!', flame: 'TOASTY!', dropbear: 'DROP BEAR!', maul: 'MAUL!', magpie: 'SWOOP!',
+    claw: 'SLASH!', fruit: 'SPLAT!',
   };
   MG.Projectile = class {
     constructor(kind, x, y, vx, vy, team, hit) {

@@ -137,7 +137,7 @@ hf.state = 'idle'; hf.move = null; var snapIdle = JSON.parse(JSON.stringify(MG.S
 snapJab.pl[1].jab = 1; rs.onNet(snapJab); rs.onNet(snapIdle);
 check(!rs.players[1].jab && !rs.players[1].mk, 'a finished punch is not left drawn on friends\' screens');
 sent = [];
-key('KeyE', true); frames(1); key('KeyE', false); frames(1);
+key('KeyG', true); frames(1); key('KeyG', false); frames(1);
 key('KeyD', true); frames(3); key('KeyD', false); frames(1);
 var ins = sentOf('in');
 check(ins.some(function (s) { return s.to === 'host' && s.m.p.indexOf('grenadeP') >= 0; }), 'the friend\'s grenade key is sent to the host');

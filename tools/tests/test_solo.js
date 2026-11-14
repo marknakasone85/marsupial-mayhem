@@ -15,11 +15,11 @@ function runLevel(li) {
       var dir = near[0].x > p.x ? 'KeyD' : 'KeyA';
       set(dir, true); set(dir === 'KeyD' ? 'KeyA' : 'KeyD', false);
       set('KeyF', i % 10 < 2);
-      set('KeyG', i % 37 === 20);
+      set('KeyE', i % 37 === 20);
       set('KeyH', p.canSpecial && i % 20 === 0);
-      set('KeyE', many >= 3 && p.grenades > 0 && i % 120 === 0);
+      set('KeyG', many >= 3 && p.grenades > 0 && i % 120 === 0);
     } else {
-      set('KeyA', false); set('KeyD', true); set('KeyF', false); set('KeyG', false); set('KeyH', false); set('KeyE', false);
+      set('KeyA', false); set('KeyD', true); set('KeyF', false); set('KeyE', false); set('KeyH', false); set('KeyG', false);
     }
     set('KeyR', !!p.weapon && sc.enemies.some(function (e) { return e.alive && (e.x - p.x) * p.facing > 0 && Math.abs(e.x - p.x) < 500; }));
     if (i % 60 === 0) { if (Math.abs(p.x - lastX) < 5) stuck++; else stuck = 0; lastX = p.x; }

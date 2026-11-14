@@ -67,10 +67,10 @@
         ['Jump', 'W', '↑', 'A'],
         ['Block (hold)', 'S', '↓', 'Down / LB'],
         ['Attack', 'F', ', (comma)', 'X'],
-        ['Big Attack', 'G', '. (period)', 'Y'],
+        ['Big Attack', 'E', '. (period)', 'Y'],
         ['Special', 'H', '/ (slash)', 'B'],
         ['Shoot (hold)', 'R', '; (semicolon)', 'RB'],
-        ['Grenade, then kick it', 'E', "' (quote)", 'LT'],
+        ['Grenade, then kick it', 'G', "' (quote)", 'LT'],
         ['Joey (send it out)', 'Q', '[', 'Back / View'],
         ['Pouch (use saved item)', 'T', ']', 'RT'],
         ['Pause', 'Esc / P', 'Esc / P', 'Start'],
@@ -96,10 +96,10 @@
     //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
     keyStrip(ctx, player, t, opts = {}) {
       const LAYOUTS = {
-        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch'], [['Esc'], 'pause']],
+        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['E'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch'], [['Esc'], 'pause']],
         arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'attack'], [['K'], 'big'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['['], 'joey'], [[']'], 'pouch'], [['Esc'], 'pause']],
         pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'attack'], [['Y'], 'big'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Back'], 'joey'], [['RT'], 'pouch'], [['Start'], 'pause']],
-        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['G'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['E'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch']],
+        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'attack'], [['E'], 'big'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Q'], 'joey'], [['T'], 'pouch']],
         p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'attack'], [['.'], 'big'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['['], 'joey'], [[']'], 'pouch']],
       };
       const compact = !!opts.compact;
