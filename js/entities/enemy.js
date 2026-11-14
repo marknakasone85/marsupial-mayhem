@@ -59,15 +59,15 @@
       moves: ['dash', 'yowl', 'pounce', 'binThrow', 'dash', 'swipe', 'binThrow'], defeatText: 'FOXY ROXY\'S GANG IS FINISHED!',
     },
     diprotodon: {
-      art: 'diprotodon', behavior: 'boss', boss: true, native: true, hp: 800, speed: 180, w: 190, h: 130, dmg: 17, score: 9000,
+      art: 'diprotodon', behavior: 'boss', boss: true, native: true, confused: true, hp: 800, speed: 180, w: 190, h: 130, dmg: 17, score: 9000,
       scale: 1.1, weight: 6, name: 'DIPROTODON', moves: ['dash', 'stomp', 'leap', 'dash', 'stomp'], defeatText: 'THE DIPROTODON WANDERS HOME THROUGH THE RIFT!',
     },
     thylacoleo: {
-      art: 'thylacoleo', behavior: 'boss', boss: true, native: true, hp: 760, speed: 240, w: 150, h: 96, dmg: 17, score: 9000,
+      art: 'thylacoleo', behavior: 'boss', boss: true, native: true, confused: true, hp: 760, speed: 240, w: 150, h: 96, dmg: 17, score: 9000,
       scale: 1.1, weight: 4, name: 'THE MARSUPIAL LION', moves: ['pounce', 'bite', 'hide', 'pounce', 'swipe', 'bite'], defeatText: 'THE MARSUPIAL LION SLINKS BACK INTO THE PAST!',
     },
     procoptodon: {
-      art: 'procoptodon', behavior: 'boss', boss: true, native: true, hp: 820, speed: 230, w: 110, h: 190, dmg: 18, score: 9000,
+      art: 'procoptodon', behavior: 'boss', boss: true, native: true, confused: true, hp: 820, speed: 230, w: 110, h: 190, dmg: 18, score: 9000,
       scale: 0.95, weight: 5, name: 'PROCOPTODON', moves: ['leap', 'kick', 'dash', 'kick', 'leap'], defeatText: 'PROCOPTODON HOPS BACK INTO HISTORY!',
     },
     grandGrinner: {
@@ -786,7 +786,7 @@
       const s = this.state, k = Math.min(1, this.stateT / 0.3);
       const P = {
         grin: 'grin', frill: 'frill', strike: 'strike', coil: 'crouch', cling: 'cling', drop: 'drop', thumpWind: 'thump', lure: 'lure', run: 'run',
-        kick: 'kick', bite: 'bite', chomp: 'chomp', roll: 'roll', tailWind: 'tail', flashWind: 'flash', summonWind: 'summon', stompWind: 'stomp',
+        kick: 'kick', bite: 'bite', chomp: 'chomp', roll: 'roll', tailWind: 'tail', flashWind: 'selfie', summonWind: 'summon', stompWind: 'stomp',
         pounce: 'pounce', charge: 'charging',
       };
       if (!P[s]) return this.d.art === 'deathAdder' ? ['lure', 1] : null;
@@ -821,10 +821,13 @@
         crouch: !!(vf & 1), charging: !!(vf & 2), air: !!(vf & 8), moving: Math.abs(this.vx) > 10,
         warlord: d.warlord, bigTom: d.bigTom, crown: d.crown,
         roxy: d.roxy, emperor: d.emperor, spottedTail: d.spottedTail, champ: d.champ, evil: d.evil, hypno: d.hypno && this.alive,
-        angry: !!(vf & 256) && d.art === 'grandGrinner', jump: !!(vf & 8) && d.art === 'grandGrinner',
+        // the Grand Grinner: once the smile drops he's off his throne for good (it stays where it was)
+        angry: !!(vf & 256) && d.art === 'grandGrinner', jump: !!(vf & 256) && d.art === 'grandGrinner',
+        confused: !!d.confused,
         tongue: vf & 16 ? (this.remoteFlags !== undefined ? 0.9 : this.tongueAmt || 0) : 0,
         puff: vf & 32 ? (this.remoteFlags !== undefined ? 0.8 : this.puff || 0) : 0,
       };
+      if (d.art === 'grandGrinner' && (vf & 256) && MG.Art.grinThrone) MG.Art.grinThrone(ctx, this.homeX, world.groundY, { t: this.t, facing: -1 });
       const pose = this.remotePose !== undefined ? this.remotePose : this.pose();
       if (pose && pose[0]) o[pose[0]] = pose[1] === undefined ? 1 : pose[1];
       if (MG.Art[d.art]) MG.Art[d.art](ctx, this.x, this.y, o);

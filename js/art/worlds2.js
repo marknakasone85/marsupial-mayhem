@@ -16,8 +16,10 @@
 
   // ---------------------------------------------------------------- little helpers
   // Sub-paths (no stray joining lines) so many shapes can share one fill.
-  function circ(ctx, x, y, r) { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, TAU); }
+  // (radii are clamped: a negative one would make the canvas throw)
+  function circ(ctx, x, y, r) { r = Math.max(0.1, r); ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, TAU); }
   function ell(ctx, x, y, rx, ry, rot) {
+    rx = Math.max(0.1, rx); ry = Math.max(0.1, ry);
     ctx.moveTo(x + Math.cos(rot) * rx, y + Math.sin(rot) * rx);
     ctx.ellipse(x, y, rx, ry, rot, 0, TAU);
   }
@@ -50,7 +52,7 @@
     ctx.fill();
   }
   // the top half of an ellipse as its own sub-path (snow caps, domes)
-  function cap(ctx, x, y, rx, ry) { ctx.moveTo(x - rx, y); ctx.ellipse(x, y, rx, ry, 0, Math.PI, TAU); ctx.closePath(); }
+  function cap(ctx, x, y, rx, ry) { rx = Math.max(0.1, rx); ry = Math.max(0.1, ry); ctx.moveTo(x - rx, y); ctx.ellipse(x, y, rx, ry, 0, Math.PI, TAU); ctx.closePath(); }
   // a frothy line of surf along y from x0 to x1
   function foamLine(ctx, x0, x1, y, t, seed, alpha) {
     const n = Math.max(2, Math.round((x1 - x0) / 16));
@@ -112,7 +114,7 @@
   // Smoke puffs rising from (x, y), drifting right and fading.
   function smoke(ctx, x, y, t, n, size, rgb, alpha, rise) {
     for (let j = 0; j < n; j++) {
-      const k = (t * 0.18 + j / n) % 1;
+      const k = mod(t * 0.18 + j / n, 1);
       ctx.fillStyle = 'rgba(' + rgb + ',' + (alpha * (1 - k)).toFixed(3) + ')';
       ctx.beginPath(); ctx.arc(x + k * rise * 0.8 + Math.sin(t + j) * 3, y - k * rise, size * (0.4 + k), 0, TAU); ctx.fill();
     }
@@ -297,7 +299,7 @@
     ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
     ctx.beginPath();
     each(camX, 0.1, 48, 40, (sx, i) => {
-      const k = (t * 0.5 + hash(i + 61)) % 1;
+      const k = mod(t * 0.5 + hash(i + 61), 1);
       if (k > 0.6) return;
       const wy = hz + 10 + hash(i + 62) * 80, wx = sx + hash(i + 63) * 30;
       ctx.moveTo(wx - 8 * k - 3, wy); ctx.lineTo(wx + 8 * k + 3, wy);
@@ -325,10 +327,10 @@
     ['#8c8446', '#c4b872'].forEach((col, c) => {
       ctx.strokeStyle = col; ctx.lineWidth = 2;
       ctx.beginPath();
-      each(camX, 0.3, 19, 30, (sx, i) => {
+      each(camX, 0.3, 22, 30, (sx, i) => {
         if ((i & 1) !== c) return;
         const bx = sx + hash(i + 71) * 10, by = gy - 28 - tasPlain(bx + off3) + 6 + hash(i + 72) * 18;
-        for (let j = -3; j <= 3; j++) { ctx.moveTo(bx + j * 1.2, by + 6); ctx.quadraticCurveTo(bx + j * 3, by - 6, bx + j * 6, by - 9 + Math.abs(j) * 2); }
+        for (let j = -2; j <= 2; j++) { ctx.moveTo(bx + j * 1.5, by + 6); ctx.quadraticCurveTo(bx + j * 3.5, by - 6, bx + j * 7, by - 9 + Math.abs(j) * 2); }
       });
       ctx.stroke();
     });
@@ -550,9 +552,10 @@
   const riftHill = (x) => 38 + Math.sin(x * 0.005) * 20 + Math.sin(x * 0.013 + 2) * 10;
   function skyTear(ctx, cx, cy, t) {
     const pulse = 0.6 + 0.4 * Math.sin(t * 2.2);
-    const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, 250);
+    if (cx < -260 || cx > W + 260) return;
+    const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, 210);
     g.addColorStop(0, 'rgba(215,140,255,' + (0.55 * pulse).toFixed(3) + ')'); g.addColorStop(1, 'rgba(170,90,255,0)');
-    ctx.fillStyle = g; ctx.fillRect(cx - 250, cy - 250, 500, 500);
+    ctx.fillStyle = g; ctx.fillRect(cx - 210, Math.max(0, cy - 210), 420, cy + 210 - Math.max(0, cy - 210));
     const top = [], bot = [];
     for (let j = 0; j <= 12; j++) {
       const k = j / 12, px = cx - 180 + k * 360, py = cy - 36 + k * 72 + (j % 2 ? -12 : 10) * hash(j + 400);
@@ -590,7 +593,7 @@
     smoke(ctx, x, base - h - 6, t + i * 2, 6, 16, '120,95,110', 0.55, 120);
   }
   // tree fern: a trunk and a crown of arching fronds with drooping leaflets (soft, no outline)
-  function fernSil(ctx, x, base, h, s, trunk, leaf, t, i) {
+  function fernSil(ctx, x, base, h, s, trunk, leaf, t, i, far) {
     const tx = x + Math.sin(i * 1.7) * 10 * s, ty = base - h;
     ctx.lineCap = 'round';
     ctx.strokeStyle = trunk; ctx.lineWidth = 10 * s;
@@ -602,14 +605,15 @@
       const a = -Math.PI / 2 + (j - 4) * 0.4, L = (62 + hash(i + j) * 22) * s, sw = Math.sin(t * 0.8 + i + j) * 2 * s;
       fr.push([tx + Math.cos(a) * L * 0.7, ty + Math.sin(a) * L * 0.8, tx + Math.cos(a) * L * 1.3 + sw, ty + Math.sin(a) * L * 0.3 + L * 0.5]);
     }
-    ctx.strokeStyle = leaf; ctx.lineWidth = 3.2 * s;
+    ctx.strokeStyle = leaf; ctx.lineWidth = (far ? 7 : 3.2) * s;
     ctx.beginPath();
     for (const [cx, cy, ex, ey] of fr) { ctx.moveTo(tx, ty); ctx.quadraticCurveTo(cx, cy, ex, ey); }
     ctx.stroke();
-    ctx.lineWidth = 2.6 * s;
+    if (far) return;
+    ctx.lineWidth = 2.6 * s; ctx.lineCap = 'butt';
     ctx.beginPath();
     for (const [cx, cy, ex, ey] of fr) {
-      for (let k = 0.18; k < 0.95; k += 0.11) {
+      for (let k = 0.2; k < 0.95; k += 0.15) {
         const m = 1 - k, px = m * m * tx + 2 * m * k * cx + k * k * ex, py = m * m * ty + 2 * m * k * cy + k * k * ey;
         const ll = ((1 - k) * 11 + 3) * s;
         ctx.moveTo(px - 3 * s, py + ll); ctx.lineTo(px, py); ctx.lineTo(px + 3 * s, py + ll);
@@ -635,10 +639,10 @@
     ctx.beginPath();
     for (const [, ex, ey] of fr) { ctx.moveTo(x, top); ctx.lineTo(ex, ey); }
     ctx.stroke();
-    ctx.lineWidth = 2 * s;
+    ctx.lineWidth = 2 * s; ctx.lineCap = 'butt';
     ctx.beginPath();
     for (const [a, ex, ey] of fr) {
-      for (let k = 0.25; k < 1; k += 0.15) {
+      for (let k = 0.25; k < 1; k += 0.18) {
         const px = lerp(x, ex, k), py = lerp(top, ey, k);
         ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(a - 1) * 8 * s, py + Math.sin(a - 1) * 8 * s);
         ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(a + 1) * 8 * s, py + Math.sin(a + 1) * 8 * s);
@@ -659,9 +663,9 @@
     ctx.fillStyle = haze; ctx.fillRect(0, gy - 200, W, 140);
     // misty tree-fern forest
     ridge(ctx, camX, 0.18, gy - 66, gy, '#9a7c62', (x) => 8 + Math.sin(x * 0.02) * 5);
-    each(camX, 0.18, 96, 120, (sx, i) => {
+    each(camX, 0.18, 120, 120, (sx, i) => {
       if (hash(i + 11) < 0.3) return;
-      fernSil(ctx, sx + hash(i + 12) * 40, gy - 60, 100 + hash(i + 13) * 70, 0.8, '#94776a', '#8c9364', t, i);
+      fernSil(ctx, sx + hash(i + 12) * 40, gy - 60, 100 + hash(i + 13) * 70, 0.8, '#94776a', '#8c9364', t, i, true);
     });
     // near cycads and tree ferns
     each(camX, 0.35, 190, 160, (sx, i) => {
@@ -675,7 +679,7 @@
     ctx.beginPath();
     each(camX, 0.6, 70, 80, (sx, i) => {
       const bx = sx + hash(i + 31) * 30, hgt = 20 + hash(i + 32) * 28;
-      for (let j = -3; j <= 3; j++) { const a = -Math.PI / 2 + j * 0.42; ell(ctx, bx + Math.cos(a) * hgt * 0.5, gy - 2 + Math.sin(a) * hgt * 0.5, hgt * 0.5, 4.5, a); }
+      for (let j = -2; j <= 2; j++) { const a = -Math.PI / 2 + j * 0.5; ell(ctx, bx + Math.cos(a) * hgt * 0.5, gy - 2 + Math.sin(a) * hgt * 0.5, hgt * 0.5, 5, a); }
     });
     ctx.fill();
     // dark volcanic soil with black rocks and glowing cracks
@@ -871,22 +875,24 @@
   const lairRoof = (x) => 34 + Math.sin(x * 0.009) * 14 + Math.abs(Math.sin(x * 0.023)) * 16;
   // overlapping scales carved faintly into the rock, fading out towards the edge of the patch
   function scalePatch(ctx, cx, cy, rx, ry, s) {
+    if (cx + rx < 0 || cx - rx > W) return;
     ctx.lineWidth = 2;
-    for (const [k, a] of [[1, 0.035], [0.7, 0.05], [0.42, 0.06]]) {
-      ctx.save();
-      ctx.beginPath(); ctx.ellipse(cx, cy, rx * k, ry * k, 0, 0, TAU); ctx.clip();
+    const a0 = 0.12 * Math.PI, ca = Math.cos(a0) * s, sa = Math.sin(a0) * s;
+    for (const [k0, k1, a] of [[0.7, 1, 0.035], [0.42, 0.7, 0.07], [0, 0.42, 0.11]]) {
       ctx.strokeStyle = 'rgba(150,215,185,' + a + ')';
       ctx.beginPath();
-      for (let r = 0, y = cy - ry * k; y < cy + ry * k + s; r++, y += s * 0.7) {
-        for (let x = cx - rx * k - (r % 2 ? s : 0); x < cx + rx * k + s; x += s * 2) {
-          ctx.moveTo(x + Math.cos(0.12 * Math.PI) * s, y + Math.sin(0.12 * Math.PI) * s); ctx.arc(x, y, s, 0.12 * Math.PI, 0.88 * Math.PI);
+      for (let r = 0, y = cy - ry; y < cy + ry; r++, y += s * 0.7) {
+        for (let x = cx - rx - (r % 2 ? s : 0); x < cx + rx; x += s * 2) {
+          const q = Math.hypot((x - cx) / rx, (y - cy) / ry);
+          if (q < k0 || q >= k1) continue;
+          ctx.moveTo(x + ca, y + sa); ctx.arc(x, y, s, a0, Math.PI - a0);
         }
       }
       ctx.stroke();
-      ctx.restore();
     }
   }
   function glowSpot(ctx, x, y, r, rgb, a) {
+    if (!(a > 0.005)) return;
     const g = ctx.createRadialGradient(x, y, 2, x, y, r);
     g.addColorStop(0, 'rgba(' + rgb + ',' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + rgb + ',0)');
     ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
@@ -911,7 +917,7 @@
   }
   function torch(ctx, x, y, t, i) {
     const fl = Math.sin(t * 13 + i * 2) * 0.12 + Math.sin(t * 7.3 + i) * 0.08;
-    glowSpot(ctx, x, y - 16, 110, '255,170,80', 0.3 + fl * 0.4);
+    glowSpot(ctx, x, y - 14, 92, '255,170,80', 0.3 + fl * 0.4);
     ctx.fillStyle = '#3a3030'; ctx.fillRect(x - 7, y - 2, 14, 4); ctx.fillRect(x - 2, y - 2, 4, 14);
     ctx.fillStyle = '#6a4a30';
     ctx.beginPath(); ctx.moveTo(x - 4, y - 14); ctx.lineTo(x + 4, y - 14); ctx.lineTo(x + 2, y + 6); ctx.lineTo(x - 2, y + 6); ctx.closePath(); ctx.fill();
@@ -931,8 +937,8 @@
     each(camX, 0.06, 150, 120, (sx, i) => { circ(ctx, sx + hash(i + 1) * 40, gy - 120 - hash(i + 2) * 120, 70 + hash(i + 3) * 50); });
     ctx.fill();
     each(camX, 0.06, 760, 300, (sx, i) => {
-      glowSpot(ctx, sx + 380, gy - 180, 200, '60,220,150', 0.12 + 0.05 * Math.sin(t * 1.5 + i));
-      scalePatch(ctx, sx + 200 + hash(i + 4) * 200, gy - 210 + hash(i + 5) * 60, 170, 80, 13);
+      if (sx + 380 > -170 && sx + 380 < W + 170) glowSpot(ctx, sx + 380, gy - 180, 170, '60,220,150', 0.12 + 0.05 * Math.sin(t * 1.5 + i));
+      scalePatch(ctx, sx + 200 + hash(i + 4) * 200, gy - 210 + hash(i + 5) * 60, 170, 80, 15);
     });
     // stone pillars where stalactites have grown down to the floor
     each(camX, 0.15, 420, 80, (sx, i) => {
@@ -984,10 +990,12 @@
     ctx.fillStyle = 'rgba(90,255,170,' + (0.45 + 0.3 * Math.sin(t * 3)).toFixed(3) + ')';
     ctx.beginPath(); each(camX, 1, 77, 20, (sx, i) => { if (hash(i + 58) < 0.4) circ(ctx, sx + hash(i + 59) * 40, gy + 8 + hash(i + 60) * 54, 1.6); }); ctx.fill();
     ctx.fillStyle = '#6a7084'; ctx.fillRect(0, gy, W, 3);
-    // a soft dark vignette at the edges
-    const vig = ctx.createRadialGradient(W / 2, H * 0.55, H * 0.35, W / 2, H * 0.55, W * 0.7);
-    vig.addColorStop(0, 'rgba(5,8,14,0)'); vig.addColorStop(1, 'rgba(5,8,14,0.45)');
-    ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+    // darker edges
+    for (const [x0, x1] of [[0, 150], [W, W - 150]]) {
+      const v = ctx.createLinearGradient(x0, 0, x1, 0);
+      v.addColorStop(0, 'rgba(5,8,14,0.4)'); v.addColorStop(1, 'rgba(5,8,14,0)');
+      ctx.fillStyle = v; ctx.fillRect(Math.min(x0, x1), 0, 150, H);
+    }
   };
 
   // ---- a generic green island (the bonus Isle of Man map): rolling green hills with dry-stone
@@ -1059,14 +1067,18 @@
     for (let sx = -10; sx <= W + 20; sx += 10) ctx.lineTo(sx, wallTop(sx) + 4);
     for (let sx = W + 20; sx >= -10; sx -= 10) ctx.lineTo(sx, wallTop(sx) + 24);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#9c9d94'; ctx.strokeStyle = 'rgba(55,55,50,0.55)'; ctx.lineWidth = 1.2;
+    ctx.fillStyle = '#9c9d94';
     ctx.beginPath();
-    each(camX, 0.3, 14, 20, (sx, i) => { const y = wallTop(sx); ell(ctx, sx, y + 10, 6.5, 3.6, 0); ell(ctx, sx + 7, y + 18, 6.5, 3.6, 0); });
-    ctx.fill(); ctx.stroke();
+    each(camX, 0.3, 14, 20, (sx, i) => { const y = wallTop(sx); ell(ctx, sx, y + 10, 5.6, 3, 0); ell(ctx, sx + 7, y + 18, 5.6, 3, 0); });
+    ctx.fill();
+    ctx.fillStyle = '#6a6b64';
+    ctx.beginPath();
+    each(camX, 0.3, 6, 20, (sx, i) => { const y = wallTop(sx); ctx.rect(sx - 2.5, y - 1.5 + (i % 3 === 1 ? 1 : 0), 6, 8); });
+    ctx.fill();
     ctx.fillStyle = '#aeafa5';
     ctx.beginPath();
-    each(camX, 0.3, 6, 20, (sx, i) => { const y = wallTop(sx); ctx.rect(sx - 2, y - 1 + (i % 3 === 1 ? 1 : 0), 5, 7); });
-    ctx.fill(); ctx.stroke();
+    each(camX, 0.3, 6, 20, (sx, i) => { const y = wallTop(sx); ctx.rect(sx - 1.5, y - 0.5 + (i % 3 === 1 ? 1 : 0), 4, 6); });
+    ctx.fill();
     each(camX, 0.3, 170, 80, (sx, i) => {
       if (hash(i + 181) < 0.4) return;
       const bx = sx + hash(i + 182) * 60, by = gy - 18 - iomNear(bx + offN) + 12, r = 14 + hash(i + 183) * 8;
@@ -1264,24 +1276,38 @@
     ctx.beginPath(); ctx.moveTo(x0, bottom); ctx.lineTo(x0 + 3, top + 9); ctx.lineTo(x0 + w - 3, top + 9); ctx.lineTo(x0 + w, bottom); ctx.closePath();
     ctx.fill(); ctx.stroke();
     ctx.save(); ctx.clip();
-    ctx.strokeStyle = 'rgba(43,26,20,0.55)'; ctx.lineWidth = 1.2;
+    const stones = [];
     let row = 0;
     for (let y = bottom - 12; y > top + 4; y -= 11, row++) {
       let x = x0 - (row % 2 ? 9 : 0) - 4, j = 0;
       while (x < x0 + w + 4) {
         const sw = 15 + hash(seed + row * 17 + j) * 13;
-        ctx.fillStyle = STONES[Math.floor(hash(seed + row * 7 + j * 3) * STONES.length)];
-        ctx.beginPath(); ctx.roundRect(x + 1, y + 1, sw - 2, 10, 4); ctx.fill(); ctx.stroke();
+        stones.push([x + 1, y + 1, sw - 2, Math.floor(hash(seed + row * 7 + j * 3) * STONES.length)]);
         x += sw; j++;
       }
     }
+    for (let c = 0; c < STONES.length; c++) {
+      ctx.fillStyle = STONES[c];
+      ctx.beginPath();
+      for (const st of stones) if (st[3] === c) ctx.rect(st[0], st[1], st[2], 10);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(43,26,20,0.55)'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (const st of stones) ctx.rect(st[0], st[1], st[2], 10);
+    ctx.stroke();
     ctx.restore();
     // coping stones standing on edge
-    ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
-    for (let x = x0 + 1, j = 0; x < x0 + w - 4; x += 7, j++) {
-      ctx.fillStyle = STONES[Math.floor(hash(seed + j * 5 + 1) * STONES.length)];
-      ctx.beginPath(); ctx.roundRect(x, top + (j % 3 === 1 ? 1 : 0), 7, 12, 2); ctx.fill(); ctx.stroke();
+    for (let c = 0; c < 2; c++) {
+      ctx.fillStyle = STONES[c ? 2 : 0];
+      ctx.beginPath();
+      for (let x = x0 + 1, j = 0; x < x0 + w - 4; x += 7, j++) if ((j % 2) === c) ctx.roundRect(x, top + (j % 3 === 1 ? 1 : 0), 7, 12, 2);
+      ctx.fill();
     }
+    ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x = x0 + 1, j = 0; x < x0 + w - 4; x += 7, j++) ctx.roundRect(x, top + (j % 3 === 1 ? 1 : 0), 7, 12, 2);
+    ctx.stroke();
     ctx.fillStyle = 'rgba(110,160,70,0.8)';
     ctx.beginPath();
     for (let j = 0; j < w / 50; j++) ell(ctx, x0 + 14 + j * 50 + hash(seed + j * 9) * 20, top + 14 + hash(seed + j * 4) * (bottom - top - 24), 6, 3, 0);
@@ -1612,7 +1638,7 @@
       ctx.strokeStyle = o.line; ctx.lineWidth = 3; ctx.stroke();
       ctx.lineWidth = 1.5;
       for (let j = 0; j < w / 120; j++) {
-        const k = (t * 0.6 + hash(seed + j * 5)) % 1, rx = x + 40 + j * 120 + hash(seed + j) * 50;
+        const k = mod(t * 0.6 + hash(seed + j * 5), 1), rx = x + 40 + j * 120 + hash(seed + j) * 50;
         ctx.strokeStyle = o.glow ? 'rgba(150,255,220,' + (0.7 * (1 - k)).toFixed(3) + ')' : 'rgba(255,255,255,' + (0.7 * (1 - k)).toFixed(3) + ')';
         ctx.beginPath(); ctx.ellipse(rx, surfaceY + 4, 6 + k * 24, 2 + k * 4, 0, 0, TAU); ctx.stroke();
       }
@@ -2096,20 +2122,22 @@
       const a = -Math.PI / 2 + (j - 4.5) * 0.34 + Math.sin(t * 0.7 + j) * 0.02, L = (100 + hash(x + j) * 30) * s;
       fr.push([a, tx + Math.cos(a) * L * 0.7, ty + Math.sin(a) * L * 0.75, tx + Math.cos(a) * L * 1.35, ty + Math.sin(a) * L * 0.25 + L * 0.55, j]);
     }
-    fr.sort((p, q) => Math.abs(q[0] + Math.PI / 2) - Math.abs(p[0] + Math.PI / 2));
-    for (const [a, cx, cy, ex, ey, j] of fr) {
-      ctx.fillStyle = j % 2 ? '#3f8a32' : '#4f9a3c'; ctx.strokeStyle = LINE; ctx.lineWidth = 1.2;
+    const leaflets = (dx, dy, grow) => {
       ctx.beginPath();
-      for (let k = 0.14; k < 0.97; k += 0.083) {
-        const m = 1 - k, px = m * m * tx + 2 * m * k * cx + k * k * ex, py = m * m * ty + 2 * m * k * cy + k * k * ey;
-        const dx = 2 * m * (cx - tx) + 2 * k * (ex - cx), dy = 2 * m * (cy - ty) + 2 * k * (ey - cy), ang = Math.atan2(dy, dx);
-        const ll = ((1 - k) * 11 + 4) * s;
-        for (const side of [-1, 1]) { const la = ang + side * 1.25; ell(ctx, px + Math.cos(la) * ll * 0.9, py + Math.sin(la) * ll * 0.9, ll, ll * 0.33, la); }
+      for (const [, cx, cy, ex, ey] of fr) {
+        for (let k = 0.14; k < 0.97; k += 0.12) {
+          const m = 1 - k, px = m * m * tx + 2 * m * k * cx + k * k * ex, py = m * m * ty + 2 * m * k * cy + k * k * ey;
+          const ddx = 2 * m * (cx - tx) + 2 * k * (ex - cx), ddy = 2 * m * (cy - ty) + 2 * k * (ey - cy), ang = Math.atan2(ddy, ddx);
+          const ll = ((1 - k) * 12 + 4.5) * s;
+          for (const side of [-1, 1]) { const la = ang + side * 1.25; ell(ctx, px + Math.cos(la) * ll * 0.9 + dx, py + Math.sin(la) * ll * 0.9 + dy, ll + grow, ll * 0.34 + grow, la); }
+        }
       }
-      ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = '#2e5a24'; ctx.lineWidth = 2.5 * s;
-      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.quadraticCurveTo(cx, cy, ex, ey); ctx.stroke();
-    }
+      ctx.fill();
+    };
+    ctx.fillStyle = LINE; leaflets(0, 0, 1.4);
+    ctx.fillStyle = '#4a9638'; leaflets(0, 0, 0);
+    ctx.strokeStyle = '#2e5a24'; ctx.lineWidth = 2.5 * s;
+    ctx.beginPath(); for (const [, cx, cy, ex, ey] of fr) { ctx.moveTo(tx, ty); ctx.quadraticCurveTo(cx, cy, ex, ey); } ctx.stroke();
     // a new frond uncurling in the middle
     ctx.strokeStyle = LINE; ctx.lineWidth = 6 * s;
     const fh = ty - 26 * s;
