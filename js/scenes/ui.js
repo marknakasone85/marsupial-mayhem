@@ -94,6 +94,19 @@
       UI.text(ctx, 'Press any key to go back.', W / 2, 512, 13, '#9bf6ff', 'center');
     },
 
+    // The key for an action on the controls the player is using now (keyboard keys follow Settings).
+    keyName(action, layout = MG.Input.lastDevice) {
+      const PAD = { left: '◀', right: '▶', up: 'A', down: 'LB', attack: 'X', big: 'Y', special: 'B', shoot: 'RB', grenade: 'LT', joey: 'Back', pouch: 'RT' };
+      const SOLO = { attack: 'J', big: 'K', special: 'L' }; // playing alone with the arrow keys
+      if (layout === 'pad') return PAD[action] || null;
+      if (layout === 'arrows') return SOLO[action] || MG.Keys.label('P2', action);
+      return MG.Keys.label('P1', action);
+    },
+    // Hints can name a key as {action} (e.g. "Press {grenade}"): never a fixed letter, since keys change.
+    fillKeys(str) {
+      return String(str).replace(/\{(\w+)\}/g, (m, a) => UI.keyName(a) || m);
+    },
+
     // Key-hint strip along the bottom edge. Lights up the move the player is doing, and shows the joey's
     // level (with a bar while it rests) and the pouch's saved item, so every control sits at the bottom.
     //  opts.layout: 'wasd' | 'arrows' | 'pad' (solo, follows the keys in use) or 'p1' | 'p2' (duel)

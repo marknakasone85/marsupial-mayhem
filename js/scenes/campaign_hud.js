@@ -122,7 +122,7 @@
         UI.outlineText(ctx, o.L.world, W / 2, 210, 26, '#ffd23f', 'center');
         UI.outlineText(ctx, o.L.name, W / 2, 252, 46, '#ffffff', 'center');
         const tip = MG.Touch.enabled && o.L.tipTouch ? o.L.tipTouch : o.L.tip;
-        if (tip) UI.outlineText(ctx, tip, W / 2, 298, 17, '#9bf6ff', 'center');
+        if (tip) UI.outlineText(ctx, UI.fillKeys(tip), W / 2, 298, 17, '#9bf6ff', 'center');
         ctx.globalAlpha = 1;
       } else if (o.state === 'paused') {
         UI.fade(ctx, 0.55);

@@ -450,12 +450,17 @@
           this.comboT = 1.2;
           const cx = (box.x + box.w / 2 + target.x) / 2;
           const cy = target.box.y + target.box.h * 0.35;
-          world.fx.burst(cx, cy, h.big ? '#ff4d6d' : '#ffd23f', h.big ? 18 : 10);
-          world.fx.hitText(cx, cy - 30, h.big);
+          // a punch (the attack; a combo's third is a hook) or a kick (the big attack) each look and
+          // sound their own way; specials keep the general burst
+          const blow = this.move && this.move.kind === 'kick' ? 'kick' : this.move && this.move.kind === 'jab' ? (h === this.moves.hook ? 'hook' : 'punch') : null;
+          world.fx.burst(cx, cy, h.big ? '#ff4d6d' : '#ffd23f', h.big ? 18 : blow === 'hook' ? 13 : 10);
+          if (blow) world.fx.impact(cx, cy, blow === 'kick' ? 'kick' : 'punch', dir, blow === 'hook');
+          if (blow === 'kick' && this.onGround) world.fx.dust(this.x - this.facing * 12, this.y, -this.facing, 7);
+          world.fx.hitText(cx, cy - 30, h.big, blow);
           if (bane > 1 && Math.random() < 0.3) world.fx.text(cx, cy - 60, 'BILBY BEATS BUNNY!', '#f6b3c4', 16);
-          world.fx.shake(h.big ? 10 : 4);
-          MG.Engine.freeze(h.big ? 0.08 : 0.035);
-          if (h.big) MG.Audio.kick(); else MG.Audio.jab();
+          world.fx.shake(h.big ? 10 : blow === 'hook' ? 6 : 4);
+          MG.Engine.freeze(blow === 'kick' ? 0.1 : h.big ? 0.08 : blow === 'hook' ? 0.055 : 0.035);
+          if (h.big) MG.Audio.kick(); else MG.Audio.jab(blow === 'hook');
         }
         if (world.onHit) world.onHit(this, target, hit, result);
       }

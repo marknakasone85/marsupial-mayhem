@@ -3,7 +3,7 @@
 // "snapshot" of everything guests need to draw, plus the effects and sounds that
 // happened since the last one (recorded here so guests can replay them).
 (function () {
-  const FX_METHODS = ['burst', 'text', 'gore', 'splat', 'feathers', 'shake', 'hitText', 'finisher', 'ring'];
+  const FX_METHODS = ['burst', 'text', 'gore', 'splat', 'feathers', 'shake', 'hitText', 'finisher', 'ring', 'impact', 'dust'];
   const AUDIO_METHODS = ['tone', 'noise', 'wobble', 'hit', 'bigHit', 'whiff', 'jump', 'land', 'hurt', 'block',
     'pickup', 'heal', 'gong', 'crate', 'special', 'ko', 'win', 'shoot', 'emptyClick', 'ammo', 'powerUp',
     'funnyDeath', 'playMusic', 'finisher', 'jab', 'kick', 'hop', 'pin', 'punt', 'boom', 'gatling', 'munch',

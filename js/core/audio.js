@@ -157,11 +157,20 @@
     ammo() { [660, 880, 1100].forEach((f, i) => this.tone(f, 0.07, 'square', 0.1, null, i * 0.05)); },
 
     // ---------- Marsupial Mayhem ----------
-    jab() { this.noise(0.07, 0.7, 2600, 0.8); this.tone(320, 0.05, 'square', 0.1, 140); },
+    // A punch: a crisp snap, a touch higher or lower each time so a flurry doesn't sound like a machine.
+    // heavy = a combo's third punch (the hook): a fuller smack.
+    jab(heavy) {
+      const v = 0.9 + Math.random() * 0.2;
+      this.noise(0.045, 0.75, 3400 * v, 1.1);
+      this.tone(560 * v, 0.045, 'square', 0.09, 230);
+      if (heavy) { this.noise(0.1, 0.8, 1500, 0.7, 0.01); this.tone(240, 0.09, 'square', 0.12, 90, 0.01); }
+    },
+    // A kick: a deep body thud with a slap on top.
     kick() {
-      this.noise(0.2, 1.0, 900, 0.6);
-      this.tone(150, 0.2, 'sawtooth', 0.22, 40);
-      this.tone(900, 0.12, 'sine', 0.08, 300, 0.03);
+      this.tone(118, 0.24, 'sine', 0.5, 36);
+      this.noise(0.18, 1.0, 520, 0.7);
+      this.noise(0.05, 0.6, 2200, 1.2, 0.012);
+      this.tone(170, 0.16, 'sawtooth', 0.14, 50, 0.01);
     },
     hop() { this.tone(170, 0.16, 'sine', 0.22, 420); },
     // Grenade: the pin comes out with a little "tink", then a fizzing fuse; the boom is big and low.

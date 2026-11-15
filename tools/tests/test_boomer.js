@@ -163,4 +163,64 @@ pig = sc.addEnemy('pig', 850); pig.cool = 0; sc.enemies.push(pig);
 var charged = false;
 for (i = 0; i < 150; i++) { frames(1); if (pig.state === 'charge') charged = true; }
 check(charged, 'a pig snorts "!" then charges');
+
+// ---- punches and kicks feel different (players asked for punch and kick, 15 Nov 2026)
+function blows(cid, fn) {
+  MG.Engine.setScene(new MG.CampaignScene({ charId: cid, level: 0 }));
+  var s = scene();
+  s.enemies = []; s.crates = []; s.pickups = []; s.boss = null;
+  s.gates.forEach(function (g) { g.opened = true; });
+  s.player.x = 600; s.player.facing = 1; s.t = 5;
+  frames(30);
+  var d = dummy(s, 'pig', 650, 900), log = [];
+  var fx = s.fx, realI = fx.impact, realD = fx.dust, realT = fx.hitText, realJ = MG.Audio.jab, realK = MG.Audio.kick, realF = MG.Engine.freeze;
+  fx.impact = function (x, y, kind, dir, heavy) { log.push('impact:' + kind + (heavy ? '!' : '')); return realI.apply(this, arguments); };
+  fx.dust = function () { log.push('dust'); return realD.apply(this, arguments); };
+  fx.hitText = function (x, y, big, kind) { log.push('words:' + kind); return realT.apply(this, arguments); };
+  MG.Audio.jab = function (heavy) { log.push(heavy ? 'snap!' : 'snap'); };
+  MG.Audio.kick = function () { log.push('thud'); };
+  MG.Engine.freeze = function (t) { log.push('freeze:' + t); return realF.apply(this, arguments); };
+  fn(s, d);
+  fx.impact = realI; fx.dust = realD; fx.hitText = realT; MG.Audio.jab = realJ; MG.Audio.kick = realK; MG.Engine.freeze = realF;
+  return log;
+}
+var lp = blows('boomer', function () { press('KeyF', 12); });
+check(lp.indexOf('impact:punch') >= 0 && lp.indexOf('words:punch') >= 0 && lp.indexOf('snap') >= 0 && lp.indexOf('freeze:0.035') >= 0 && lp.indexOf('dust') < 0,
+  'a punch: a quick white star, punch words, a crisp snap and the shortest pause: ' + lp.join(' '));
+var lh = blows('boomer', function (s, d) { [18, 18, 30].forEach(function (n) { d.x = s.player.x + 50; d.vx = 0; press('KeyF', n); }); });
+check(lh.indexOf('impact:punch!') >= 0 && lh.indexOf('words:hook') >= 0 && lh.indexOf('snap!') >= 0 && lh.indexOf('freeze:0.055') >= 0,
+  'the combo\'s third punch (the hook) lands harder: a bigger star, its own words, a fuller smack: ' + lh.join(' '));
+var lk = blows('tank', function () { press('KeyE', 30); });
+check(lk.indexOf('impact:kick') >= 0 && lk.indexOf('words:kick') >= 0 && lk.indexOf('thud') >= 0 && lk.indexOf('dust') >= 0 && lk.indexOf('freeze:0.1') >= 0,
+  'a kick (Tank\'s too): a golden burst with a shock arc, kick words, a deep thud, dust from the planted foot and a longer pause: ' + lk.join(' '));
+var ls = blows('bins', function (s) { s.player.meter = MG.SPECIAL_COST; press('KeyH', 90); });
+check(ls.join(' ').indexOf('impact') < 0, 'specials keep their own look (no punch or kick star)');
+// the effects themselves: they show for a split second, draw both kinds, and the dust puffs grow
+var fx = new MG.FX(), dc = 0;
+fx.impact(100, 200, 'punch', 1, false); fx.impact(120, 200, 'kick', -1, false); fx.impact(140, 200, 'punch', 1, true); fx.dust(100, 470, -1, 6);
+var cx = new Proxy({}, { get: function (t, k) { if (k in t) return t[k]; if (k === 'fill' || k === 'stroke') return function () { dc++; }; return noop; }, set: function (t, k, v) { t[k] = v; return true; } });
+fx.draw(cx);
+var puff0 = fx.parts[0].size;
+fx.update(0.1);
+check(fx.impacts.length === 3 && dc >= 10 && fx.parts.length === 6 && fx.parts[0].size > puff0 && fx.parts.every(function (q) { return q.kind === 'puff' && q.vx < 0; }),
+  'the stars and the shock arc draw, and the dust puffs drift back and grow');
+fx.update(0.15);
+check(fx.impacts.length === 0, '...and the stars are gone in a fifth of a second');
+// Wi-Fi friends see and hear them too
+var gfx = new MG.FX();
+MG.Sync.replay(gfx, { fx: [['impact', [300, 250, 'kick', 1, false]], ['dust', [280, 470, -1, 5]], ['hitText', [300, 220, true, 'kick']]], au: [] });
+check(gfx.impacts && gfx.impacts.length === 1 && gfx.parts.length === 5 && gfx.texts.length === 1, 'a Wi-Fi friend replays the kick\'s burst, dust and words');
+
+// ---- hints name the player's own keys (never a fixed letter)
+check(MG.UI.fillKeys('Press {grenade} to drop a grenade') === 'Press G to drop a grenade', 'the first map\'s tip says G with the standard keys');
+MG.Keys.set('P1', 'grenade', 'KeyZ');
+var changed = MG.UI.fillKeys('Press {grenade}');
+MG.Keys.reset();
+var lastDev = MG.Input.lastDevice;
+MG.Input.lastDevice = 'pad'; var padTip = MG.UI.fillKeys('Press {grenade}');
+MG.Input.lastDevice = 'arrows'; var arrowTip = MG.UI.fillKeys('{attack} {big} {grenade}');
+MG.Input.lastDevice = lastDev;
+check(changed === 'Press Z' && padTip === 'Press LT' && arrowTip === 'J K ' + MG.Keys.label('P2', 'grenade'), '...the key chosen in Settings, LT on a gamepad, and the solo arrow keys');
+check(MG.LEVELS.every(function (L) { return ![L.tip, L.tipTouch].some(function (t) { return t && /\bPress [A-Z0-9]\b/.test(t); }); }) && /\{grenade\}/.test(MG.LEVELS[0].tip),
+  'no map tip names a fixed key');
 done('boomer');

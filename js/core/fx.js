@@ -3,6 +3,10 @@
   const U = MG.U;
   const HIT_WORDS = ['WHACK!', 'THUMP!', 'BIFF!', 'POW!', 'BONK!', 'WALLOP!'];
   const BIG_WORDS = ['MEGA WALLOP!', 'KA-THUMP!', 'MAYHEM!', 'BIG BIFF!'];
+  // every marsupial punches and kicks, and each has its own words
+  const PUNCH_WORDS = ['POW!', 'BIFF!', 'WHAP!', 'BAM!', 'SMACK!'];
+  const HOOK_WORDS = ['KA-POW!', 'BIG BIFF!', 'UPPERCUT!'];
+  const KICK_WORDS = ['THWACK!', 'KA-THUMP!', 'BOOT!', 'WALLOP!', 'KICKED!'];
 
   // Player-facing settings. Blood is ON by default (the owner's choice); OFF swaps it for rainbow confetti.
   MG.Settings = { blood: MG.Save.get('blood', true) };
@@ -107,8 +111,29 @@
       this.texts.push({ x, y, str, color, size, life: 0.8, rot: U.rand(-0.25, 0.25) });
     }
 
-    hitText(x, y, big) {
-      this.text(x, y, U.choice(big ? BIG_WORDS : HIT_WORDS), big ? '#ff4d6d' : '#ffd23f', big ? 40 : 30);
+    // kind: 'punch', 'hook' (a combo's third punch) or 'kick'; anything else uses the general words
+    hitText(x, y, big, kind) {
+      const list = kind === 'kick' ? KICK_WORDS : kind === 'hook' ? HOOK_WORDS : kind === 'punch' ? PUNCH_WORDS : big ? BIG_WORDS : HIT_WORDS;
+      this.text(x, y, U.choice(list), big ? '#ff4d6d' : kind === 'hook' ? '#ffb703' : '#ffd23f', big ? 40 : kind === 'hook' ? 34 : 30);
+    }
+
+    // Where a blow lands, for a split second: a punch is a quick white star with streaks flying the way
+    // the target goes (dir); a kick a bigger golden burst with a shock arc. heavy: a combo's hook.
+    impact(x, y, kind, dir, heavy) {
+      this.impacts = this.impacts || [];
+      const kick = kind === 'kick', max = kick ? 0.2 : heavy ? 0.16 : 0.13;
+      this.impacts.push({ x, y, kick, heavy: !!heavy, dir: dir < 0 ? -1 : 1, life: max, max, rot: U.rand(0, 1) });
+      if (this.impacts.length > 24) this.impacts.shift();
+    }
+
+    // A puff of dust thrown up from the ground (behind the planted foot in a kick), going toward dir.
+    dust(x, y, dir, n = 6) {
+      for (let i = 0; i < n; i++) {
+        this.parts.push({
+          x: x + U.rand(-6, 6), y: y - U.rand(0, 6), vx: (dir < 0 ? -1 : 1) * U.rand(40, 170) + U.rand(-25, 25), vy: U.rand(-90, -20),
+          life: U.rand(0.35, 0.6), max: 0.6, size: U.rand(4, 7), color: 'rgba(214,182,142,0.85)', kind: 'puff', grav: 60,
+        });
+      }
     }
 
     shake(amount) {
@@ -198,6 +223,7 @@
       for (const p of this.parts) {
         if (p.kind === 'feather') p.vx = Math.sin(p.life * 5) * 70;
         if (p.kind === 'confetti') p.vx *= Math.pow(0.3, dt);
+        if (p.kind === 'puff') { p.size += 16 * dt; p.vx *= Math.pow(0.05, dt); }
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         p.vy += (p.grav !== undefined ? p.grav : 700) * dt;
@@ -223,9 +249,61 @@
         for (const r of this.rings) r.life -= dt;
         this.rings = this.rings.filter((r) => r.life > 0);
       }
+      if (this.impacts) {
+        for (const m of this.impacts) m.life -= dt;
+        this.impacts = this.impacts.filter((m) => m.life > 0);
+      }
+    }
+
+    // A spiky star: n points between radius r (tips) and r * inner.
+    static spikes(ctx, x, y, r, n, inner, rot) {
+      ctx.beginPath();
+      for (let i = 0; i < n * 2; i++) {
+        const a = rot + (i / (n * 2)) * Math.PI * 2, rr = i % 2 ? r * inner : r;
+        if (i) ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); else ctx.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+      }
+      ctx.closePath();
+    }
+
+    drawImpacts(ctx) {
+      for (const m of this.impacts || []) {
+        const k = 1 - m.life / m.max, fade = 1 - k * k;
+        const R = (m.kick ? 34 : m.heavy ? 24 : 18) * (0.55 + 0.6 * Math.min(1, k * 2.2));
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.scale(m.dir, 1);
+        ctx.globalAlpha = fade;
+        ctx.lineCap = 'round';
+        if (m.kick) {
+          // the shock arc on the far side, thrown the way the target flies
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 9 * (1 - k) + 1.5;
+          ctx.beginPath(); ctx.arc(R * 0.2, 0, R * (1.05 + k * 0.7), -0.95, 0.95); ctx.stroke();
+          ctx.fillStyle = '#ffb703';
+          MG.FX.spikes(ctx, 0, 0, R, 10, 0.45, m.rot); ctx.fill();
+          ctx.fillStyle = '#fff6c2';
+          MG.FX.spikes(ctx, 0, 0, R * 0.55, 10, 0.5, m.rot + 0.3); ctx.fill();
+        } else {
+          // streaks flying on, then the white star where the fist lands
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = m.heavy ? 3.5 : 2.5;
+          ctx.beginPath();
+          for (const a of [-0.38, 0, 0.38]) {
+            const r0 = R * (0.8 + k * 0.6), r1 = R * (1.35 + k * 0.9);
+            ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1);
+          }
+          ctx.stroke();
+          ctx.fillStyle = m.heavy ? '#ffd23f' : '#fff6c2';
+          MG.FX.spikes(ctx, 0, 0, R, 8, 0.4, m.rot); ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          MG.FX.spikes(ctx, 0, 0, R * 0.5, 8, 0.45, m.rot + 0.4); ctx.fill();
+        }
+        ctx.restore();
+      }
     }
 
     draw(ctx) {
+      this.drawImpacts(ctx);
       for (const r of this.rings || []) {
         const k = 1 - r.life / r.max;
         ctx.globalAlpha = (1 - k) * 0.8;
