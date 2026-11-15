@@ -99,7 +99,74 @@ check(sc.wantsTouch() && sc.hudModel().strips.length === 0, 'touch buttons repla
 MG.Input.keys.TouchGrenade = false; MG.Input.pressed.TouchGrenade = true; frames(25);
 check(sc.grenades.length === 1, 'the BOOM button drops a grenade');
 MG.Input.pressed.TouchAttack = true; frames(5);
-check(sc.grenades[0].kicked > 0, 'the HIT button kicks it');
+check(sc.grenades[0].kicked > 0, 'the PUNCH button kicks it');
+check(sc.hudModel().players[0].below, '...and the joey and pouch leave the top panel (they show on the buttons)');
+check(MG.Touch.buttons.find(function (b) { return b.id === 'Attack'; }).label === 'PUNCH' && MG.Touch.buttons.find(function (b) { return b.id === 'Big'; }).label === 'KICK', 'the buttons say PUNCH and KICK');
+// computers (a mouse or trackpad): every button in one row along the bottom, and a mouse click presses them
+var phone = MG.Touch.layout();
+check(phone.find(function (b) { return b.id === 'Pause'; }).y < 100, 'phones keep the thumb layout (pause at the top)');
+window.matchMedia = function (q) { return { matches: /pointer: fine/.test(q) }; };
+function rowOk(vw, vh) {
+  window.innerWidth = vw; window.innerHeight = vh;
+  var row = MG.Touch.layout(), ok = row.length === MG.Touch.buttons.length;
+  row.forEach(function (b, i) {
+    ok = ok && Math.abs(b.y - row[0].y) < 0.01 && b.y + b.r <= vh && b.y - b.r > vh * 0.78 && b.x - b.r >= 0 && b.x + b.r <= vw;
+    row.forEach(function (c, j) { if (j > i) ok = ok && Math.hypot(b.x - c.x, b.y - c.y) > b.r + c.r; });
+  });
+  var at = function (id) { return row.find(function (b) { return b.id === id; }).x; };
+  return ok && at('Left') < vw / 3 && at('Attack') > vw * 2 / 3 && at('Attack') === Math.max.apply(null, row.map(function (b) { return b.x; }));
+}
+check(rowOk(1280, 720) && rowOk(960, 540) && rowOk(700, 500) && rowOk(1920, 1080), 'computers: every button (pause too) in one row along the bottom, moving on the left and PUNCH at the right end, never overlapping, in any window size');
+MG.Touch.enabled = true; MG.Touch.points.clear();
+sc = fresh(); sc.t = 5; frames(2);
+var punchB = MG.Touch.layout().find(function (b) { return b.id === 'Attack'; });
+fire('pointerdown', { pointerType: 'mouse', pointerId: 1, clientX: punchB.x, clientY: punchB.y, preventDefault: noop }); frames(1);
+var clicked = MG.Input.keys.TouchAttack === true && sc.player.state === 'attack';
+fire('pointerup', { pointerType: 'mouse', pointerId: 1, clientX: punchB.x, clientY: punchB.y, preventDefault: noop }); frames(1);
+check(clicked && !MG.Input.keys.TouchAttack, 'a mouse click on PUNCH punches (on a computer), and letting go releases it');
+frames(40);
+var kickB = MG.Touch.layout().find(function (b) { return b.id === 'Big'; });
+fire('pointerdown', { pointerType: 'mouse', pointerId: 1, clientX: kickB.x, clientY: kickB.y, preventDefault: noop });
+fire('pointerup', { pointerType: 'mouse', pointerId: 1, clientX: kickB.x, clientY: kickB.y, preventDefault: noop }); frames(1);
+check(sc.player.move && sc.player.move.kind === 'kick', '...and a very quick click on KICK (let go before the next frame) still kicks');
+fire('pointerdown', { pointerType: 'mouse', pointerId: 1, clientX: 480, clientY: 200, preventDefault: noop }); frames(1);
+check(!Object.keys(MG.Input.keys).some(function (k) { return /^Touch/.test(k) && MG.Input.keys[k]; }), '...and a click away from the buttons presses nothing');
+fire('pointerup', { pointerType: 'mouse', pointerId: 1, clientX: 480, clientY: 200, preventDefault: noop });
+MG.Touch.enabled = false; MG.Touch.points.clear(); delete window.matchMedia; window.innerWidth = 960; window.innerHeight = 540;
+
+// the key strip: punch and kick, the joey's level (and a bar while it rests) and the pouch's saved item
+function texts(fn) {
+  var out = [];
+  var ctx = new Proxy({}, {
+    get: function (t, p) {
+      if (p in t) return t[p];
+      if (p === 'measureText') return function (s) { return { width: String(s).length * 6 }; };
+      if (p === 'createLinearGradient' || p === 'createRadialGradient') return function () { return { addColorStop: noop }; };
+      if (p === 'fillText') return function (s) { out.push(String(s)); };
+      return noop;
+    },
+    set: function (t, p, v) { t[p] = v; return true; },
+  });
+  fn(ctx);
+  return out;
+}
+sc = fresh(); sc.t = 5; frames(2);
+var hm = sc.hudModel(), pouchDrawn = 0, realPouch = MG.UI.pouchItem;
+MG.UI.pouchItem = function () { pouchDrawn++; };
+sc.player.pouch = 'heart';
+var stripT = texts(function (c) { MG.UI.keyStrip(c, sc.player, 1, {}); });
+var duoT = texts(function (c) { MG.UI.keyStrip(c, sc.player, 1, { compact: true, layout: 'p1', x: 16, align: 'left', tag: 'P1' }); });
+MG.UI.pouchItem = realPouch;
+check(['punch', 'kick', 'joey Lv' + sc.player.joey.level, 'pouch'].every(function (w) { return stripT.indexOf(w) >= 0 && duoT.indexOf(w) >= 0; })
+  && stripT.indexOf('attack') < 0 && stripT.indexOf('big') < 0, 'the key strip says punch and kick, and shows the joey\'s level and the pouch (both strips)');
+check(pouchDrawn === 2, '...with the pouch\'s saved item on it');
+sc.player.pouch = null;
+var panelT = texts(function (c) { MG.CampaignHUD.draw(c, sc.hudModel()); });
+check(hm.players[0].below && !panelT.some(function (w) { return /^JOEY|^POUCH$/.test(w); }), 'the top panel leaves out JOEY and POUCH while the strip shows them');
+sc.showStrip = false;
+panelT = texts(function (c) { MG.CampaignHUD.draw(c, sc.hudModel()); });
+check(!sc.hudModel().players[0].below && panelT.some(function (w) { return /^JOEY Lv/.test(w); }) && panelT.indexOf('POUCH') >= 0, '...but keeps them when the on-screen controls are off');
+sc.showStrip = true;
 MG.Touch.enabled = false;
 
 // 2 players on one keyboard: separate controls, shared screen, tougher pests, revive after 5 s

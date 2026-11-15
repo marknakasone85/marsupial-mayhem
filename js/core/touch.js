@@ -4,6 +4,8 @@
 //  * They are drawn on a separate full-screen layer, anchored to the screen corners and
 //    sized for thumbs, so on wide phones they sit mostly in the black bars beside the game.
 //  * Each button acts like a key ("TouchAttack", "TouchLeft"...), so every mode understands them.
+//  * Computers (a mouse or trackpad, with or without a touchscreen) get every button in one row along
+//    the bottom instead (players asked for that, 15 Nov 2026), and a mouse click presses them too.
 (function () {
   const I = MG.Input;
   const W = MG.W, H = MG.H;
@@ -14,9 +16,9 @@
     { id: 'Left', corner: 'bl', dx: 1.1, dy: 1.1, r: 1.1, icon: 'left' },
     { id: 'Right', corner: 'bl', dx: 3.5, dy: 1.1, r: 1.1, icon: 'right' },
     { id: 'Down', corner: 'bl', dx: 2.3, dy: 3.3, r: 0.8, icon: 'block', label: 'BLOCK' },
-    { id: 'Attack', corner: 'br', dx: 1.3, dy: 1.3, r: 1.3, label: 'HIT', color: '#ffd23f' },
+    { id: 'Attack', corner: 'br', dx: 1.3, dy: 1.3, r: 1.3, label: 'PUNCH', color: '#ffd23f' },
     { id: 'Jump', corner: 'br', dx: 3.9, dy: 0.95, r: 0.95, label: 'JUMP', color: '#9bf6ff' },
-    { id: 'Big', corner: 'br', dx: 1.1, dy: 3.9, r: 0.9, label: 'BIG', color: '#ff4d6d' },
+    { id: 'Big', corner: 'br', dx: 1.1, dy: 3.9, r: 0.9, label: 'KICK', color: '#ff4d6d' },
     { id: 'Shoot', corner: 'br', dx: 3.3, dy: 3.1, r: 0.85, label: 'SHOOT', color: '#ffb703' },
     { id: 'Special', corner: 'br', dx: 5.9, dy: 0.8, r: 0.75, label: 'SUPER', color: '#00f5d4' },
     { id: 'Grenade', corner: 'br', dx: 5.6, dy: 2.6, r: 0.75, label: 'BOOM', color: '#9ef01a' },
@@ -24,6 +26,14 @@
     { id: 'Pouch', corner: 'bl', dx: 0.75, dy: 3.45, r: 0.65, label: 'POUCH', color: '#ffd23f', icon: 'pouch' },
     { id: 'Pause', corner: 'tr', dx: 0.6, dy: 0.6, r: 0.55, icon: 'pause' },
   ];
+  // The computer layout: one row along the bottom, moving on the left and the moves on the right (the
+  // punch at the right-hand end), so the middle of the screen stays clear. Sizes in u, like above.
+  const ROW = {
+    left: ['Pause', 'Left', 'Right', 'Down', 'Jump'],
+    right: ['Pouch', 'Joey', 'Grenade', 'Shoot', 'Special', 'Big', 'Attack'],
+    r: { Pause: 0.6, Left: 1, Right: 1, Down: 0.85, Jump: 1, Big: 1, Attack: 1.1 }, // the rest 0.8
+    gap: 0.22,
+  };
 
   // Little shield icon for the BLOCK button.
   function drawShield(c, x, y, s) {
@@ -43,6 +53,7 @@
     enabled: false,
     userOff: false,          // switched off from the pause menu (this visit only)
     points: new Map(),       // pointerId -> { x, y } in screen (CSS) pixels
+    tapped: new Set(),       // buttons pressed since the last frame (a quick click still counts)
     buttons: BUTTONS,
     layer: null,
     isTouchDevice: typeof window !== 'undefined' && (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0),
@@ -57,9 +68,11 @@
         this.layer = layer;
       }
       const down = (e) => {
-        if (e.pointerType !== 'touch') return;
+        // a mouse or pen presses the buttons too while they're showing (computers)
+        if (e.pointerType !== 'touch' && !this.visible()) return;
         if (!this.enabled && !this.userOff) this.enabled = true;
         this.points.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (this.visible()) for (const b of this.layout()) if (this.held(b)) this.tapped.add(b.id);
       };
       window.addEventListener('pointerdown', down);
       window.addEventListener('pointermove', (e) => {
@@ -83,17 +96,44 @@
 
     portrait() { return window.innerHeight > window.innerWidth * 1.05; },
 
+    // A computer: it has a mouse or trackpad (phones and tablets only have fingers).
+    computer() {
+      try { return typeof window.matchMedia === 'function' && window.matchMedia('(any-pointer: fine)').matches; } catch (e) { return false; }
+    },
+
     // Button circles in screen pixels for the current screen size.
     layout() {
       const vw = window.innerWidth, vh = window.innerHeight;
       const big = MG.Settings && MG.Settings.bigTouch ? 1.2 : 1; // Settings: bigger buttons
-      const u = Math.max(24, Math.min(vh * 0.11 * big, vw * 0.075 * big, 62 * big));
       const pad = 10;
+      if (this.computer()) return this.rowLayout(vw, vh, big, pad);
+      const u = Math.max(24, Math.min(vh * 0.11 * big, vw * 0.075 * big, 62 * big));
       return BUTTONS.map((b) => {
         const x = b.corner === 'bl' ? pad + b.dx * u : vw - pad - b.dx * u;
         const y = b.corner === 'tr' ? pad + b.dy * u : vh - pad - b.dy * u;
         return Object.assign({}, b, { x, y, r: b.r * u });
       });
+    },
+
+    // Computers: every button in one row along the bottom edge (shrinks to fit a narrow window).
+    rowLayout(vw, vh, big, pad) {
+      const r = (id) => ROW.r[id] || 0.8;
+      const span = (ids) => ids.reduce((a, id) => a + 2 * r(id), 0) + ROW.gap * (ids.length - 1);
+      const need = span(ROW.left) + span(ROW.right) + 1.5; // and a gap in the middle
+      const u = Math.max(16, Math.min(vh * 0.07 * big, (vw - pad * 2) / need, 46 * big));
+      const cy = vh - pad - 1.1 * u; // every centre on one line, the biggest button just above the edge
+      const out = [];
+      const place = (ids, x0) => {
+        let x = x0;
+        for (const id of ids) {
+          const b = BUTTONS.find((bb) => bb.id === id);
+          out.push(Object.assign({}, b, { x: x + r(id) * u, y: cy, r: r(id) * u }));
+          x += (2 * r(id) + ROW.gap) * u;
+        }
+      };
+      place(ROW.left, pad);
+      place(ROW.right, vw - pad - span(ROW.right) * u);
+      return out;
     },
 
     held(b) {
@@ -111,13 +151,14 @@
       const buttons = show ? this.layout() : BUTTONS;
       for (const b of buttons) {
         const code = 'Touch' + b.id;
-        const now = show && this.held(b);
+        const now = show && (this.held(b) || this.tapped.has(b.id));
         if (now && !I.keys[code]) {
           I.pressed[code] = true;
           if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not supported */ } }
         }
         I.keys[code] = now;
       }
+      this.tapped.clear();
     },
 
     // Draw the buttons on their own layer (and the "turn sideways" hint on the game).
@@ -183,7 +224,9 @@
           MG.UI.text(c, b.label, 0, b.r * 0.5, Math.max(9, b.r * 0.3), '#ffffff', 'center');
         } else {
           const fs = Math.max(10, b.r * (b.label.length > 4 ? 0.36 : 0.42));
-          MG.UI.outlineText(c, b.label, 0, 1, fs, '#ffffff', 'center');
+          const lv = b.id === 'Joey' && player ? (player.joey ? player.joey.level : player.joeyLevel) : 0;
+          MG.UI.outlineText(c, b.label, 0, lv ? -b.r * 0.1 : 1, fs, '#ffffff', 'center');
+          if (lv) MG.UI.text(c, 'Lv' + lv, 0, b.r * 0.42, Math.max(8, b.r * 0.28), '#f6b3c4', 'center');
         }
         c.restore();
       }
@@ -211,7 +254,7 @@
   // Computers: key hints -> touch buttons -> nothing.
   MG.onscreenLabel = (scene) => {
     if (T.isTouchDevice) return 'Touch buttons: ' + (T.enabled ? 'ON' : 'OFF');
-    return 'On-screen controls: ' + (T.enabled ? 'TOUCH BUTTONS' : scene.showStrip ? 'KEY HINTS' : 'OFF');
+    return 'On-screen controls: ' + (T.enabled ? 'BUTTONS (click or tap)' : scene.showStrip ? 'KEY HINTS' : 'OFF');
   };
   MG.cycleOnscreen = (scene) => {
     if (T.isTouchDevice) {

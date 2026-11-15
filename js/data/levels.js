@@ -8,7 +8,7 @@ MG.LEVELS = [
   {
     id: 'outback-1', world: 'THE OUTBACK', name: 'TOURNAMENT TRAIL', theme: 'outback', music: 'outback',
     tip: 'Clear the pests to open each gate.  Press G to drop a grenade, then KICK it!',
-    tipTouch: 'Clear the pests to open each gate.  Tap BOOM to drop a grenade, then HIT to kick it!',
+    tipTouch: 'Clear the pests to open each gate.  Tap BOOM for a grenade, then PUNCH or KICK it!',
     length: 4800,
     platforms: [
       { x: 1000, y: 362, w: 180 },

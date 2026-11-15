@@ -122,7 +122,7 @@ var realText = MG.UI.text;
 MG.UI.text = function (c, str) { texts.push(String(str)); return realText.apply(this, arguments); };
 MG.UI.keyStrip(MG.Engine.ctx, p, 0, {}); MG.UI.controlsPanel(MG.Engine.ctx);
 MG.UI.text = realText;
-check(texts.indexOf('joey') >= 0 && texts.indexOf('pouch') >= 0, 'the key-hint strip shows joey and pouch');
+check(texts.indexOf('joey Lv' + p.joey.level) >= 0 && texts.indexOf('pouch') >= 0, 'the key-hint strip shows the joey (with its level) and the pouch');
 check(texts.some(function (t) { return /^Joey/.test(t); }) && texts.some(function (t) { return /^Pouch/.test(t); }), 'Pause > Controls lists Joey and Pouch');
 
 // ---- every joey draws: in the pouch, on the back, out hopping

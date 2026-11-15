@@ -10,8 +10,11 @@
     ctx.beginPath(); ctx.arc(cx, cy, 24, 0, Math.PI * 2); ctx.stroke();
   }
 
+  // p.below: this player's joey and pouch show at the bottom of the screen (key strip or touch buttons),
+  // so the panel leaves them out and is shorter
   function playerPanel(ctx, x, y, p, t, coop) {
-    UI.panel(ctx, x, y, 262, 98, 'rgba(43,25,61,0.82)');
+    const ph = p.below ? 80 : 98;
+    UI.panel(ctx, x, y, 262, ph, 'rgba(43,25,61,0.82)');
     portrait(ctx, x + 32, y + 38, p, t);
     UI.text(ctx, p.name, x + 64, y + 15, 15, '#ffffff');
     if (coop) UI.text(ctx, p.tag, x + 236, y + 15, 14, p.color, 'right');
@@ -50,7 +53,7 @@
       ix += 26;
     }
     // the joey (with its cooldown ring and level) and the pouch's saved item
-    if (p.joeyLevel) {
+    if (p.joeyLevel && !p.below) {
       const jx = x + 74, jy = y + 87;
       ctx.fillStyle = p.joeyReady ? '#f6b3c4' : 'rgba(246,179,196,0.35)';
       ctx.beginPath(); ctx.arc(jx, jy, 7, 0, Math.PI * 2); ctx.fill();
@@ -67,8 +70,8 @@
     if (p.canSpecial && Math.floor(t * 3) % 2 === 0) UI.outlineText(ctx, 'SPECIAL READY!', x + 156, y + 4, 11, '#00f5d4', 'center');
     if (p.ko) {
       ctx.fillStyle = 'rgba(20,10,30,0.6)';
-      ctx.beginPath(); ctx.roundRect(x, y, 262, 98, 16); ctx.fill();
-      UI.outlineText(ctx, p.respawnT > 0 ? 'Back in ' + Math.ceil(p.respawnT) + '...' : 'KNOCKED OUT', x + 131, y + 48, 18, '#ffffff', 'center');
+      ctx.beginPath(); ctx.roundRect(x, y, 262, ph, 16); ctx.fill();
+      UI.outlineText(ctx, p.respawnT > 0 ? 'Back in ' + Math.ceil(p.respawnT) + '...' : 'KNOCKED OUT', x + 131, y + ph / 2, 18, '#ffffff', 'center');
     }
   }
 

@@ -137,7 +137,7 @@
       if (this.showStrip && me && (s.st === 'fight' || s.st === 'intro') && !this.menu && !MG.Touch.enabled) {
         strips.push({
           fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0, firing: !!me.fi,
-            pouch: me.pu || null, joeyReady: !!me.jr, joeyOut: Array.isArray(me.jy) && !!me.jy[2] },
+            pouch: me.pu || null, joeyReady: !!me.jr, joeyOut: Array.isArray(me.jy) && !!me.jy[2], joeyLevel: Array.isArray(me.jy) ? me.jy[3] : 0, joeyCool: me.jc || 0 },
           opts: { tag: `YOU (${me.tag})`, tagColor: me.tc },
         });
       }
@@ -147,6 +147,7 @@
           tag: p.tag, color: p.tc, name: MG.charById(p.cid).name, hp: p.hp, mhp: p.mhp, ghost: p.gh === undefined ? 0 : p.gh,
           meter: p.me || 0, canSpecial: !!p.cs, ammo: p.am || 0, grenades: p.gr || 0, wins: p.wins || 0, ko: p.st === 'ko',
           joeyReady: !!p.jr, pouch: p.pu || null, weapon: p.wpn || null, armor: p.ar || 0, armorMax: p.arm || 0,
+          below: me === p && (strips.length > 0 || MG.Touch.visible()),
         })),
       });
       MG.DuelHUD.banner(ctx, s.bn || null, s.ba);

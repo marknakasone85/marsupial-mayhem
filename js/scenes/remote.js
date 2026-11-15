@@ -180,7 +180,7 @@
     wantsTouch() { return !!this.snap && !this.menu && !this.ended && !this.showControls && this.snap.st === 'play'; }
     touchPlayer() {
       const me = this.snap && this.snap.pl.find((p) => p.id === MG.Net.id);
-      return me ? { canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0, pouch: me.pu || null, joeyReady: !!me.jr } : null;
+      return me ? { canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0, pouch: me.pu || null, joeyReady: !!me.jr, joeyLevel: Array.isArray(me.jy) ? me.jy[3] : 0 } : null;
     }
 
     // ---------------- draw ----------------
@@ -209,7 +209,7 @@
       if (this.showStrip && me && s.st === 'play' && !this.menu && !MG.Touch.enabled) {
         strips.push({
           fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am || 0, grenades: me.gr || 0, firing: !!me.fi,
-            pouch: me.pu || null, joeyReady: !!me.jr, joeyOut: Array.isArray(me.jy) && !!me.jy[2] },
+            pouch: me.pu || null, joeyReady: !!me.jr, joeyOut: Array.isArray(me.jy) && !!me.jy[2], joeyLevel: Array.isArray(me.jy) ? me.jy[3] : 0, joeyCool: me.jc || 0 },
           opts: { tag: `YOU (P${me.id + 1})`, tagColor: MG.PLAYER_COLORS[me.id % 4] },
         });
       }
@@ -230,6 +230,7 @@
             joeyLevel: Array.isArray(p.jy) ? p.jy[3] : 0, joeyCool: p.jc || 0, joeyReady: !!p.jr, pouch: p.pu || null,
             weapon: p.wpn || null, ammoMax: p.amx || 0, armor: p.ar || 0, armorMax: p.arm || 0,
             coins: p.id === MG.Net.id ? MG.Gear.coins('p1') : p.cn || 0,
+            below: p.id === MG.Net.id && (strips.length > 0 || MG.Touch.visible()),
           };
         }),
         strips,

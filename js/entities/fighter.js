@@ -741,7 +741,7 @@
         }));
       } else {
         MG.Art.character(ctx, def, Object.assign(common, {
-          basic: basicAmt, basicStyle, big: bigAmt, bigStyle,
+          basic: basicAmt, basicStyle, big: bigAmt, bigStyle, jabArm: sp.basic !== undefined ? 0 : s.ja,
           glide: !!s.gl || !!sp.glide, dive: !!sp.dive, dead: !!sp.dead, nap: !!s.np, screech: !!sp.screech, tongue: !!sp.tongue,
         }));
       }

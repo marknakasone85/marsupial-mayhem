@@ -29,14 +29,16 @@
     extras(ctx, s, x, y, align) {
       const r = align === 'right';
       let ix = r ? x - 10 : x + 10;
-      // the joey (pink when ready) and the pouch's saved item
-      ctx.fillStyle = s.joeyReady ? '#f6b3c4' : 'rgba(246,179,196,0.3)';
-      ctx.beginPath(); ctx.arc(ix, y, 6, 0, Math.PI * 2); ctx.fill();
-      UI.text(ctx, 'JOEY', r ? ix - 10 : ix + 10, y, 11, s.joeyReady ? '#f6b3c4' : '#a98a92', r ? 'right' : 'left');
-      ix += r ? -52 : 52;
-      if (s.pouch) {
-        UI.pouchItem(ctx, s.pouch, ix, y, 7);
-        ix += r ? -22 : 22;
+      // the joey (pink when ready) and the pouch's saved item, unless they show at the bottom of the screen
+      if (!s.below) {
+        ctx.fillStyle = s.joeyReady ? '#f6b3c4' : 'rgba(246,179,196,0.3)';
+        ctx.beginPath(); ctx.arc(ix, y, 6, 0, Math.PI * 2); ctx.fill();
+        UI.text(ctx, 'JOEY', r ? ix - 10 : ix + 10, y, 11, s.joeyReady ? '#f6b3c4' : '#a98a92', r ? 'right' : 'left');
+        ix += r ? -52 : 52;
+        if (s.pouch) {
+          UI.pouchItem(ctx, s.pouch, ix, y, 7);
+          ix += r ? -22 : 22;
+        }
       }
       if (s.grenades > 0) {
         MG.Art.grenade(ctx, ix, y, { r: 6, pin: true });
@@ -496,6 +498,7 @@
           tag: this.tagOf(s), color: this.colorOf(s), name: s.def.name, hp: Math.max(0, s.f.hp), mhp: s.f.maxHp, ghost: s.ghost,
           meter: s.f.meter, canSpecial: s.f.canSpecial, ammo: s.f.ammo, grenades: s.f.grenades, wins: s.wins, ko: s.f.state === 'ko',
           joeyReady: s.f.joeyReady, pouch: s.f.pouch,
+          below: strips.some((st) => st.fighter === s.f) || (MG.Touch.visible() && s.f === this.touchPlayer()),
           weapon: s.f.weapon ? s.f.weapon.id : null, armor: s.f.armor, armorMax: s.f.armorMax,
         })),
       };

@@ -26,7 +26,7 @@ A comical cartoon brawler starring marsupials. Kangaroos, wombats, koalas, possu
 | **Boomer** (red kangaroo) | Power | Boomer Bound: a giant leap and ground pound | Tail Counter: block, and he kicks back by himself |
 | **Stinker** (western grey kangaroo) | Power | Stink Cloud | Gets tougher the longer a fight goes on |
 | **Tank** (common wombat) | Power | Cube Barrage: cubes that become little walls | Super armour; double-tap to sprint |
-| **Chompers** (Tasmanian devil) | Power | Devil Screech, then a bite combo | Eats scraps to heal; his crunch breaks blocks |
+| **Chompers** (Tasmanian devil) | Power | Devil Screech, then a bite combo | Eats scraps to heal; his kick breaks blocks |
 | **Zip** (sugar glider) | Fast | Dive Bomb | Glide: hold jump while falling |
 | **Stripes** (numbat) | Fast | Tongue Grab: pulls pests and pickups in | Every pickup is a speedy termite snack |
 | **Earl** (greater bilby) | Fast | Burrow Dash: tunnel under and pop up | Ear Radar; extra damage to rabbits |
@@ -103,8 +103,8 @@ Good to know:
 | Move | A / D | ← / → | D-pad / stick |
 | Jump | W | ↑ | A |
 | Block (hold) | S | ↓ | Down / LB |
-| Attack | F | , (comma) | X |
-| Big attack | E | . (period) | Y |
+| Punch | F | , (comma) | X |
+| Kick (big attack) | E | . (period) | Y |
 | Special | H | / (slash) | B |
 | Shoot (hold) | R | ; (semicolon) | RB |
 | Grenade | G | ' (quote) | LT |
@@ -112,11 +112,11 @@ Good to know:
 | Pouch (use the saved item) | T | ] | RT |
 | Pause | Esc / P | Esc / P | Start |
 
-Playing alone? Arrows with J (attack), K (big), L (special), ; (shoot), ' (grenade), [ (joey) and ] (pouch) work too. On phones and tablets, touch buttons appear during play (BOOM is the grenade). The title screen's CONTROLS button and the pause menu show this table too.
+Every marsupial punches and kicks. Playing alone? Arrows with J (punch), K (kick), L (special), ; (shoot), ' (grenade), [ (joey) and ] (pouch) work too. All the controls sit along the bottom of the screen: the key hints (with your joey's level and the pouch's saved item), or on-screen buttons. On phones and tablets, touch buttons appear during play (BOOM is the grenade); on a computer, Pause > On-screen controls puts every button in one row along the bottom, and you can click them with the mouse. The title screen's CONTROLS button and the pause menu show this table too.
 
 **Settings** (on the title screen): music and sound-effects volume, blood (on, gore, or confetti), difficulty for the adventure (easy, normal or hard; duels always stay fair), bigger touch buttons, high contrast, light and haze (switch it off if an older phone feels slow), the key hints, and **changing the keys** for player 1 and player 2 (the key hints and the Controls page follow your keys).
 
-**Tips:** some marsupials (Boomer, Chompers, Bins, Dead Fred) chain their attack: press it three times for a combo. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then kick it with attack (short), big attack (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
+**Tips:** some marsupials (Boomer, Chompers, Bins, Dead Fred) chain their punches: press it three times for a combo. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then send it flying with punch (short), kick (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!
 
 **Joeys and the pouch:** every marsupial carries a joey, in the pouch or riding on the back. It hops out by itself to nip pests that get close and to fetch pickups, and the joey key sends it on a Joey Rush (then it needs a rest: watch the ring by JOEY on the screen). Once per map, if you're knocked out, your joey gets you back up. Clear a map and that marsupial's joey grows (up to level 5), so it hits harder. Pick up a heart at full health, or a power-up while another is running, and it goes in the pouch: press the pouch key when you need it. In duels every joey starts at level 1 and there's no rescue.
 

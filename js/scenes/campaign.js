@@ -750,6 +750,8 @@
           }));
         }
       }
+      // a player whose joey and pouch show at the bottom (key strip or touch buttons) has a shorter panel
+      this.slots.forEach((s, i) => { players[i].below = strips.some((st) => st.fighter === s.f) || (MG.Touch.visible() && s.f === this.touchPlayer()); });
       const nextGate = this.gates.findIndex((g) => !g.opened);
       const g = nextGate >= 0 ? this.gates[nextGate] : null;
       return {

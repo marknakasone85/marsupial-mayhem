@@ -37,6 +37,8 @@ Traits from Sloth Slap that can be reused: `armor` (super armour: small hits don
 
 ## The 12 playable characters
 
+**Punch and kick (15 Nov 2026, from a player's feedback, asked for by the owner):** every marsupial's attack is now a punch and its big attack a kick. Each keeps its own numbers (damage, reach, knockback, stun, guard break), so they still play differently; specials and traits are unchanged. The "was" notes below give the original moves.
+
 ### Power
 
 **1. Boomer: Red kangaroo.** "Boomer" is real Aussie slang for a big male kangaroo.
@@ -47,19 +49,19 @@ Traits from Sloth Slap that can be reused: `armor` (super armour: small hits don
 
 **2. Stinker: Western grey kangaroo.**
 - **Fact:** males are nicknamed "stinkers" for their strong, curry-like smell.
-- **Basic:** heavy paws. **Big:** a haymaker.
+- **Basic:** heavy punches. **Big:** a two-footed kick, leaning back on the tail (was a haymaker).
 - **Special:** *Stink Cloud*, an area where enemies cough, flee and take damage over time.
 - **Trait:** high health; tougher the longer a fight goes on.
 
 **3. Tank: Common wombat.**
 - **Fact:** makes cube-shaped poo. Its tough, plated rump blocks its burrow. Can sprint at about 40 km/h. Its pouch faces backwards.
-- **Basic:** headbutt. **Big:** a charging bum-block that shoves enemies away.
+- **Basic:** punches. **Big:** a heavy kick that shoves enemies away (was a headbutt and a bum-block).
 - **Special:** *Cube Barrage*: throws cube poo that bounces and can be stacked as a little wall. Cartoon and silly, not gross.
 - **Trait:** *super armour* (like Gorilla Gainz in Sloth Slap), plus a surprise sprint burst.
 
 **4. Chompers: Tasmanian devil.** Must not look like Taz from Looney Tunes.
 - **Fact:** the strongest bite for its size of any living mammal. Screeches loudly when feeding.
-- **Basic:** snapping bites. **Big:** a crunch that breaks guards.
+- **Basic:** punches. **Big:** a kick that breaks guards (was bites and a crunch; the Devil Screech special still bites).
 - **Special:** *Devil Screech*, an area stun followed by a bite combo.
 - **Trait:** eats dropped food for a small heal (devils eat almost everything, bones included).
 
@@ -67,25 +69,25 @@ Traits from Sloth Slap that can be reused: `armor` (super armour: small hits don
 
 **5. Zip: Sugar glider.**
 - **Fact:** glides between trees on skin flaps, up to about 50 m.
-- **Basic:** quick swipes. **Big:** a spinning kick.
+- **Basic:** quick punches. **Big:** a spinning kick.
 - **Special:** *Dive Bomb*, diving out of a glide onto enemies.
 - **Trait:** *Glide*: hold jump to float across gaps. The best air control in the game.
 
 **6. Stripes: Numbat.**
 - **Fact:** eats up to about 20,000 termites a day with a tongue about 10 cm long. Active by day. **Has no pouch,** so its joey rides on its back.
-- **Basic:** claw rakes. **Big:** a tail-flick trip.
+- **Basic:** quick punches. **Big:** a kick that pops enemies up and stuns them (was claw rakes and a tail-flick trip).
 - **Special:** *Tongue Grab*, which yanks an enemy or a far-off item to you.
 - **Trait:** *Termite Snack*: picking up snacks gives a short speed boost.
 
 **7. Earl: Greater bilby.**
 - **Fact:** huge ears; digs spiral burrows. Australia's "Easter Bilby" stands in for the invasive rabbit. Its pouch faces backwards.
-- **Basic:** quick kicks. **Big:** an ear-flap slap.
+- **Basic:** quick punches. **Big:** a kick (was quick kicks and an ear-flap slap).
 - **Special:** *Burrow Dash*: dive underground and pop up under an enemy.
 - **Trait:** *Ear Radar* reveals hidden enemies and secrets. Does bonus damage to rabbits, its arch-rivals.
 
 **8. Paddles: Water opossum (yapok).** A guest from the Americas.
 - **Fact:** the only truly aquatic marsupial: webbed hind feet and a watertight pouch.
-- **Basic:** paw swipes. **Big:** a tail slap.
+- **Basic:** punches. **Big:** a long kick (was swipes and a tail slap).
 - **Special:** *Splash Wave*, a wave of water that pushes enemies away.
 - **Trait:** swims fast and can stay underwater. The star of the water sections.
 
@@ -93,25 +95,25 @@ Traits from Sloth Slap that can be reused: `armor` (super armour: small hits don
 
 **9. Benny: Red-necked wallaby.**
 - **Fact:** common in eastern Australia. Small feral colonies also live on the Isle of Man and on Ireland's Lambay Island.
-- **Basic:** kicks. **Big:** a hopping double kick.
+- **Basic:** punches. **Big:** a hopping double kick.
 - **Special:** *Thump Alarm*, a foot-thump shockwave that calls a mob of wallabies stampeding across the screen.
 - **Trait:** double jump. A good first character. Unlocks the secret Isle of Man bonus level.
 
 **10. Drowsy: Koala.**
 - **Fact:** sleeps up to about 20 hours a day on a low-energy eucalyptus diet. Males give a deep, surprisingly loud bellow.
-- **Basic:** claw swipes. **Big:** a tree-hug slam.
+- **Basic:** punches. **Big:** a kick that launches enemies up (was swipes and a tree-hug slam).
 - **Special:** *Bellow*, a shockwave of sound.
 - **Trait:** *Power Nap*: hold block to doze and slowly heal, which is risky. Climbs poles and trees.
 
 **11. Bins: Common brushtail possum.**
 - **Fact:** a bold city possum known for noisy fights in roofs at night. It's also a major pest in New Zealand.
-- **Basic:** scrappy swipes. **Big:** a tail whip.
+- **Basic:** scrappy punches. **Big:** a long kick (was swipes and a tail whip).
 - **Special:** *Bin Fling*: throws a wheelie bin.
 - **Trait:** wall cling and roof runs. Hometown hero of the City world.
 
 **12. Dead Fred: Virginia opossum.** A guest from the Americas.
 - **Fact:** North America's only marsupial. Plays dead when threatened, resists many snake venoms, and has 50 teeth.
-- **Basic:** quick bites. **Big:** a 50-tooth grin chomp.
+- **Basic:** quick punches. **Big:** a kick (was bites and a 50-tooth grin chomp; the Play Dead special still chomps).
 - **Special:** *Play Dead*: briefly untouchable, enemies lose interest, then a surprise attack.
 - **Trait:** *Venom Immunity*: unaffected by poison, such as cane toad clouds. Useful against the Cane Toad King.
 
@@ -119,12 +121,12 @@ Traits from Sloth Slap that can be reused: `armor` (super armour: small hits don
 
 **Ghost: Thylacine (Tasmanian tiger).** Fast.
 - **Fact:** the last known one died in 1936. It could open its jaws extremely wide.
-- **Moves:** a wide-jaw bite. Phases through attacks for a moment.
+- **Moves:** punches and a kick that breaks blocks (was a wide-jaw bite, which his Phantom Dash special still uses). Phases through attacks for a moment.
 - **Unlock:** found in the Time Rift world. A legendary "ghost" character, handled respectfully.
 
 **Cousin Cuscus: Spotted cuscus.** Power.
 - **Fact:** a slow-moving, sloth-like possum relative from New Guinea and Cape York.
-- **Moves:** slow but strong, borrowing Sloth Slap-style slaps.
+- **Moves:** slow but strong punches and kicks (the Slap Storm special keeps Sloth Slap-style slaps).
 - **Unlock:** a hidden crossover with Sloth Slap.
 
 ## Benched for later updates ("Later" in the sheet)

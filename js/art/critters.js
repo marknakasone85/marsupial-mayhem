@@ -412,6 +412,10 @@
     // the secret characters' moves: a huge gape, a big open-paw slap and a two-handed overhead slap
     const amt = (st) => Math.min(1, (bs === st ? basic : 0) + (gs === st ? big : 0));
     const wj = amt('wideJaw'), slap = amt('slap'), mega = amt('megaSlap');
+    // the big attack is a kick: the front leg thrusts out at belly height (Zip's spins round, Benny's goes twice;
+    // a grenade punt uses it too); punches come from the front paw, or the back one on every other combo hit
+    const kickBig = gs === 'kick' || gs === 'spinKick' || gs === 'doubleKick' ? big : 0;
+    const punchArm = o.jabArm === 1;
     const crouch = o.crouch || 0;
     let facing = o.facing || 1;
     let shove = 0;
@@ -423,6 +427,8 @@
     if (pose === 'win') bob = Math.abs(Math.sin(t * 6)) * 10;
     let lean = pose === 'hurt' ? -0.3 : pose === 'block' ? 0.05 : air ? 0.2 : 0.08;
     if (bs === 'bite' || bs === 'headbutt') lean += basic * (bs === 'headbutt' ? 0.55 : 0.3);
+    if (bs === 'punch') lean += basic * 0.12;
+    if (gs === 'kick' || gs === 'doubleKick') lean -= kickBig * 0.34;
     if (gs === 'crunch' || gs === 'grinChomp') lean += big * 0.35;
     if (gs === 'bumBlock') lean += big * 0.5;
     if (gs === 'treeHug') lean += big * 0.25;
@@ -450,14 +456,18 @@
     // ---- legs (back one darker)
     const leg = (dx, col, phase) => {
       const kickOut = (bs === 'kick' ? basic : 0) * (phase > 0 ? 1 : 0);
-      const fx = dx + swing * 9 * phase + kickOut * 22 - (air ? 6 : 0) + (o.dive ? -10 : 0);
-      const fy = air || o.dive ? -6 : -Math.max(0, -swing * phase) * 6 - kickOut * (L + 6);
+      const kb = phase > 0 ? kickBig : 0; // the big kick, front leg only (the back one braces)
+      const fx = dx + swing * 9 * phase * (1 - kickBig) + kickOut * 22 - (air ? 6 : 0) + (o.dive ? -10 : 0)
+        + kb * (k.rx * 0.7 + k.footLen * 0.5 + 8) - (phase < 0 ? kickBig * 5 : 0);
+      const rest = air || o.dive ? -6 : -Math.max(0, -swing * phase) * 6 * (1 - kickBig) - kickOut * (L + 6);
+      const fy = lerp(rest, -L - k.ry * 0.55, kb);
       ctx.fillStyle = fill(col);
       ctx.strokeStyle = LINE;
       ctx.lineWidth = 2;
-      A.taper(ctx, dx * 0.6, -L - 4, (dx * 0.6 + fx) / 2, (-L + fy) / 2, fx, fy - 3, k.legW, k.legW * 0.8);
+      A.taper(ctx, dx * 0.6, -L - 4, (dx * 0.6 + fx) / 2, (-L + fy) / 2 - kb * 4, fx, fy - 3, k.legW, k.legW * 0.8);
       ctx.fill(); ctx.stroke();
-      A.oval(ctx, fx + k.footLen * 0.3, fy - 3, k.footLen * 0.55, 4.5, kickOut * -0.4, fill(c.dark), LINE, 1.8);
+      const fa = kickOut * -0.4 - kb * 1.05; // the sole turns to face forward in a big kick
+      A.oval(ctx, fx + Math.cos(fa) * k.footLen * 0.3, fy - 3 + Math.sin(fa) * k.footLen * 0.3, k.footLen * 0.55, 4.5, fa, fill(c.dark), LINE, 1.8);
       if (k.webbed && !flash) {
         ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
         for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(fx + 2 + i * 4, fy - 5); ctx.lineTo(fx + 4 + i * 4, fy - 1); ctx.stroke(); }
@@ -477,8 +487,8 @@
       else if (o.gun) p = { x: k.rx * 0.9, y: -k.ry * 1.0 };
       if (spread) p = { x: k.rx * 1.2 + (back ? -4 : 6), y: -k.ry * 2.3 + (back ? 4 : 0) };
       if (o.dive) p = { x: -k.rx * 0.4, y: -k.ry * 1.6 };
-      // basic attacks: a punch straight out, or a swipe in an arc
-      if (!back && (bs === 'punch' || bs === 'swipe') && basic > 0) {
+      // basic attacks: a punch straight out (either paw), or a swipe in an arc
+      if ((bs === 'punch' ? back === punchArm : !back && bs === 'swipe') && basic > 0) {
         if (bs === 'punch') p = { x: lerp(p.x, k.rx + k.armLen, basic), y: lerp(p.y, -k.ry * 1.3, basic) };
         else {
           const a = lerp(-2.2, 0.6, basic);

@@ -30,6 +30,43 @@ check(MG.CHARACTERS.every(function (c) { return (c.abilities || []).every(functi
 var ids = MG.CHARACTERS.map(function (c) { return c.special; });
 check(ids.filter(function (s, i) { return ids.indexOf(s) === i; }).length === 12, 'all 12 specials are different');
 
+// ---- players asked (15 Nov 2026): every marsupial punches (attack) and kicks (big attack)
+var everyone = MG.CHARACTERS.concat(MG.SECRETS);
+check(everyone.every(function (c) { return c.basic.style === 'punch'; }), 'every marsupial (the secret ones too) punches with attack');
+check(everyone.every(function (c) { return /^(kick|spinKick|doubleKick)$/.test(c.big.style); }) && MG.charById('zip').big.style === 'spinKick' && MG.charById('benny').big.style === 'doubleKick',
+  '...and kicks with the big attack (Zip\'s kick spins, Benny\'s kicks twice)');
+check(MG.charById('chompers').big.guardBreak && MG.charById('tank').big.kbx === 840 && MG.charById('cuscus').big.dmg === 18 && MG.charById('stinker').basic.dmg === 7,
+  'each keeps its own numbers (Chompers\' kick still breaks blocks)');
+var drawn = {}, realChar = MG.Art.character;
+MG.Art.character = function (ctx, def, o) { drawn[def.id] = Object.assign({}, o); };
+everyone.forEach(function (c) { MG.Fighter.drawState(makeCtx(), { cid: c.id, x: 100, y: 470, f: 1, pose: 'idle', t: 1, walk: 0, vx: 0, kick: 1 }, { groundY: 470 }); });
+var kicked = drawn, punched = {}; drawn = {};
+everyone.forEach(function (c) { MG.Fighter.drawState(makeCtx(), { cid: c.id, x: 100, y: 470, f: 1, pose: 'idle', t: 1, walk: 0, vx: 0, jab: 1, ja: 1 }, { groundY: 470 }); punched[c.id] = drawn[c.id]; });
+MG.Art.character = realChar;
+check(everyone.every(function (c) { var o = kicked[c.id]; return c.art === 'kangaroo' ? o.kick === 1 && !o.jab : o.big === 1 && /kick/i.test(o.bigStyle); }),
+  'every big attack is drawn as a kick (kangaroos lean back on the tail)');
+check(everyone.every(function (c) { var o = punched[c.id]; return c.art === 'kangaroo' ? o.jab === 1 && o.jabArm === 1 : o.basic === 1 && o.basicStyle === 'punch' && o.jabArm === 1; }),
+  'every attack is drawn as a punch, with the other paw on the next combo hit');
+// the critter rig: the kick sends the front foot out and up; a punch sends a paw straight out
+function critterParts(look, o) {
+  var k = MG.Art.LOOKS[look], real = MG.Art.oval, feet = [], paws = [];
+  MG.Art.oval = function (ctx, x, y, rx, ry) {
+    if (Math.abs(rx - k.footLen * 0.55) < 0.01 && ry === 4.5) feet.push([x, y]);
+    if (Math.abs(rx - k.armW * 0.55) < 0.01 && Math.abs(ry - k.armW * 0.5) < 0.01) paws.push(x);
+    return real.apply(this, arguments);
+  };
+  MG.Art.critter(makeCtx(), Object.assign({ x: 0, y: 0, look: look, t: 1, facing: 1 }, o));
+  MG.Art.oval = real;
+  return { feet: feet, paws: paws };
+}
+var rigOk = ['wombat', 'devil', 'koala', 'bilby', 'cuscus'].every(function (look) {
+  var still = critterParts(look, {}), kick = critterParts(look, { big: 1, bigStyle: 'kick' });
+  var p0 = critterParts(look, { basic: 1, basicStyle: 'punch', jabArm: 0 }), p1 = critterParts(look, { basic: 1, basicStyle: 'punch', jabArm: 1 });
+  return still.feet.length === 2 && kick.feet[1][0] > still.feet[1][0] + 20 && kick.feet[1][1] < still.feet[1][1] - 15 && Math.abs(kick.feet[0][1] - still.feet[0][1]) < 3
+    && p0.paws[1] > still.paws[1] + 12 && Math.abs(p0.paws[0] - still.paws[0]) < 1 && p1.paws[0] > still.paws[0] + 12 && Math.abs(p1.paws[1] - still.paws[1]) < 1;
+});
+check(rigOk, 'the critters\' kick thrusts the front foot out and up (the back foot stays planted); punches send one paw straight out');
+
 // ---- every character: attack and big attack hit, and every pose draws
 MG.CHARACTERS.forEach(function (c) {
   var sc = arena(c.id), p = sc.player, d = dummy(sc, 'pig', 600 + 50, 800);

@@ -71,8 +71,8 @@
         ['Move', K('P1', 'left') + ' / ' + K('P1', 'right'), K('P2', 'left') + ' / ' + K('P2', 'right'), 'D-pad / stick'],
         ['Jump', K('P1', 'up'), P2('up'), 'A'],
         ['Block (hold)', K('P1', 'down'), P2('down'), 'Down / LB'],
-        ['Attack', K('P1', 'attack'), P2('attack'), 'X'],
-        ['Big Attack', K('P1', 'big'), P2('big'), 'Y'],
+        ['Punch', K('P1', 'attack'), P2('attack'), 'X'],
+        ['Kick (big attack)', K('P1', 'big'), P2('big'), 'Y'],
         ['Special', K('P1', 'special'), P2('special'), 'B'],
         ['Shoot (hold)', K('P1', 'shoot'), P2('shoot'), 'RB'],
         ['Grenade, then kick it', K('P1', 'grenade'), P2('grenade'), 'LT'],
@@ -88,13 +88,14 @@
         UI.text(ctx, r[2], 570, y, 17, col, 'center');
         UI.text(ctx, r[3], 735, y, 17, col, 'center');
       });
-      UI.text(ctx, `Playing alone? Arrows + J (attack) K (big) L (special) ${K('P2', 'shoot')} (shoot) ${K('P2', 'grenade')} (grenade) ${K('P2', 'joey')} (joey) ${K('P2', 'pouch')} (pouch) work too.`, W / 2, 460, 14, '#cccccc', 'center');
-      UI.text(ctx, 'Grenade: pull the pin and drop it, then kick it with attack, big attack or the grenade key.', W / 2, 478, 14, '#cccccc', 'center');
+      UI.text(ctx, `Playing alone? Arrows + J (punch) K (kick) L (special) ${K('P2', 'shoot')} (shoot) ${K('P2', 'grenade')} (grenade) ${K('P2', 'joey')} (joey) ${K('P2', 'pouch')} (pouch) work too.`, W / 2, 460, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Grenade: pull the pin and drop it, then send it flying with punch, kick or the grenade key.', W / 2, 478, 14, '#cccccc', 'center');
       UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 496, 14, '#cccccc', 'center');
       UI.text(ctx, 'Press any key to go back.', W / 2, 512, 13, '#9bf6ff', 'center');
     },
 
-    // Key-hint strip along the bottom edge. Lights up the move the player is doing.
+    // Key-hint strip along the bottom edge. Lights up the move the player is doing, and shows the joey's
+    // level (with a bar while it rests) and the pouch's saved item, so every control sits at the bottom.
     //  opts.layout: 'wasd' | 'arrows' | 'pad' (solo, follows the keys in use) or 'p1' | 'p2' (duel)
     //  opts.x + opts.align ('left'|'right') to place it; centered otherwise
     //  opts.compact: for two strips side by side: each label sits under its key, no pause key
@@ -113,6 +114,11 @@
         p2: kb('P2'),
       };
       const compact = !!opts.compact;
+      // every marsupial punches (attack) and kicks (big attack)
+      const joeyLv = player.joey ? player.joey.level : player.joeyLevel || 0;
+      const joeyRest = player.joey ? MG.U.clamp(player.joey.cool / 8, 0, 1) : player.joeyCool || 0;
+      const SHOW = { attack: 'punch', big: 'kick', joey: joeyLv ? 'joey Lv' + joeyLv : 'joey' };
+      const POUCH_SLOT = compact ? 15 : 19; // room for the saved item's icon after "pouch"
       let items = LAYOUTS[opts.layout || MG.Input.lastDevice] || LAYOUTS.wasd;
       if (compact) items = items.filter(([, label]) => label !== 'pause');
       const kind = player.move ? player.move.kind : null;
@@ -133,7 +139,7 @@
       // each item: its key caps, then the label beside them (or under them when compact)
       const sizes = items.map(([keys, label]) => {
         const kw = keys.reduce((a, k) => a + capW(k) + 3, 0) - 3;
-        const lw = textW(label, lfont);
+        const lw = textW(SHOW[label] || label, lfont) + (label === 'pouch' ? POUCH_SLOT : 0);
         return { kw, w: compact ? Math.max(kw, lw) : kw + 5 + lw };
       });
       const tagW = opts.tag ? textW(opts.tag, font) + 10 : 0;
@@ -169,9 +175,25 @@
           UI.text(ctx, k, kx + w / 2, ky, fs, '#2b193d', 'center');
           kx += w + 3;
         }
-        const color = on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#999999' : '#ffffff';
-        if (compact) UI.text(ctx, label, x + m.w / 2, y + 10, lfs, color, 'center');
-        else UI.text(ctx, label, kx + 2, y, fs, color);
+        // the joey resting: a pink bar fills along the bottom of its key
+        if (label === 'joey' && player.joeyReady === false && joeyRest > 0) {
+          const w = capW(keys[0]), k0 = compact ? x + (m.w - m.kw) / 2 : x;
+          ctx.fillStyle = '#f6b3c4';
+          ctx.fillRect(k0 + 2, ky + capH / 2 - 3, (w - 4) * (1 - joeyRest), 2);
+        }
+        const color = on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#999999' : label === 'joey' && player.joeyReady !== false && joeyLv ? '#f6b3c4' : '#ffffff';
+        const text = SHOW[label] || label;
+        const slot = label === 'pouch' ? POUCH_SLOT : 0;
+        let lx;
+        if (compact) { lx = x + (m.w - slot) / 2; UI.text(ctx, text, lx, y + 10, lfs, color, 'center'); lx += textW(text, lfont) / 2; }
+        else { UI.text(ctx, text, kx + 2, y, fs, color); lx = kx + 2 + textW(text, font); }
+        if (slot) {
+          // the pouch's saved item (or an empty slot)
+          const cx = lx + slot / 2 + 1, cy = compact ? y + 10 : y, r = compact ? 5.5 : 7;
+          ctx.fillStyle = 'rgba(255,255,255,0.14)';
+          ctx.beginPath(); ctx.arc(cx, cy, r + 1, 0, Math.PI * 2); ctx.fill();
+          if (player.pouch) UI.pouchItem(ctx, player.pouch, cx, cy, r);
+        }
         x += m.w + gap;
       });
     },

@@ -118,8 +118,10 @@ Every playable marsupial has a **joey** (a baby of its own kind) and a **pouch s
 **Controls** (added everywhere: key strip, Pause > Controls, touch buttons):
 | | Player 1 | Player 2 | Gamepad | Phones |
 |---|---|---|---|---|
-| JOEY | Q | [ | Back / View | JOEY button |
+| JOEY | Q | [ | Back / View | JOEY button (shows its level) |
 | POUCH | T | ] | RT (shoot stays on RB) | POUCH button (shows the saved item) |
+
+Since 15 Nov 2026 the key strip at the bottom shows the joey's level (with a pink bar on its key while it rests) and the pouch's saved item, and the top-left panel leaves them out while the strip or the touch buttons are showing (players asked for every control at the bottom).
 
 **Wi-Fi:** the joey and the pouch are in the snapshots, and the JOEY and POUCH presses are sent like any other button.
 

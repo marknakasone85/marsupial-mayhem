@@ -101,6 +101,11 @@
 - **Light and haze is on by default**, with a Settings switch, and switches itself off on slow devices unless the player chose ON.
 - **Livelier movement** has no switch: it's subtle (at most a quarter squash), costs almost nothing, and works the same for Wi-Fi friends (the host sends the squash amount and the falling speed).
 
+## Chosen after a player's feedback (15 Nov 2026; the owner asked for both)
+
+- **Every marsupial punches and kicks:** the attack is a punch and the big attack a kick, for all 14 (the secret ones too). Each keeps its own numbers, so Chompers' kick still breaks blocks and Tank's still shoves hardest. Zip's kick still spins and Benny's still lands twice. The specials keep their bites, chomps and slaps. On screen the keys are now called "punch" and "kick" (the Controls page, the key strip, Settings > keys, the touch buttons PUNCH and KICK). Inside the code the actions keep their old names (`attack`, `big`), so saved keys keep working.
+- **All the controls at the bottom:** the joey's level and the pouch's saved item moved from the top-left panel into the key strip at the bottom. The panel is shorter whenever the strip or the touch buttons show them; with the on-screen controls off, they stay in the panel. On a computer (anything with a mouse or trackpad), the touch buttons sit in one row along the bottom, moving on the left and PUNCH at the right-hand end, and a mouse click presses them. Phones and tablets keep the thumb layout.
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.

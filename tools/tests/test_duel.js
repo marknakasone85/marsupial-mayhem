@@ -31,6 +31,9 @@ check(unused.length <= 1, 'the CPU uses every character\'s special' + (unused.le
 MG.Engine.setScene(new MG.DuelScene({ stage: 0, players: [{ id: 0, cid: 'boomer', local: 'P1' }, { id: 1, cid: 'tank', local: 'P2' }] }));
 var sc = scene(), a = sc.slots[0].f, b = sc.slots[1].f;
 check(a.grenades === 0 && !a.weapon && b.grenades === 0 && a.autoFace, 'fair fight: no grenades or weapons at the start, and fighters face each other');
+frames(2);
+var dm = sc.hudModel();
+check(dm.strips.length === 2 && dm.sides[0].below && dm.sides[1].below, 'both players\' joeys and pouches show in their key strips at the bottom, not by the health bars');
 frames(60 * 12);
 check(sc.state === 'fight' && sc.pickups.length + (a.grenades + b.grenades) + (a.weapon ? 1 : 0) + (b.weapon ? 1 : 0) > 0 || sc.dropT < 13, 'supply drops fall onto the stage');
 var g0 = a.grenades, drop = new MG.Pickup('grenades', a.x, MG.GROUND_Y); sc.pickups.push(drop); frames(3);

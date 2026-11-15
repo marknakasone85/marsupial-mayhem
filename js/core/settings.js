@@ -41,7 +41,7 @@
   // ---------------- changing the keys ----------------
   // Each action has one keyboard key per player (gamepads and touch buttons don't change).
   const ACTIONS = ['left', 'right', 'up', 'down', 'attack', 'big', 'special', 'shoot', 'grenade', 'joey', 'pouch'];
-  const ACTION_NAMES = { left: 'Move left', right: 'Move right', up: 'Jump', down: 'Block', attack: 'Attack', big: 'Big attack', special: 'Special', shoot: 'Shoot', grenade: 'Grenade', joey: 'Joey', pouch: 'Pouch' };
+  const ACTION_NAMES = { left: 'Move left', right: 'Move right', up: 'Jump', down: 'Block', attack: 'Punch', big: 'Kick (big attack)', special: 'Special', shoot: 'Shoot', grenade: 'Grenade', joey: 'Joey', pouch: 'Pouch' };
   const C = MG.Controls;
   const DEFAULTS = { P1: {}, P2: {} };
   for (const p of ['P1', 'P2']) for (const a of ACTIONS) DEFAULTS[p][a] = C[p][a][0];
