@@ -37,11 +37,9 @@
     ctx.closePath();
     ctx.fill();
   }
+  // skies and the other still gradient bands are drawn once and reused (A.band, js/art/still.js)
   function skyFill(ctx, bottom, c0, c1, c2) {
-    const g = ctx.createLinearGradient(0, 0, 0, bottom);
-    g.addColorStop(0, c0); g.addColorStop(0.6, c1); g.addColorStop(1, c2);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, bottom);
+    A.band(ctx, 0, 0, W, bottom, [0, 0, 0, bottom], [[0, c0], [0.6, c1], [1, c2]]);
   }
   const CLOUD = [[0, 0, 22], [24, -8, 26], [52, 0, 20], [26, 6, 22]];
   function sunClouds(ctx, camX, t, gy, sunset, sunX) {
@@ -75,11 +73,8 @@
   const rfFar = (x) => 112 + Math.sin(x * 0.005) * 46 + Math.sin(x * 0.013 + 2) * 20;
   BG.rainforest = function (ctx, camX, t, gy, sunset) {
     skyFill(ctx, gy, sunset ? '#5a3a6a' : '#86cbbd', sunset ? '#f2a372' : '#d4eed6', sunset ? '#ffd79a' : '#eef6dc');
-    const glow = ctx.createRadialGradient(700, 70, 10, 700, 70, 300);
-    glow.addColorStop(0, sunset ? 'rgba(255,200,120,0.7)' : 'rgba(255,252,220,0.85)');
-    glow.addColorStop(1, 'rgba(255,252,220,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(400, 0, 560, Math.min(gy, 370));
+    A.band(ctx, 400, 0, 560, Math.min(gy, 370), [700, 70, 10, 700, 70, 300],
+      [[0, sunset ? 'rgba(255,200,120,0.7)' : 'rgba(255,252,220,0.85)'], [1, 'rgba(255,252,220,0)']]);
     // far misty hills, and a waterfall off a cliff every so often
     ridge(ctx, camX, 0.06, gy - 140, gy - 170, '#a6d0bd', rfFar);
     each(camX, 0.06, 1500, 300, (sx, i) => {
@@ -119,12 +114,8 @@
     ctx.fillRect(0, gy - 180, W, 182);
     ctx.fillStyle = '#93c49c';
     each(camX, 0.15, 120, 40, (sx, i) => { if (hash(i + 9) < 0.6) ctx.fillRect(sx + hash(i) * 40, gy - 168 + hash(i + 2) * 30, 5 + hash(i + 4) * 4, 200); });
-    const mist = ctx.createLinearGradient(0, gy - 200, 0, gy);
-    mist.addColorStop(0, 'rgba(240,250,240,0)');
-    mist.addColorStop(0.6, 'rgba(240,250,240,0.4)');
-    mist.addColorStop(1, 'rgba(240,250,240,0.15)');
-    ctx.fillStyle = mist;
-    ctx.fillRect(0, gy - 200, W, 200);
+    A.band(ctx, 0, gy - 200, W, 200, [0, gy - 200, 0, gy],
+      [[0, 'rgba(240,250,240,0)'], [0.6, 'rgba(240,250,240,0.4)'], [1, 'rgba(240,250,240,0.15)']]);
     // near trunks with flared buttress roots
     each(camX, 0.35, 210, 140, (sx, i) => {
       if (hash(i * 1.7 + 3) < 0.25) return;
@@ -189,10 +180,7 @@
     });
     ctx.fill();
     // dark soil and leaf litter, mossy edge, roots
-    const soil = ctx.createLinearGradient(0, gy, 0, H);
-    soil.addColorStop(0, '#5a3d27'); soil.addColorStop(1, '#2a1a10');
-    ctx.fillStyle = soil;
-    ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#5a3d27'], [1, '#2a1a10']]);
     const litter = ['#9a6a34', '#c0843a', '#6f8a3a', '#7a4a26'];
     for (let c = 0; c < 4; c++) {
       ctx.fillStyle = litter[c];
@@ -301,10 +289,7 @@
       ctx.lineTo(sx, caneTop(i * 8) + (i & 1 ? 6 : -8 - hash(i + 70) * 18));
     }
     ctx.lineTo(W + 16, gy); ctx.closePath(); ctx.fill();
-    const shade = ctx.createLinearGradient(0, gy - 100, 0, gy);
-    shade.addColorStop(0, 'rgba(40,70,20,0)'); shade.addColorStop(1, 'rgba(40,70,20,0.55)');
-    ctx.fillStyle = shade;
-    ctx.fillRect(0, gy - 100, W, 100);
+    A.band(ctx, 0, gy - 100, W, 100, [0, gy - 100, 0, gy], [[0, 'rgba(40,70,20,0)'], [1, 'rgba(40,70,20,0.55)']]);
     const stalks = [[], []];
     each(camX, 0.35, 13, 30, (sx, i) => stalks[i & 1].push([sx + hash(i + 71) * 6, gy - 70 - hash(i + 72) * 30, (hash(i + 73) - 0.5) * 5]));
     ['#b8c75a', '#d4c05e'].forEach((col, c) => {
@@ -336,10 +321,7 @@
     ctx.fillStyle = '#7a5a3a'; ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
     each(camX, 0.6, 120, 20, (sx) => { ctx.fillRect(sx, gy - 38, 6, 38); ctx.strokeRect(sx, gy - 38, 6, 38); });
     // the dirt farm track: grass verge, two wheel ruts, pebbles
-    const dirt = ctx.createLinearGradient(0, gy, 0, H);
-    dirt.addColorStop(0, '#c9a06a'); dirt.addColorStop(1, '#94693f');
-    ctx.fillStyle = dirt;
-    ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#c9a06a'], [1, '#94693f']]);
     ctx.fillStyle = 'rgba(110,70,40,0.3)';
     ctx.fillRect(0, gy + 16, W, 9);
     ctx.fillRect(0, gy + 44, W, 10);
@@ -433,12 +415,8 @@
     });
     ctx.fill();
     // the sea
-    const sea = ctx.createLinearGradient(0, hz, 0, gy);
-    sea.addColorStop(0, sunset ? '#2a5a90' : '#1f6fae');
-    sea.addColorStop(0.45, sunset ? '#4a8ab0' : '#2a9cc8');
-    sea.addColorStop(1, sunset ? '#7ab8b8' : '#5fd3c6');
-    ctx.fillStyle = sea;
-    ctx.fillRect(0, hz, W, gy - hz);
+    A.band(ctx, 0, hz, W, gy - hz, [0, hz, 0, gy],
+      [[0, sunset ? '#2a5a90' : '#1f6fae'], [0.45, sunset ? '#4a8ab0' : '#2a9cc8'], [1, sunset ? '#7ab8b8' : '#5fd3c6']]);
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.fillRect(0, hz, W, 2);
     // the reef: irregular turquoise shallows with surf breaking along the seaward edge
@@ -480,12 +458,8 @@
       ctx.beginPath(); ctx.moveTo(bx - 12, by - 2); ctx.lineTo(bx + 16, by - 2); ctx.lineTo(bx + 11, by + 3); ctx.lineTo(bx - 8, by + 3); ctx.closePath(); ctx.fill();
     });
     // shallows (fading in from the sea) with mangroves standing in them
-    const sh = ctx.createLinearGradient(0, gy - 80, 0, gy);
-    sh.addColorStop(0, sunset ? 'rgba(138,176,160,0)' : 'rgba(99,199,180,0)');
-    sh.addColorStop(0.45, sunset ? '#8ab0a0' : '#63c7b4');
-    sh.addColorStop(1, '#7f9a72');
-    ctx.fillStyle = sh;
-    ctx.fillRect(0, gy - 80, W, 82);
+    A.band(ctx, 0, gy - 80, W, 82, [0, gy - 80, 0, gy],
+      [[0, sunset ? 'rgba(138,176,160,0)' : 'rgba(99,199,180,0)'], [0.45, sunset ? '#8ab0a0' : '#63c7b4'], [1, '#7f9a72']]);
     each(camX, 0.25, 110, 120, (sx, i) => {
       if (hash(i + 115) < 0.5) return;
       mangroveTree(ctx, sx + hash(i + 116) * 50, gy - 40, 0.5 + hash(i + 117) * 0.2, i + 50, true);
@@ -499,10 +473,7 @@
     each(camX, 0.35, 40, 20, (sx, i) => { const wy = gy - 28 + hash(i + 114) * 18; ctx.moveTo(sx, wy); ctx.lineTo(sx + 12 + Math.sin(t * 2 + i) * 3, wy); });
     ctx.stroke();
     // sand and mud: wet sheen, ripples, shells and crab holes
-    const sand = ctx.createLinearGradient(0, gy, 0, H);
-    sand.addColorStop(0, '#d9c08a'); sand.addColorStop(0.35, '#e6d29e'); sand.addColorStop(1, '#a88c5a');
-    ctx.fillStyle = sand;
-    ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#d9c08a'], [0.35, '#e6d29e'], [1, '#a88c5a']]);
     ctx.fillStyle = 'rgba(110,90,60,0.28)';
     ctx.fillRect(0, gy, W, 12);
     ctx.strokeStyle = 'rgba(150,115,70,0.45)'; ctx.lineWidth = 1.5;

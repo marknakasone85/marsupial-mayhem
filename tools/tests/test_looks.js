@@ -318,5 +318,70 @@ MG.Engine.setScene(new MG.DuelScene({ players: [{ id: 0, cid: 'boomer', local: '
 MG.Art.groundDetail = realGD;
 check(inMaps > 0 && gCalls > inMaps, 'the maps and the duel stages draw it');
 
+// ---- still layers (for older phones): skies, seas, soil and the light's glow drawn once, then copied
+var SA = MG.Art;
+SA.stillClear(); SA.stillOff = false;
+var r0 = recCtx(), d0 = SA.stillStats.direct;
+SA.band(r0.ctx, 0, 0, 960, 470, [0, 0, 0, 470], [[0, '#000000'], [1, '#ffffff']]);
+check(SA.stillStats.direct === d0 + 1 && r0.has('createLinearGradient') && r0.has('fillRect') && !r0.has('drawImage'), 'no pictures without a document to make them in (like here): drawn directly, as before');
+// a pretend browser: canvases to make pictures in, and a screen at 2 real pixels per game pixel
+var made = [], realCreate = document.createElement;
+document.createElement = function (tag) {
+  if (tag !== 'canvas') return null;
+  var c = { width: 0, height: 0 }, g = recCtx();
+  g.ctx.canvas = c; c.getContext = function () { return g.ctx; }; c.rec = g; made.push(c);
+  return c;
+};
+function screen(px, e) { var r = recCtx(); r.ctx.getTransform = function () { return { a: px, b: 0, c: 0, d: px, e: e || 0, f: 0 }; }; r.ctx.canvas = { width: 960 * px, height: 540 * px }; return r; }
+MG.Engine.pixel = 2;
+var s1 = screen(2), sky = function (ctx, sunset) { SA.band(ctx, 0, 0, 960, 470, [0, 0, 0, 470], [[0, sunset ? '#2b1a4a' : '#3d8fd6'], [1, '#f6dcae']]); };
+sky(s1.ctx);
+var pic = made[0];
+check(made.length === 1 && pic.width === 1921 && pic.height === 941 && pic.rec.has('createLinearGradient') && pic.rec.has('fillRect') && s1.has('drawImage') && !s1.has('createLinearGradient'),
+  'the sky is drawn once into a picture at the screen\'s real size (' + (pic ? pic.width + 'x' + pic.height : 'none') + ') and copied onto the screen');
+var s2 = screen(2); sky(s2.ctx); sky(s2.ctx);
+check(made.length === 1 && s2.log.filter(function (x) { return x === 'drawImage'; }).length === 2 && !s2.has('fillRect'), '...and the next frames just copy it (no gradient filled again)');
+sky(s2.ctx, true);
+check(made.length === 2, 'a sunset sky is its own picture');
+var z = screen(2.6); sky(z.ctx);
+check(made.length === 2 && z.has('createLinearGradient') && !z.has('drawImage'), 'zoomed in (the slow-motion finisher): drawn directly');
+SA.stillOff = true; var off = screen(2); sky(off.ctx); SA.stillOff = false;
+check(off.has('createLinearGradient') && !off.has('drawImage'), 'MG.Art.stillOff draws everything directly');
+// only the part on the screen is kept: the sun's glow box reaches above the top of the screen
+SA.stillClear(); made.length = 0;
+var lg = screen(2); MG.Light.front(lg.ctx, { theme: 'outback', camX: 0, t: 1, groundY: MG.GROUND_Y });
+var glowPic = made.filter(function (c) { return c.height > 0; }).map(function (c) { return c.width + 'x' + c.height; });
+check(made.length >= 3 && made.every(function (c) { return c.width <= 1921 && c.height <= 1081; }) && !lg.has('createRadialGradient') && lg.has('drawImage') && lg.has('op:soft-light'),
+  'the light\'s glow, colour grade and vignette are pictures too, copied with their blend modes, cut to the screen (' + glowPic.join(', ') + ')');
+var ray = screen(2); MG.Light.front(ray.ctx, { theme: 'rainforest', camX: 0, t: 1, groundY: MG.GROUND_Y });
+check(ray.has('createLinearGradient') && ray.has('drawImage'), '...while the moving light shafts are still drawn live');
+// every world, day and sunset: the second frame makes no new pictures, and a world needs at most 10
+SA.stillClear(); var perWorld = [], again = [], wErr = null;
+try {
+  Object.keys(themes).forEach(function (th) {
+    [false, true].forEach(function (sunset) {
+      var before = made.length;
+      for (var f = 0; f < 2; f++) {
+        var sc2 = screen(2), lit = { theme: th, sunset: sunset, camX: 900 + f * 3, t: 2 + f / 60, groundY: MG.GROUND_Y };
+        SA.background(sc2.ctx, 900 + f * 3, 2 + f / 60, MG.GROUND_Y, sunset ? 'sunset' : undefined, th);
+        MG.Light.back(sc2.ctx, lit); MG.Light.front(sc2.ctx, lit);
+        if (f === 0) perWorld.push(made.length - before); else if (made.length - before !== perWorld[perWorld.length - 1]) again.push(th);
+      }
+    });
+  });
+} catch (e) { wErr = '' + e; }
+check(!wErr && again.length === 0 && Math.max.apply(null, perWorld) <= 10, 'every world (day and sunset) makes its pictures once and reuses them (at most ' + Math.max.apply(null, perWorld) + ' a world)' + (wErr ? ': ' + wErr : '') + (again.length ? '; remade: ' + again.join(', ') : ''));
+check(SA.stillCache.size <= 16, '...and only the 16 most recently used are kept (memory)');
+// a safety net: something remade every frame switches the pictures off (drawn directly again)
+SA.stillClear();
+for (var q = 0; q < 45; q++) SA.still(screen(2).ctx, 'changes ' + q, 0, 0, 100, 100, function (c) { c.fillRect(0, 0, 100, 100); });
+check(SA.stillOff === true && SA.stillCache.size === 0, 'pictures remade over and over: they switch off and the memory is freed');
+SA.stillOff = false; SA.stillClear();
+document.createElement = realCreate; MG.Engine.pixel = 1;
+// and in a real map, with no document, nothing changes
+var mErr = null;
+try { MG.Engine.setScene(new MG.CampaignScene({ charId: 'boomer', level: 26 })); frames(3); } catch (e) { mErr = '' + e; }
+check(!mErr, 'a map still draws everything without pictures' + (mErr ? ': ' + mErr : ''));
+
 fresh();
 done('looks');

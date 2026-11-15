@@ -40,8 +40,12 @@
   const mod = (a, n) => ((a % n) + n) % n;
 
   // A gradient drawn into the rectangle (x, y, dw, dh): draw() paints a w x h box in its own units.
-  function layer(ctx, w, h, draw, x, y, dw, dh) {
-    ctx.save(); ctx.translate(x, y); ctx.scale(dw / w, dh / h); draw(ctx, w, h); ctx.restore();
+  // With a key (naming everything it depends on), it's drawn once and the picture reused each frame
+  // with the current blend mode and alpha (MG.Art.still: much cheaper on phones without a graphics chip).
+  function layer(ctx, w, h, draw, x, y, dw, dh, key) {
+    const paint = (c) => { c.save(); c.translate(x, y); c.scale(dw / w, dh / h); draw(c, w, h); c.restore(); };
+    if (key && MG.Art.still) MG.Art.still(ctx, 'light ' + key, x, y, dw, dh, paint);
+    else paint(ctx);
   }
   // a top-to-bottom gradient through the given [stop, colour] pairs
   const vertical = (stops) => (g, w, h) => {
@@ -58,7 +62,7 @@
       if (!on()) return;
       const k = look(v), gy = v.groundY || MG.GROUND_Y;
       layer(ctx, 4, 68, vertical([[0, rgba(k.haze, 0)], [0.62, rgba(k.haze, k.hz)], [0.9, rgba(k.haze, k.hz * 0.6)], [1, rgba(k.haze, 0)]]),
-        -40, gy - 340, W + 80, 340);
+        -40, gy - 340, W + 80, 340, 'haze ' + k.haze + ' ' + k.hz + ' ' + gy);
     },
 
     // Safety net for slow devices (no graphics chip for the canvas): if most frames take longer than
@@ -84,18 +88,19 @@
       this.watch();
       if (S.contrast) return;
       const k = look(v), gy = v.groundY || MG.GROUND_Y, t = v.t || 0, camX = v.camX || 0;
+      const id = JSON.stringify(k) + ' ' + gy; // the still layers below depend only on the look and the ground
       ctx.save();
       if (k.shade) {
         // the canopy's shadow (or the cave roof's), so the shafts of light show
         ctx.globalCompositeOperation = 'multiply';
-        layer(ctx, 4, 60, vertical([[0, rgba(k.shade, k.sh)], [1, rgba(k.shade, 0)]]), -20, -10, W + 40, 310);
+        layer(ctx, 4, 60, vertical([[0, rgba(k.shade, k.sh)], [1, rgba(k.shade, 0)]]), -20, -10, W + 40, 310, 'shade ' + id);
       }
       if (k.rays) this.rays(ctx, k, gy, t, camX);
       if (k.under) {
         // lava light from below, flickering
         ctx.globalCompositeOperation = 'screen';
         ctx.globalAlpha = 0.85 + 0.15 * Math.sin(t * 1.7);
-        layer(ctx, 4, 60, vertical([[0, rgba(k.under, 0)], [1, rgba(k.under, k.un)]]), -20, gy - 220, W + 40, H - gy + 230);
+        layer(ctx, 4, 60, vertical([[0, rgba(k.under, 0)], [1, rgba(k.under, k.un)]]), -20, gy - 220, W + 40, H - gy + 230, 'under ' + id);
         ctx.globalAlpha = 1;
       }
       if (k.sun && k.gl) {
@@ -108,7 +113,7 @@
           gr.addColorStop(0.35, rgba(k.glow, k.gl * 0.45));
           gr.addColorStop(1, rgba(k.glow, 0));
           g.fillStyle = gr; g.fillRect(0, 0, w, w);
-        }, sx - r, sy - r, r * 2, r * 2);
+        }, sx - r, sy - r, r * 2, r * 2, 'glow ' + id);
       }
       if (k.gr) {
         // colour grade: warm light from the sun's side, cooler shade on the other
@@ -119,7 +124,7 @@
           const gr = g.createLinearGradient(sx * w / W, sy * h / H, (W - sx) * w / W, h);
           gr.addColorStop(0, k.warm); gr.addColorStop(1, k.cool);
           g.fillStyle = gr; g.fillRect(0, 0, w, h);
-        }, 0, 0, W, H);
+        }, 0, 0, W, H, 'grade ' + id);
         ctx.globalAlpha = 1;
       }
       if (k.vig) {
@@ -129,7 +134,7 @@
           vg.addColorStop(0, 'rgba(18,8,30,0)');
           vg.addColorStop(1, rgba('18,8,30', k.vig));
           g.fillStyle = vg; g.fillRect(0, 0, w, h);
-        }, -6, -6, W + 12, H + 12);
+        }, -6, -6, W + 12, H + 12, 'vignette ' + id);
       }
       ctx.restore();
     },
