@@ -26,12 +26,9 @@
   // sky: 'day' (default) or 'sunset'
   A.background = function (ctx, camX, t, groundY, skyKind) {
     const sunset = skyKind === 'sunset';
-    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-    sky.addColorStop(0, sunset ? '#2b1a4a' : '#3d8fd6');
-    sky.addColorStop(0.65, sunset ? '#e0794a' : '#8fcfee');
-    sky.addColorStop(1, sunset ? '#ffc15e' : '#f6dcae');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, groundY);
+    // the sky and the dirt never change: drawn once and reused (A.band, js/art/still.js)
+    A.band(ctx, 0, 0, W, groundY, [0, 0, 0, groundY],
+      [[0, sunset ? '#2b1a4a' : '#3d8fd6'], [0.65, sunset ? '#e0794a' : '#8fcfee'], [1, sunset ? '#ffc15e' : '#f6dcae']]);
     // sun and a few lazy clouds
     const sunY = sunset ? groundY - 60 : 90;
     ctx.fillStyle = sunset ? 'rgba(255,214,102,0.4)' : 'rgba(255,240,180,0.5)';
@@ -52,11 +49,7 @@
     ctx.fillStyle = '#d06a3d';
     ctx.fillRect(0, hy + 18, W, groundY - hy - 18);
     // red dirt
-    const dirt = ctx.createLinearGradient(0, groundY, 0, H);
-    dirt.addColorStop(0, '#c4552f');
-    dirt.addColorStop(1, '#8a3520');
-    ctx.fillStyle = dirt;
-    ctx.fillRect(0, groundY, W, H - groundY);
+    A.band(ctx, 0, groundY, W, H - groundY, [0, groundY, 0, H], [[0, '#c4552f'], [1, '#8a3520']]);
     ctx.fillStyle = 'rgba(90,30,15,0.35)';
     const first = Math.floor(camX / 37);
     for (let i = first; i < first + W / 37 + 2; i++) {

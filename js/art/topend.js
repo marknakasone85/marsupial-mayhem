@@ -42,11 +42,9 @@
     ctx.closePath();
     ctx.fill();
   }
+  // the sky is drawn once and reused (A.band, js/art/still.js)
   function skyFill(ctx, bottom, c0, c1, c2) {
-    const g = ctx.createLinearGradient(0, 0, 0, bottom);
-    g.addColorStop(0, c0); g.addColorStop(0.62, c1); g.addColorStop(1, c2);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, bottom);
+    A.band(ctx, 0, 0, W, bottom, [0, 0, 0, bottom], [[0, c0], [0.62, c1], [1, c2]]);
   }
   const CLOUD = [[0, 0, 22], [24, -8, 26], [52, 0, 20], [26, 6, 22]];
   // n puffy clouds drifting with the wind (speed) and a little with the camera (f); s = size

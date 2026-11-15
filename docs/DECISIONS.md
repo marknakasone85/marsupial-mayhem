@@ -110,6 +110,12 @@
 - **A practice corner for new players:** on the first map, a straw-stuffed training dummy stands just past the TOURNAMENT sign and a coach board walks through punch (3 times), kick, jump, block and the grenade, showing each move's key (the button on a touch screen, both players' keys with two on one keyboard). The first rabbits wait until it's done; walking on past the dummy skips it. It shows only when the map is started from the world map (or restarted), never on Wi-Fi, and stops once it's been done or skipped, or the first map has been cleared. Punching the dummy scores nothing. Afterwards the dummy stays as scenery.
 - **All the controls at the bottom:** the joey's level and the pouch's saved item moved from the top-left panel into the key strip at the bottom. The panel is shorter whenever the strip or the touch buttons show them; with the on-screen controls off, they stay in the panel. On a computer (anything with a mouse or trackpad), the touch buttons sit in one row along the bottom, moving on the left and PUNCH at the right-hand end, and a mouse click presses them. Phones and tablets keep the thumb layout.
 
+## Chosen for older phones (15 Nov 2026; the owner asked for "smoother on older phones")
+
+- **Still layers are drawn once and copied, with no switch:** skies, seas, mist, soil and the light's still layers (glow, colour grade, canopy shade, lava glow, vignette) become pictures at the screen's real size. It looks the same (checked pixel by pixel) and roughly halves the time a frame takes without a graphics chip. Moving parts stay live, so nothing in the worlds changed.
+- **The light and haze stays on by default.** With its still layers copied, it now costs about 1.3-2 ms a frame without a graphics chip (it was 4-5 ms), so the slow-device switch-off should trip much less often.
+- **Memory is capped** at 16 pictures (a world needs up to 8) and about 80 MB, and only the part of each picture that's on screen is kept.
+
 ## Open questions for the owner
 
 1. **Price:** free on GitHub for sure; an itch.io page (free or pay what you want) is optional. Needed before release.

@@ -65,11 +65,9 @@
     }
     ctx.lineTo(x1, y + 3); ctx.closePath(); ctx.fill();
   }
+  // skies and the other still gradient bands are drawn once and reused (A.band, js/art/still.js)
   function skyFill(ctx, bottom, c0, c1, c2) {
-    const g = ctx.createLinearGradient(0, 0, 0, bottom);
-    g.addColorStop(0, c0); g.addColorStop(0.6, c1); g.addColorStop(1, c2);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, bottom);
+    A.band(ctx, 0, 0, W, bottom, [0, 0, 0, bottom], [[0, c0], [0.6, c1], [1, c2]]);
   }
   const CLOUD = [[0, 0, 22], [24, -8, 26], [52, 0, 20], [26, 6, 22]];
   // n puffy clouds drifting with the wind (speed) and a little with the camera (f); s = size
@@ -173,10 +171,8 @@
     // two rows of snowy peaks, then haze at their feet
     each(camX, 0.03, 330, 320, (sx, i) => peak(ctx, sx + hash(i + 1) * 100, gy - 128, 300 + hash(i + 2) * 170, 110 + hash(i + 3) * 80, (hash(i + 4) - 0.5) * 70, ALP_FAR, 0.42, i));
     each(camX, 0.05, 430, 320, (sx, i) => peak(ctx, sx + hash(i + 11) * 140, gy - 118, 340 + hash(i + 12) * 180, 150 + hash(i + 13) * 90, (hash(i + 14) - 0.5) * 90, ALP_NEAR, 0.36, i + 40));
-    const haze = ctx.createLinearGradient(0, gy - 220, 0, gy - 110);
-    haze.addColorStop(0, sunset ? 'rgba(255,214,190,0)' : 'rgba(236,245,253,0)');
-    haze.addColorStop(1, sunset ? 'rgba(255,214,190,0.8)' : 'rgba(236,245,253,0.85)');
-    ctx.fillStyle = haze; ctx.fillRect(0, gy - 220, W, 110);
+    A.band(ctx, 0, gy - 220, W, 110, [0, gy - 220, 0, gy - 110],
+      [[0, sunset ? 'rgba(255,214,190,0)' : 'rgba(236,245,253,0)'], [1, sunset ? 'rgba(255,214,190,0.8)' : 'rgba(236,245,253,0.85)']]);
     // rolling snowy high plains with dark clumps of snow-gum woodland and a little hut
     const off12 = camX * 0.12;
     ridge(ctx, camX, 0.12, gy - 112, gy, '#eef3fa', alpHill);
@@ -220,10 +216,7 @@
     });
     ctx.stroke();
     // the snowy ground: blue hollows, rocks poking through and twinkling glints
-    const snow = ctx.createLinearGradient(0, gy, 0, H);
-    snow.addColorStop(0, '#fbfdff'); snow.addColorStop(1, '#c9d7e6');
-    ctx.fillStyle = snow;
-    ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#fbfdff'], [1, '#c9d7e6']]);
     ctx.fillStyle = 'rgba(140,170,210,0.28)';
     ctx.beginPath();
     each(camX, 1, 90, 70, (sx, i) => ell(ctx, sx + hash(i + 41) * 40, gy + 14 + hash(i + 42) * 44, 24 + hash(i + 43) * 30, 3.5 + hash(i + 44) * 3, 0));
@@ -287,14 +280,9 @@
     // misty mountains, layered
     ridge(ctx, camX, 0.02, hz + 2, hz + 4, '#9fb0be', (x) => tasMtn(x) + 20);
     ridge(ctx, camX, 0.04, hz + 2, hz + 4, '#8a9dad', (x) => tasMtn(x + 900) * 0.7);
-    const mist = ctx.createLinearGradient(0, hz - 60, 0, hz);
-    mist.addColorStop(0, 'rgba(225,233,238,0)'); mist.addColorStop(1, 'rgba(225,233,238,0.8)');
-    ctx.fillStyle = mist; ctx.fillRect(0, hz - 60, W, 62);
+    A.band(ctx, 0, hz - 60, W, 62, [0, hz - 60, 0, hz], [[0, 'rgba(225,233,238,0)'], [1, 'rgba(225,233,238,0.8)']]);
     // the cold sea, with whitecaps
-    const sea = ctx.createLinearGradient(0, hz, 0, gy);
-    sea.addColorStop(0, sunset ? '#4a5a78' : '#4c6b81'); sea.addColorStop(1, sunset ? '#7a8aa0' : '#6f8d9f');
-    ctx.fillStyle = sea;
-    ctx.fillRect(0, hz, W, gy - hz);
+    A.band(ctx, 0, hz, W, gy - hz, [0, hz, 0, gy], [[0, sunset ? '#4a5a78' : '#4c6b81'], [1, sunset ? '#7a8aa0' : '#6f8d9f']]);
     ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(0, hz, W, 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
     ctx.beginPath();
@@ -347,10 +335,7 @@
     ctx.fillStyle = '#5a4430';
     ctx.beginPath(); for (const [bx, by] of buttons) circ(ctx, bx, by, 2.4); ctx.fill();
     // a peaty track with flat grey stones and moss
-    const peat = ctx.createLinearGradient(0, gy, 0, H);
-    peat.addColorStop(0, '#6a5a44'); peat.addColorStop(1, '#3b3127');
-    ctx.fillStyle = peat;
-    ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#6a5a44'], [1, '#3b3127']]);
     ctx.fillStyle = '#8b8a84';
     ctx.beginPath();
     each(camX, 1, 70, 40, (sx, i) => { if (hash(i + 81) < 0.55) ell(ctx, sx + hash(i + 82) * 30, gy + 14 + hash(i + 83) * 44, 9 + hash(i + 84) * 9, 3.5 + hash(i + 85) * 2, (hash(i + 86) - 0.5) * 0.3); });
@@ -493,10 +478,7 @@
       bridgeArch(ctx, sx + 580, hz - 8, 400, t);
     });
     // the harbour
-    const sea = ctx.createLinearGradient(0, hz, 0, gy - 100);
-    sea.addColorStop(0, sunset ? '#3a5a8a' : '#2a7fc0'); sea.addColorStop(1, sunset ? '#6a8ab0' : '#4fb0d8');
-    ctx.fillStyle = sea;
-    ctx.fillRect(0, hz, W, gy - 100 - hz);
+    A.band(ctx, 0, hz, W, gy - 100 - hz, [0, hz, 0, gy - 100], [[0, sunset ? '#3a5a8a' : '#2a7fc0'], [1, sunset ? '#6a8ab0' : '#4fb0d8']]);
     ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(0, hz, W, 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -538,9 +520,7 @@
     ctx.beginPath(); each(camX, 1, 61, 20, (sx, i) => { if (hash(i + 121) < 0.4) circ(ctx, sx + hash(i + 122) * 40, gy + 6 + hash(i + 123) * 24, 1.8); }); ctx.fill();
     ctx.fillStyle = '#ebe7df'; ctx.fillRect(0, kerb, W, 6);
     ctx.fillStyle = '#7f7a72'; ctx.fillRect(0, kerb + 6, W, 3);
-    const road = ctx.createLinearGradient(0, kerb + 9, 0, H);
-    road.addColorStop(0, '#50545d'); road.addColorStop(1, '#3b3e46');
-    ctx.fillStyle = road; ctx.fillRect(0, kerb + 9, W, H - kerb - 9);
+    A.band(ctx, 0, kerb + 9, W, H - kerb - 9, [0, kerb + 9, 0, H], [[0, '#50545d'], [1, '#3b3e46']]);
     ctx.fillStyle = '#f2f0e8';
     each(camX, 1, 96, 50, (sx) => ctx.fillRect(sx, kerb + 21, 46, 4));
     ctx.fillStyle = '#e6e2da'; ctx.fillRect(0, gy, W, 3);
@@ -658,9 +638,7 @@
     // far volcanoes, dusty hills and haze
     each(camX, 0.04, 820, 300, (sx, i) => farVolcano(ctx, sx + 200 + hash(i + 1) * 300, gy - 110, 260 + hash(i + 2) * 120, 110 + hash(i + 3) * 60, t, i));
     ridge(ctx, camX, 0.08, gy - 104, gy, '#b46f68', riftHill);
-    const haze = ctx.createLinearGradient(0, gy - 200, 0, gy - 60);
-    haze.addColorStop(0, 'rgba(255,190,140,0)'); haze.addColorStop(1, 'rgba(255,190,140,0.55)');
-    ctx.fillStyle = haze; ctx.fillRect(0, gy - 200, W, 140);
+    A.band(ctx, 0, gy - 200, W, 140, [0, gy - 200, 0, gy - 60], [[0, 'rgba(255,190,140,0)'], [1, 'rgba(255,190,140,0.55)']]);
     // misty tree-fern forest
     ridge(ctx, camX, 0.18, gy - 66, gy, '#9a7c62', (x) => 8 + Math.sin(x * 0.02) * 5);
     each(camX, 0.18, 120, 120, (sx, i) => {
@@ -683,9 +661,7 @@
     });
     ctx.fill();
     // dark volcanic soil with black rocks and glowing cracks
-    const soil = ctx.createLinearGradient(0, gy, 0, H);
-    soil.addColorStop(0, '#7a4a32'); soil.addColorStop(1, '#3a2018');
-    ctx.fillStyle = soil; ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#7a4a32'], [1, '#3a2018']]);
     ctx.strokeStyle = 'rgba(255,130,50,' + (0.35 + 0.2 * Math.sin(t * 2)).toFixed(3) + ')'; ctx.lineWidth = 2; ctx.lineCap = 'round';
     ctx.beginPath();
     each(camX, 1, 210, 60, (sx, i) => {
@@ -792,9 +768,8 @@
     smileSun(ctx, 780, 108, 62, t, camX, sunset);
     clouds(ctx, camX, t, 3, 50, 40, 0.04, 7, sunset ? 'rgba(255,200,190,0.9)' : 'rgba(255,255,255,0.95)', 0.9);
     // the sea
-    const sea = ctx.createLinearGradient(0, hz, 0, gy - 60);
-    sea.addColorStop(0, sunset ? '#2a6a9a' : '#139fd0'); sea.addColorStop(0.5, sunset ? '#4a9ab0' : '#22c4d6'); sea.addColorStop(1, sunset ? '#8ac8c0' : '#7ff0e0');
-    ctx.fillStyle = sea; ctx.fillRect(0, hz, W, gy - 60 - hz);
+    A.band(ctx, 0, hz, W, gy - 60 - hz, [0, hz, 0, gy - 60],
+      [[0, sunset ? '#2a6a9a' : '#139fd0'], [0.5, sunset ? '#4a9ab0' : '#22c4d6'], [1, sunset ? '#8ac8c0' : '#7ff0e0']]);
     ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fillRect(0, hz, W, 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.6;
     ctx.beginPath();
@@ -856,9 +831,7 @@
     ctx.strokeStyle = 'rgba(110,60,25,0.55)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); each(camX, 1, 15, 10, (sx) => { ctx.moveTo(sx, gy); ctx.lineTo(sx - 3, bw); }); ctx.stroke();
     ctx.fillStyle = 'rgba(255,240,210,0.3)'; ctx.fillRect(0, gy + 2, W, 3);
-    const sand = ctx.createLinearGradient(0, bw, 0, H);
-    sand.addColorStop(0, '#f7e3b5'); sand.addColorStop(1, '#e2c58a');
-    ctx.fillStyle = sand; ctx.fillRect(0, bw, W, H - bw);
+    A.band(ctx, 0, bw, W, H - bw, [0, bw, 0, H], [[0, '#f7e3b5'], [1, '#e2c58a']]);
     ctx.fillStyle = '#a8703c'; ctx.fillRect(0, bw, W, 6);
     ctx.fillStyle = '#8a5a2e';
     each(camX, 1, 120, 20, (sx) => ctx.fillRect(sx, bw + 6, 8, 14));
@@ -928,9 +901,7 @@
     ctx.beginPath(); ctx.moveTo(x - 3.5, y - 14); ctx.quadraticCurveTo(x - 4, y - 14 - fh * 0.4, x, y - 14 - fh * 0.62); ctx.quadraticCurveTo(x + 4, y - 14 - fh * 0.4, x + 3.5, y - 14); ctx.closePath(); ctx.fill();
   }
   BG.lair = function (ctx, camX, t, gy) {
-    const wall = ctx.createLinearGradient(0, 0, 0, gy);
-    wall.addColorStop(0, '#151b26'); wall.addColorStop(0.55, '#26324a'); wall.addColorStop(1, '#1d2636');
-    ctx.fillStyle = wall; ctx.fillRect(0, 0, W, gy);
+    A.band(ctx, 0, 0, W, gy, [0, 0, 0, gy], [[0, '#151b26'], [0.55, '#26324a'], [1, '#1d2636']]);
     // the far wall: big lumpy rock shapes with faint scale patterns and a green glow here and there
     ctx.fillStyle = '#212b3e';
     ctx.beginPath();
@@ -976,9 +947,7 @@
     each(camX, 0.6, 60, 60, (sx, i) => { const r = 10 + hash(i + 41) * 18; ell(ctx, sx + hash(i + 42) * 30, gy - r * 0.3, r, r * 0.6, 0); });
     ctx.fill();
     // the rocky floor
-    const floor = ctx.createLinearGradient(0, gy, 0, H);
-    floor.addColorStop(0, '#4a4e5e'); floor.addColorStop(1, '#23252f');
-    ctx.fillStyle = floor; ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#4a4e5e'], [1, '#23252f']]);
     ctx.fillStyle = '#5c6072';
     ctx.beginPath();
     each(camX, 1, 58, 30, (sx, i) => { if (hash(i + 51) < 0.6) ell(ctx, sx + hash(i + 52) * 30, gy + 10 + hash(i + 53) * 50, 7 + hash(i + 54) * 8, 3 + hash(i + 55) * 2, 0); });
@@ -992,9 +961,7 @@
     ctx.fillStyle = '#6a7084'; ctx.fillRect(0, gy, W, 3);
     // darker edges
     for (const [x0, x1] of [[0, 150], [W, W - 150]]) {
-      const v = ctx.createLinearGradient(x0, 0, x1, 0);
-      v.addColorStop(0, 'rgba(5,8,14,0.4)'); v.addColorStop(1, 'rgba(5,8,14,0)');
-      ctx.fillStyle = v; ctx.fillRect(Math.min(x0, x1), 0, 150, H);
+      A.band(ctx, Math.min(x0, x1), 0, 150, H, [x0, 0, x1, 0], [[0, 'rgba(5,8,14,0.4)'], [1, 'rgba(5,8,14,0)']]);
     }
   };
 
@@ -1044,9 +1011,7 @@
     clouds(ctx, camX + 300, t, 4, 58, 22, 0.05, 7, sunset ? 'rgba(255,215,200,0.85)' : 'rgba(245,248,250,0.92)', 1.1);
     clouds(ctx, camX + 650, t, 5, 150, 10, 0.07, 9, sunset ? 'rgba(255,225,205,0.6)' : 'rgba(236,242,246,0.75)', 0.75);
     // the sea at the horizon, with a little fishing boat
-    const sea = ctx.createLinearGradient(0, hz, 0, hz + 60);
-    sea.addColorStop(0, sunset ? '#5a6a8a' : '#6a8aa6'); sea.addColorStop(1, sunset ? '#8a9ab0' : '#8aa6bb');
-    ctx.fillStyle = sea; ctx.fillRect(0, hz, W, 90);
+    A.band(ctx, 0, hz, W, 90, [0, hz, 0, hz + 60], [[0, sunset ? '#5a6a8a' : '#6a8aa6'], [1, sunset ? '#8a9ab0' : '#8aa6bb']]);
     ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(0, hz, W, 2);
     each(camX, 0.03, 1300, 60, (sx, i) => {
       const bx = sx + 500 + Math.sin(t * 0.2 + i) * 20, by = hz + 12 + Math.sin(t * 1.3) * 0.8;
@@ -1088,9 +1053,7 @@
       ctx.beginPath(); for (let j = 0; j < 9; j++) circ(ctx, bx + (hash(i * 9 + j) - 0.5) * r * 2, by - r * 0.4 - hash(i * 7 + j) * r, 1.8); ctx.fill();
     });
     // grassy ground with clover and daisies
-    const grass = ctx.createLinearGradient(0, gy, 0, H);
-    grass.addColorStop(0, '#6db04c'); grass.addColorStop(1, '#3f7a30');
-    ctx.fillStyle = grass; ctx.fillRect(0, gy, W, H - gy);
+    A.band(ctx, 0, gy, W, H - gy, [0, gy, 0, H], [[0, '#6db04c'], [1, '#3f7a30']]);
     ctx.strokeStyle = '#4f8a3a'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
     ctx.beginPath();
     each(camX, 1, 13, 10, (sx, i) => { const y = gy + 8 + hash(i + 191) * 54; ctx.moveTo(sx, y); ctx.lineTo(sx - 2, y - 6); ctx.moveTo(sx + 3, y); ctx.lineTo(sx + 4, y - 5); });
