@@ -28,7 +28,9 @@
         { label: () => 'Touch buttons: ' + (S.bigTouch ? 'BIG' : 'NORMAL'), change: () => MG.setSetting('bigTouch', !S.bigTouch) },
         { label: () => 'High contrast: ' + (S.contrast ? 'ON' : 'OFF'), change: () => MG.setSetting('contrast', !S.contrast) },
         { label: () => 'Light and haze: ' + (S.lighting ? 'ON' : 'OFF (faster on old phones)'), change: () => MG.setSetting('lighting', !S.lighting) },
-        { label: () => 'Key hints at the bottom: ' + (MG.Save.get('keyStrip', true) ? 'ON' : 'OFF'), change: () => MG.Save.set('keyStrip', !MG.Save.get('keyStrip', true)) },
+        // the key hints can be switched off only on phones and tablets (they have touch buttons instead)
+        { label: () => 'Key hints at the bottom: ' + (!MG.Touch.isTouchDevice ? 'ALWAYS ON' : MG.Save.get('keyStrip', true) ? 'ON' : 'OFF'),
+          change: () => { if (MG.Touch.isTouchDevice) MG.Save.set('keyStrip', !MG.Save.get('keyStrip', true)); } },
         { label: 'Change keys: player 1', act: () => { this.page = 'keys'; this.player = 'P1'; this.keySel = 0; } },
         { label: 'Change keys: player 2', act: () => { this.page = 'keys'; this.player = 'P2'; this.keySel = 0; } },
         { label: 'Back', act: () => this.back() },

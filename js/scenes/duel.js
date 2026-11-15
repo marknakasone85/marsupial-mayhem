@@ -137,7 +137,7 @@
       this.round = 0;
       this.t = 0;
       this.syncT = 0;
-      this.showStrip = MG.Save.get('keyStrip', true);
+      this.showStrip = MG.stripOn(); // always on a computer
       this.startRound();
     }
 

@@ -13,7 +13,7 @@
       this.input = {};
       this.menu = null;
       this.showControls = false;
-      this.showStrip = MG.Save.get('keyStrip', true);
+      this.showStrip = MG.stripOn(); // always on a computer
       this.ended = null;
       this.players = {};
       this.proj = [];

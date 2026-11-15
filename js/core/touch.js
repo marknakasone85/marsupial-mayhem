@@ -250,11 +250,15 @@
     },
   });
 
+  // Are the key hints at the bottom shown? Always on a computer (the owner, 15 Nov 2026: every key's job
+  // must be clearly labelled during play); phones and tablets can switch them off in Settings.
+  MG.stripOn = () => !T.isTouchDevice || MG.Save.get('keyStrip', true) !== false;
+
   // Pause-menu option. Phones/tablets: touch buttons ON/OFF (this visit only, never stuck off).
-  // Computers: key hints -> touch buttons -> nothing.
+  // Computers: key hints <-> on-screen buttons (in a row along the bottom); never nothing.
   MG.onscreenLabel = (scene) => {
     if (T.isTouchDevice) return 'Touch buttons: ' + (T.enabled ? 'ON' : 'OFF');
-    return 'On-screen controls: ' + (T.enabled ? 'BUTTONS (click or tap)' : scene.showStrip ? 'KEY HINTS' : 'OFF');
+    return 'On-screen controls: ' + (T.enabled ? 'BUTTONS (click or tap)' : 'KEY HINTS');
   };
   MG.cycleOnscreen = (scene) => {
     if (T.isTouchDevice) {
@@ -262,16 +266,8 @@
       T.userOff = !T.enabled;
       return;
     }
-    if (T.enabled) {
-      T.enabled = false;
-      T.userOff = true;
-      scene.showStrip = false;
-    } else if (!scene.showStrip) {
-      scene.showStrip = true;
-    } else {
-      T.enabled = true;
-      T.userOff = false;
-    }
-    MG.Save.set('keyStrip', scene.showStrip);
+    T.enabled = !T.enabled;
+    T.userOff = !T.enabled;
+    scene.showStrip = true;
   };
 })();

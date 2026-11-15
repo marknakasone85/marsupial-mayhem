@@ -31,7 +31,7 @@
       this.stateT = 0;
       this.menu = null;
       this.showControls = false;
-      this.showStrip = MG.Save.get('keyStrip', true);
+      this.showStrip = MG.stripOn(); // always on a computer
       this.uid = 0;
       this.syncT = 0;
       this.gid = Math.random().toString(36).slice(2, 10); // this game, for Wi-Fi friends' coin totals

@@ -167,6 +167,53 @@ sc.showStrip = false;
 panelT = texts(function (c) { MG.CampaignHUD.draw(c, sc.hudModel()); });
 check(!sc.hudModel().players[0].below && panelT.some(function (w) { return /^JOEY Lv/.test(w); }) && panelT.indexOf('POUCH') >= 0, '...but keeps them when the on-screen controls are off');
 sc.showStrip = true;
+
+// ---- on a computer every key's job is labelled at the bottom during play (the owner, 15 Nov 2026)
+function measured() {
+  var labels = [];
+  var ctx = new Proxy({}, {
+    get: function (t, k) {
+      if (k in t) return t[k];
+      if (k === 'measureText') return function (str) { var m = /(\d+)px/.exec(t.font || '') || [0, 12]; return { width: String(str).length * +m[1] * 0.62 }; };
+      if (k === 'createLinearGradient' || k === 'createRadialGradient') return function () { return { addColorStop: noop }; };
+      if (k === 'fillText') return function (str) { labels.push(String(str)); };
+      return noop;
+    },
+    set: function (t, k, v) { t[k] = v; return true; },
+  });
+  return { ctx: ctx, labels: labels };
+}
+var allJobs = ['move', 'jump', 'block', 'punch', 'kick', 'special', 'shoot', 'grenade', 'joey Lv' + sc.player.joey.level, 'pouch', 'pause'];
+var stripsOk = ['wasd', 'arrows', 'pad'].every(function (lay) {
+  var r = measured(), where = MG.UI.keyStrip(r.ctx, sc.player, 1, { layout: lay });
+  return where.x >= 0 && where.x + where.w <= 960 && allJobs.every(function (j) { return r.labels.indexOf(j) >= 0; });
+});
+check(stripsOk, 'the key strip labels every job (move, jump, block, punch, kick, special, shoot, grenade, joey, pouch, pause) and fits the screen, for keys, arrow keys and a gamepad');
+var r1 = measured(), r2 = measured();
+var left = MG.UI.keyStrip(r1.ctx, sc.player, 1, { layout: 'p1', compact: true, x: 16, align: 'left', tag: 'P1' });
+var right = MG.UI.keyStrip(r2.ctx, sc.player, 1, { layout: 'p2', compact: true, x: 944, align: 'right', tag: 'P2' });
+check(left.x >= 0 && left.x + left.w < right.x && right.x + right.w <= 960 && allJobs.slice(0, 10).every(function (j) { return r1.labels.indexOf(j) >= 0 && r2.labels.indexOf(j) >= 0; }),
+  'two players: two labelled strips side by side, not overlapping');
+['up', 'attack', 'big', 'special', 'shoot', 'grenade'].forEach(function (a, i) { MG.Keys.set('P1', a, ['NumpadMultiply', 'NumpadSubtract', 'NumpadDecimal', 'NumpadDivide', 'NumpadEnter', 'NumpadAdd'][i]); });
+var rl = measured(), long = MG.UI.keyStrip(rl.ctx, sc.player, 1, { layout: 'wasd' });
+MG.Keys.reset();
+check(long.k < 1 && long.x >= 0 && long.x + long.w <= 960.5, 'long key names chosen in Settings: the strip shrinks to fit instead of running off the screen');
+// it can't be switched off on a computer (phones and tablets keep their switch)
+var wasTouch = MG.Touch.isTouchDevice;
+MG.Touch.isTouchDevice = false; MG.Save.set('keyStrip', false);
+var pcScene = fresh();
+check(MG.stripOn() && pcScene.showStrip && pcScene.hudModel().strips.length === 1, 'on a computer the key hints are always on (even if they were switched off before)');
+MG.cycleOnscreen(pcScene); var l1 = MG.onscreenLabel(pcScene), strips1 = pcScene.hudModel().strips.length;
+MG.cycleOnscreen(pcScene); var l2 = MG.onscreenLabel(pcScene), strips2 = pcScene.hudModel().strips.length;
+check(/BUTTONS/.test(l1) && /KEY HINTS/.test(l2) && strips2 === 1 && !MG.Touch.enabled, 'Pause > On-screen controls switches between key hints and buttons, never to nothing');
+var setScene = new MG.SettingsScene({});
+var hintRow = setScene.items.find(function (it) { return /^Key hints/.test(typeof it.label === 'function' ? it.label() : it.label); });
+hintRow.change(1);
+check(/ALWAYS ON/.test(hintRow.label()) && MG.stripOn(), 'Settings: "Key hints at the bottom: ALWAYS ON" on a computer');
+MG.Touch.isTouchDevice = true;
+check(!MG.stripOn(), '...while a phone or tablet can still switch them off');
+MG.Touch.isTouchDevice = wasTouch; MG.Touch.enabled = false; MG.Save.set('keyStrip', true);
+sc = fresh();
 MG.Touch.enabled = false;
 
 // 2 players on one keyboard: separate controls, shared screen, tougher pests, revive after 5 s

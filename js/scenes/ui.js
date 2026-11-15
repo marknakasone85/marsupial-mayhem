@@ -109,12 +109,15 @@
       return String(str).replace(/\{(\w+)\}/g, (m, a) => UI.keyName(a) || m);
     },
 
-    // Key-hint strip along the bottom edge. Lights up the move the player is doing, and shows the joey's
-    // level (with a bar while it rests) and the pouch's saved item, so every control sits at the bottom.
+    // Key-hint strip along the bottom edge: every control during play, each key with what it does written
+    // underneath, in three groups (moving | fighting | gear) and pause. Lights up the move the player is doing,
+    // dims what can't be used right now (no ammo, no grenades, empty pouch, joey resting), and shows the
+    // joey's level (with a bar while it rests) and the pouch's saved item.
     //  opts.layout: 'wasd' | 'arrows' | 'pad' (solo, follows the keys in use) or 'p1' | 'p2' (duel)
     //  opts.x + opts.align ('left'|'right') to place it; centered otherwise
-    //  opts.compact: for two strips side by side: each label sits under its key, no pause key
+    //  opts.compact: for two strips side by side (each fits half the screen), no pause key
     //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
+    // Returns where it went: { x, w, k } (left edge, width on screen, scale used to make it fit).
     keyStrip(ctx, player, t, opts = {}) {
       // keyboard layouts follow the keys chosen in Settings (MG.Keys)
       const K = (p, a) => MG.Keys.label(p, a);
@@ -133,7 +136,7 @@
       const joeyLv = player.joey ? player.joey.level : player.joeyLevel || 0;
       const joeyRest = player.joey ? MG.U.clamp(player.joey.cool / 8, 0, 1) : player.joeyCool || 0;
       const SHOW = { attack: 'punch', big: 'kick', joey: joeyLv ? 'joey Lv' + joeyLv : 'joey' };
-      const POUCH_SLOT = compact ? 15 : 19; // room for the saved item's icon after "pouch"
+      const GROUP = { attack: 1, shoot: 1, pause: 1 }; // a divider before each: moving | fighting | gear | pause
       let items = LAYOUTS[opts.layout || MG.Input.lastDevice] || LAYOUTS.wasd;
       if (compact) items = items.filter(([, label]) => label !== 'pause');
       const kind = player.move ? player.move.kind : null;
@@ -145,72 +148,91 @@
         joey: !!player.joeyOut,
         block: player.state === 'block', jump: !player.onGround && player.state !== 'ko',
       };
-      const fs = compact ? 11 : 12, lfs = compact ? 9 : 12;
-      const font = `bold ${fs}px ${FONT}`, lfont = `bold ${lfs}px ${FONT}`;
+      const kfs = compact ? 12 : 15, lfs = compact ? 10 : 13;   // key letters, labels underneath
+      const capH = compact ? 18 : 24, gap = compact ? 9 : 14, sep = compact ? 8 : 12;
+      const slotW = compact ? 13 : 17;                          // room for the pouch's item after "pouch"
+      const kfont = `bold ${kfs}px ${FONT}`, lfont = `bold ${lfs}px ${FONT}`;
       const textW = (str, f) => { ctx.font = f; return ctx.measureText(str).width; };
-      const capW = (k) => Math.max(compact ? 16 : 20, textW(k, font) + (compact ? 8 : 10));
-      const capH = compact ? 16 : 20;
-      const gap = compact ? 8 : 10;
-      // each item: its key caps, then the label beside them (or under them when compact)
+      const capW = (k) => Math.max(capH, textW(k, kfont) + (compact ? 9 : 12));
       const sizes = items.map(([keys, label]) => {
         const kw = keys.reduce((a, k) => a + capW(k) + 3, 0) - 3;
-        const lw = textW(SHOW[label] || label, lfont) + (label === 'pouch' ? POUCH_SLOT : 0);
-        return { kw, w: compact ? Math.max(kw, lw) : kw + 5 + lw };
+        const lw = textW(SHOW[label] || label, lfont) + (label === 'pouch' ? slotW : 0);
+        return { kw, lw, w: Math.max(kw, lw) };
       });
-      const tagW = opts.tag ? textW(opts.tag, font) + 10 : 0;
-      const total = tagW + sizes.reduce((a, m) => a + m.w, 0) + gap * (items.length - 1);
-      const h = compact ? 34 : 28;
-      const y = MG.H - (compact ? 19 : 20);
-      let x = opts.x === undefined ? (MG.W - total) / 2 : opts.align === 'right' ? opts.x - total : opts.x;
-      ctx.fillStyle = 'rgba(20,10,30,0.55)';
-      ctx.beginPath();
-      ctx.roundRect(x - 10, y - h / 2, total + 20, h, 14);
-      ctx.fill();
+      const tagW = opts.tag ? textW(opts.tag, kfont) + 12 : 0;
+      const dividers = items.filter(([, label], i) => i > 0 && GROUP[label]).length;
+      const total = tagW + sizes.reduce((a, m) => a + m.w, 0) + gap * (items.length - 1) + sep * dividers;
+      // never wider than its room (a long key name chosen in Settings would otherwise run off the edge)
+      const room = compact ? MG.W / 2 - 28 : MG.W - 28;
+      const k = Math.min(1, room / total);
+      const H = MG.H, bandH = compact ? 44 : 52;
+      const capY = H - (compact ? 29 : 35), labY = H - (compact ? 10 : 12);
+      let x = opts.x === undefined ? (MG.W - total * k) / 2 : opts.align === 'right' ? opts.x - total * k : opts.x;
+      const where = { x: x - 10 * k, w: (total + 20) * k, k };
+      ctx.save();
+      if (!compact) {
+        // one player: a dark band along the whole bottom edge
+        ctx.fillStyle = 'rgba(16,8,26,0.8)';
+        ctx.fillRect(0, H - bandH, MG.W, bandH);
+        ctx.fillStyle = 'rgba(255,255,255,0.16)';
+        ctx.fillRect(0, H - bandH, MG.W, 2);
+      }
+      ctx.translate(x, H); ctx.scale(k, k); ctx.translate(-x, -H);
+      if (compact) {
+        ctx.fillStyle = 'rgba(16,8,26,0.8)';
+        ctx.beginPath(); ctx.roundRect(x - 10, H - bandH, total + 20, bandH - 3, 12); ctx.fill();
+      }
       if (opts.tag) {
-        UI.text(ctx, opts.tag, x, y, fs, opts.tagColor || '#ffd23f');
+        UI.text(ctx, opts.tag, x, H - bandH / 2 - 1, kfs, opts.tagColor || '#ffd23f');
         x += tagW;
       }
       items.forEach(([keys, label], i) => {
+        if (i > 0 && GROUP[label]) {
+          ctx.fillStyle = 'rgba(255,255,255,0.22)';
+          ctx.fillRect(x - gap / 2 + sep / 2 - 1, H - bandH + 8, 2, bandH - 14);
+          x += sep;
+        }
         const m = sizes[i];
         const ready = label === 'special' && player.canSpecial;
         const empty = (label === 'shoot' && !(player.ammo > 0)) || (label === 'grenade' && !(player.grenades > 0))
           || (label === 'pouch' && !player.pouch) || (label === 'joey' && player.joeyReady === false);
         const on = active[label];
         const glow = ready && Math.floor(t * 4) % 2 === 0;
-        const ky = compact ? y - 6 : y;
-        let kx = compact ? x + (m.w - m.kw) / 2 : x;
-        for (const k of keys) {
-          const w = capW(k);
-          ctx.fillStyle = on ? '#ffd23f' : glow ? '#00f5d4' : empty ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.88)';
+        let kx = x + (m.w - m.kw) / 2;
+        for (const key of keys) {
+          const w = capW(key);
+          ctx.fillStyle = on ? '#ffd23f' : glow ? '#00f5d4' : empty ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.95)';
           ctx.beginPath();
-          ctx.roundRect(kx, ky - capH / 2, w, capH, 5);
+          ctx.roundRect(kx, capY - capH / 2, w, capH, 5);
           ctx.fill();
-          ctx.fillStyle = 'rgba(0,0,0,0.25)';
-          ctx.fillRect(kx + 2, ky + capH / 2 - 3, w - 4, 2);
-          UI.text(ctx, k, kx + w / 2, ky, fs, '#2b193d', 'center');
+          ctx.fillStyle = 'rgba(0,0,0,0.28)';
+          ctx.fillRect(kx + 2, capY + capH / 2 - 3, w - 4, 2);
+          UI.text(ctx, key, kx + w / 2, capY + 0.5, kfs, '#2b193d', 'center');
           kx += w + 3;
         }
         // the joey resting: a pink bar fills along the bottom of its key
         if (label === 'joey' && player.joeyReady === false && joeyRest > 0) {
-          const w = capW(keys[0]), k0 = compact ? x + (m.w - m.kw) / 2 : x;
+          const w = capW(keys[0]), k0 = x + (m.w - m.kw) / 2;
           ctx.fillStyle = '#f6b3c4';
-          ctx.fillRect(k0 + 2, ky + capH / 2 - 3, (w - 4) * (1 - joeyRest), 2);
+          ctx.fillRect(k0 + 2, capY + capH / 2 - 3, (w - 4) * (1 - joeyRest), 2);
         }
-        const color = on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#999999' : label === 'joey' && player.joeyReady !== false && joeyLv ? '#f6b3c4' : '#ffffff';
+        const color = on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#b8b8b8' : label === 'joey' && player.joeyReady !== false && joeyLv ? '#f6b3c4' : '#ffffff';
         const text = SHOW[label] || label;
-        const slot = label === 'pouch' ? POUCH_SLOT : 0;
-        let lx;
-        if (compact) { lx = x + (m.w - slot) / 2; UI.text(ctx, text, lx, y + 10, lfs, color, 'center'); lx += textW(text, lfont) / 2; }
-        else { UI.text(ctx, text, kx + 2, y, fs, color); lx = kx + 2 + textW(text, font); }
+        const slot = label === 'pouch' ? slotW : 0;
+        const tw = textW(text, lfont);
+        const lx = x + (m.w - (tw + slot)) / 2;
+        UI.text(ctx, text, lx + tw / 2, labY, lfs, color, 'center');
         if (slot) {
           // the pouch's saved item (or an empty slot)
-          const cx = lx + slot / 2 + 1, cy = compact ? y + 10 : y, r = compact ? 5.5 : 7;
-          ctx.fillStyle = 'rgba(255,255,255,0.14)';
-          ctx.beginPath(); ctx.arc(cx, cy, r + 1, 0, Math.PI * 2); ctx.fill();
-          if (player.pouch) UI.pouchItem(ctx, player.pouch, cx, cy, r);
+          const cx = lx + tw + slot / 2 + 1, r = compact ? 5 : 6.5;
+          ctx.fillStyle = 'rgba(255,255,255,0.16)';
+          ctx.beginPath(); ctx.arc(cx, labY, r + 1, 0, Math.PI * 2); ctx.fill();
+          if (player.pouch) UI.pouchItem(ctx, player.pouch, cx, labY, r);
         }
         x += m.w + gap;
       });
+      ctx.restore();
+      return where;
     },
 
     // The pouch's saved item as a small icon (HUDs): a heart, or a power-up's colour and symbol.
