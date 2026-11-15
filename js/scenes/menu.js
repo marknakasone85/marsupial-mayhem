@@ -153,10 +153,12 @@
       // No WI-FI button on public web pages (GitHub Pages): they can't reach a home share.
       if (!MG.Net.webOnly()) items.push({ label: 'WI-FI', act: () => MG.Engine.setScene(new MG.WifiScene()) });
       items.push(
+        { label: () => `STICKER BOOK  ${MG.Stickers.count()}/${MG.Stickers.LIST.length}`, act: () => MG.Engine.setScene(new MG.StickerScene()) },
         { label: 'CONTROLS', act: () => { this.page = 'controls'; this.pageT = 0; } },
         { label: 'SETTINGS', act: () => MG.Engine.setScene(new MG.SettingsScene()) },
       );
-      this.menu = new MG.MenuList(items, W / 2, 222, { w: 290, h: 30, gap: 5, fontSize: 18 });
+      this.menu = new MG.MenuList(items, W / 2, 222, { w: 290, h: 30, gap: 4, fontSize: 18 });
+      MG.Stickers.check(); // stickers from what's already saved (worlds cleared before the book existed...)
     }
 
     say(lines) { this.info = lines; this.infoT = 0; }

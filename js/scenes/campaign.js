@@ -269,6 +269,8 @@
       if (e.isBoss) return { min: Math.max(b.min, this.arenaX) + 50, max: b.max - 50 };
       return { min: b.min + 20, max: b.max - 20 };
     }
+    // Is this fighter someone playing on this computer? (stickers: not CPU champions or Wi-Fi friends)
+    isLocalHuman(f) { return this.slots.some((s) => s.f === f && !!s.local); }
     targets(team) {
       if (team === 'enemy') return this.aliveFighters();
       const list = this.enemies.filter((e) => e.alive).concat(this.crates.filter((c) => c.alive));
@@ -444,6 +446,7 @@
         if (this.state === 'play') slot.f.meter = Math.min(MG.SPECIAL_COST, slot.f.meter + dt * 3);
       }
       this.updateAllies(dt);
+      if (this.slots.some((s) => s.local && s.f.state === 'ko')) this.koSeen = true; // (the "Not a Scratch" sticker)
       if (this.practice) this.practice.update(dt);
       const waiting = !!(this.practice && this.practice.holds()); // pests wait while the players practise
       this.flashT = Math.max(0, this.flashT - dt);
@@ -634,6 +637,12 @@
       }
       this.score += this.hpBonus;
       MG.Progress.clear(this.L.id); // opens the next stop on the Marsupial World map
+      // stickers: who cleared it on this computer, no knockouts, with a friend, and what the saves now say
+      const locals = this.slots.filter((s) => s.local);
+      for (const s of locals) MG.Stickers.cleared(s.cid);
+      if (locals.length && !this.koSeen) MG.Stickers.earn('flawless');
+      if (this.slots.length > 1 && locals.length) MG.Stickers.earn('mates');
+      MG.Stickers.check();
       const best = MG.Save.get('best', {});
       if (!best[this.L.id] || this.score > best[this.L.id]) {
         best[this.L.id] = this.score;

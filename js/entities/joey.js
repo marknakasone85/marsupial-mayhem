@@ -145,6 +145,7 @@
               world.fx.burst(p.x, p.box.y + 10, '#f6b3c4', rush ? 14 : 6, rush ? 260 : 150);
               world.fx.text(p.x, p.box.y - 12, rush ? 'JOEY KICK!' : 'NIP!', '#f6b3c4', rush ? 22 : 16);
               MG.Audio.jab();
+              if (rush) MG.Stickers.earn('joeyrush', this.parent, world);
             }
             this.goHome();
             break;

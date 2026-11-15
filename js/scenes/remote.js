@@ -69,6 +69,7 @@
       if (m.bo && m.bo[2] && this.snap && !(this.snap.bo && this.snap.bo[2])) MG.Audio.playMusic('boss');
       this.snap = m;
       this.snapAt = performance.now();
+      if (m.st === 'won') MG.Stickers.earn('mates'); // a Wi-Fi friend's sticker for clearing a map together
       const mine = (m.pl || []).find((p) => p.id === MG.Net.id);
       if (mine) MG.Net.myCid = mine.cid;
       // coins we picked up in the host's game go into our own wallet (counted once)

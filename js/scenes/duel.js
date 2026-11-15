@@ -149,6 +149,7 @@
       };
     }
 
+    isLocalHuman(f) { return this.slots.some((s) => s.f === f && !!s.local && !s.cpu); }
     get vsCpu() { return !this.net && this.slots.some((s) => s.cpu); }
     get fighters() { return this.slots.map((s) => s.f); }
     currentPlayers() { return this.slots.map((s) => ({ id: s.id, cid: s.cid, local: s.local, cpu: s.cpuLevel })); }
@@ -438,6 +439,12 @@
       this.state = 'matchEnd';
       this.stateT = 0;
       this.matchWinner = this.slots.find((s) => s.wins >= WINS_NEEDED) || null;
+      // stickers: a person on this computer won (and beat the LEGEND CPU)
+      const w = this.matchWinner;
+      if (w && w.local && !w.cpu) {
+        MG.Stickers.earn('duel');
+        if (this.slots.some((s) => s !== w && s.cpu && s.cpuLevel === 2)) MG.Stickers.earn('legend');
+      }
       MG.Audio.stopMusic();
       MG.Audio.win();
       const items = [{ label: 'Rematch', act: () => this.rematch() }];

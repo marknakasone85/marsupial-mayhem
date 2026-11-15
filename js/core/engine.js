@@ -141,6 +141,8 @@ window.MG = window.MG || {};
       if (this.scene) {
         if (!frozen && !upright) this.scene.update(step);
         this.scene.draw(ctx);
+        // a new sticker's pop-up, over any screen (real time, so slow motion doesn't hold it up)
+        if (MG.Stickers) { MG.Stickers.update(dt); MG.Stickers.drawToast(ctx); }
         if (MG.Touch) MG.Touch.draw(ctx, this.scene.touchPlayer ? this.scene.touchPlayer() : null);
       }
 

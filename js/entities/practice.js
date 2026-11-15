@@ -100,6 +100,7 @@
       this.done = true; this.doneT = 0; this.skipped = skipped;
       MG.Save.set('practiced', true);
       if (!skipped) {
+        MG.Stickers.earn('practice');
         const lead = this.scene.leader();
         this.scene.fx.text(lead.x + 120, lead.y - lead.h - 60, 'READY! GO GET THEM!', '#ffd23f', 30);
         MG.Audio.powerUp();

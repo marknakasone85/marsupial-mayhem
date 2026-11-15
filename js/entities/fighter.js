@@ -126,6 +126,7 @@
       this.pouch = null;
       if (type === 'heart') { this.heal(40); MG.Audio.heal(); this.say(world, '+40 HP (from the pouch)', '#ff4d6d', 18); }
       else { this.powerUp(type); MG.Audio.powerUp(); this.say(world, MG.POWER_NAMES[type], MG.Art.POWER_COLORS[type], 22); }
+      MG.Stickers.earn('pouch', this, world);
     }
 
     powerUp(type, secs) { this.powers[type] = secs || MG.POWER_TIME; }
@@ -368,6 +369,7 @@
       this.hitList.clear();
       MG.Audio.special();
       this.say(world, this.def.specialName + '!', '#00f5d4', 24);
+      MG.Stickers.earn('special', this, world);
       if (spec.start) spec.start(this, world, this.move);
     }
 
@@ -461,6 +463,9 @@
           world.fx.shake(h.big ? 10 : blow === 'hook' ? 6 : 4);
           MG.Engine.freeze(blow === 'kick' ? 0.1 : h.big ? 0.08 : blow === 'hook' ? 0.055 : 0.035);
           if (h.big) MG.Audio.kick(); else MG.Audio.jab(blow === 'hook');
+          // stickers: the combo's hook, and 10 hits in a row
+          if (blow === 'hook') MG.Stickers.earn('combo', this, world);
+          if (this.combo >= 10) MG.Stickers.earn('tenhits', this, world);
         }
         if (world.onHit) world.onHit(this, target, hit, result);
       }

@@ -96,6 +96,8 @@
         const dir = tg.x >= this.x ? 1 : -1;
         const k = U.clamp(1 - Math.max(0, d) / (R * 1.6), 0.4, 1);
         tg.takeHit({ dmg: MG.GRENADE.dmg * k * (1 + (big - 1) * 0.5), kbx: 620 * dir * big, kby: -580 * big, stun: 0.8, big: true, blast: true, from: this, dir }, world);
+        // sticker: a pest knocked out by a grenade someone kicked
+        if (!tg.alive && !tg.isProp && tg instanceof MG.Enemy && this.kicked > 0) MG.Stickers.earn('grenade', this.kickedBy || this.owner, world);
       }
       // friendly blasts just bounce players (cartoon rules)
       for (const f of world.fighters || []) {

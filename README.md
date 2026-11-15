@@ -116,6 +116,8 @@ Every marsupial punches and kicks. Playing alone? Arrows with J (punch), K (kick
 
 **Settings** (on the title screen): music and sound-effects volume, blood (on, gore, or confetti), difficulty for the adventure (easy, normal or hard; duels always stay fair), bigger touch buttons, high contrast, light and haze (switch it off if an older phone feels slow), the key hints (always on with a keyboard; phones and tablets can hide them), and **changing the keys** for player 1 and player 2 (the key hints and the Controls page follow your keys).
 
+**The sticker book** (on the title screen) collects stickers for the things you do: clearing worlds, combos, kicked grenades, joeys, duels, playing with friends and a few secrets. They're kept in your browser.
+
 **New to the game?** The first map starts with a practice corner: a training dummy and a coach board that walk you through punch, kick, jump, block and the grenade (walk on past the dummy to skip it).
 
 **Tips:** some marsupials (Boomer, Chompers, Bins, Dead Fred) chain their punches: press it three times for a combo. Hold block when something charges at you, and Boomer's Tail Counter kicks back by himself. The grenade is the fun part: press the grenade key to pull the pin and drop it, then send it flying with punch (short), kick (a long lob) or the grenade key again. The special needs a full blue bar. Watch out: rabbits eat any power-up they reach first!

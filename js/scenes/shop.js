@@ -276,6 +276,7 @@
       }
       const r = MG.Gear.act(s.pid, item);
       if (!r) return;
+      if (r.action !== 'equip') { MG.Stickers.earn('shopper'); MG.Stickers.check(); } // (stickers: shopping, a weapon at level 3)
       s.msg = r.said;
       s.msgT = 2;
       s.sellArm = null;
