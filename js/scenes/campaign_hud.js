@@ -75,8 +75,59 @@
     }
   }
 
+  // A key cap like the key strip's; returns its width.
+  function cap(ctx, k, x, y, fs) {
+    ctx.font = `bold ${fs}px ${UI.FONT}`;
+    const w = Math.max(fs * 1.7, ctx.measureText(k).width + fs * 0.9), h = fs * 1.6;
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.beginPath(); ctx.roundRect(x, y - h / 2, w, h, 5); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x + 2, y + h / 2 - 3, w - 4, 2);
+    UI.text(ctx, k, x + w / 2, y, fs, '#2b193d', 'center');
+    return w;
+  }
+
+  // The practice corner's coach board (top middle): which move to try next, with its key(s).
+  // p: { step, of, say, n, need, keyNames: [[key per action] per player] } or { done, t }
+  function practiceBoard(ctx, p, t) {
+    const x0 = W / 2 - 250, y0 = 80, w = 500;
+    if (p.done) {
+      const a = Math.max(0, Math.min(1, (3 - p.t) / 0.6));
+      ctx.globalAlpha = a;
+      UI.panel(ctx, x0 + 60, y0, w - 120, 48, 'rgba(43,25,61,0.88)');
+      UI.outlineText(ctx, 'READY! CLEAR THE PESTS  →', W / 2, y0 + 24, 22, '#9ef01a', 'center');
+      ctx.globalAlpha = 1;
+      return;
+    }
+    UI.panel(ctx, x0, y0, w, 82, 'rgba(43,25,61,0.88)');
+    UI.text(ctx, 'PRACTICE CORNER', x0 + 18, y0 + 16, 13, '#ffd23f');
+    // progress: a dot per step
+    for (let i = 0; i < p.of; i++) {
+      ctx.fillStyle = i < p.step - 1 ? '#9ef01a' : i === p.step - 1 ? '#ffd23f' : 'rgba(255,255,255,0.25)';
+      ctx.beginPath(); ctx.arc(x0 + w - 22 - (p.of - 1 - i) * 16, y0 + 16, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    // the move, then its key(s): "KICK it  [E]" (two players: "[E] / [.]")
+    const fs = 21, say = p.say;
+    ctx.font = `bold ${fs}px ${UI.FONT}`;
+    const sayW = ctx.measureText(say).width;
+    const players = p.keyNames || [];
+    let keysW = 0;
+    ctx.font = `bold 14px ${UI.FONT}`;
+    players.forEach((ks, i) => { for (const k of ks) keysW += Math.max(14 * 1.7, ctx.measureText(k).width + 14 * 0.9) + 4; if (i) keysW += 16; });
+    let x = W / 2 - (sayW + 12 + keysW) / 2;
+    const y = y0 + 44;
+    UI.outlineText(ctx, say, x, y, fs, '#ffffff', 'left');
+    x += sayW + 12;
+    players.forEach((ks, i) => {
+      if (i) { UI.text(ctx, '/', x + 4, y, 14, '#cccccc', 'center'); x += 16; }
+      for (const k of ks) x += cap(ctx, k, x, y, 14) + 4;
+    });
+    const sub = p.need > 1 ? `${p.n} of ${p.need}   ·   or walk on  →  to skip` : 'or walk on  →  to skip';
+    UI.text(ctx, sub, W / 2, y0 + 68, 12, '#bbbbbb', 'center');
+  }
+
   MG.CampaignHUD = {
     draw(ctx, m) {
+      if (m.practice) practiceBoard(ctx, m.practice, m.t);
       // up to 4 panels: smaller when there are more than 2 players
       const k = m.players.length > 2 ? 0.86 : 1;
       m.players.forEach((p, i) => {

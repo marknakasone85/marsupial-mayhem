@@ -140,6 +140,49 @@
     }
   };
 
+  // The practice corner's training dummy: a straw-stuffed hessian sack tied onto a post, with a
+  // painted target, on a cross-plank stand. o: { tilt (radians, rocks about the stand), flash, t }.
+  A.dummy = function (ctx, x, y, o = {}) {
+    const fl = !!o.flash, col = (c) => (fl ? '#ffffff' : c);
+    ctx.save();
+    ctx.translate(x, y);
+    // the stand stays put
+    ctx.fillStyle = '#7a4a28'; ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(-24, -7, 48, 7, 3); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.roundRect(-7, -12, 14, 12, 3); ctx.fill(); ctx.stroke();
+    ctx.rotate(o.tilt || 0);
+    // the post
+    ctx.fillStyle = col('#8b5a33');
+    ctx.beginPath(); ctx.roundRect(-4, -96, 8, 86, 3); ctx.fill(); ctx.stroke();
+    // a cross-stick for arms, with straw poking out of the ends
+    ctx.strokeStyle = col('#6b4226'); ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-26, -66); ctx.lineTo(26, -66); ctx.stroke();
+    if (!fl) {
+      ctx.strokeStyle = '#e9c46a'; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (const sx of [-1, 1]) for (let i = -1; i <= 1; i++) { ctx.moveTo(sx * 26, -66); ctx.lineTo(sx * 33, -66 + i * 4 + Math.sin((o.t || 0) * 3 + i) * 0.8); }
+      ctx.stroke();
+    }
+    // the sack body, the rope tie and its top knot
+    A.oval(ctx, 0, -52, 18, 30, 0, col('#c9a46a'), LINE, 2.5);
+    if (!fl) {
+      ctx.strokeStyle = 'rgba(120,80,40,0.55)'; ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(-12, -74); ctx.quadraticCurveTo(-17, -52, -12, -30); ctx.moveTo(12, -74); ctx.quadraticCurveTo(17, -52, 12, -30); ctx.stroke();
+      ctx.setLineDash([]);
+      // a painted target where the punches go
+      for (const [r, c] of [[11, '#d62828'], [7.5, '#fff8e7'], [4, '#d62828']]) A.oval(ctx, 2, -54, r, r, 0, c);
+    }
+    ctx.strokeStyle = col('#7a5a2a'); ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-9, -80); ctx.lineTo(9, -80); ctx.stroke();
+    A.oval(ctx, 0, -88, 9, 8, 0, col('#c9a46a'), LINE, 2);
+    if (!fl) {
+      ctx.strokeStyle = '#e9c46a'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(-3, -95); ctx.lineTo(-6, -101); ctx.moveTo(1, -96); ctx.lineTo(1, -103); ctx.moveTo(4, -95); ctx.lineTo(8, -100); ctx.stroke();
+    }
+    ctx.restore();
+  };
+
   // ---------------------------------------------------------------- crates and gates
   A.crate = function (ctx, x, y, o = {}) {
     ctx.save();

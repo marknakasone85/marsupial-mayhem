@@ -315,7 +315,7 @@
       if (this.opts.fromMenu) { MG.Engine.setScene(new MG.MenuScene()); return; }
       if (this.opts.toMap) { this.mapExit(); return; }
       if (this.net) MG.Net.send({ t: 'start', mode: 'campaign', level: this.level }, 'all', true);
-      MG.Engine.setScene(new MG.CampaignScene({ level: this.level, net: this.net, players: this.players }));
+      MG.Engine.setScene(new MG.CampaignScene({ level: this.level, net: this.net, players: this.players, practice: true }));
     }
     // Back to the Marsupial World map, standing where we were.
     mapExit() {

@@ -266,6 +266,12 @@
       this.touchT = (this.touchT || 0) - dt;
       const dx = player.x - this.x;
       const dist = Math.abs(dx);
+      if (this.waiting && this.hurt <= 0) {
+        // waiting for the players to finish practising (the practice corner)
+        this.vx = 0; this.state = 'idle'; this.facing = Math.sign(dx) || this.facing;
+        this.physics(dt, world);
+        return;
+      }
       if (this.hurt > 0) {
         this.hurt -= dt;
         if (!this.isBoss) this.vx *= Math.pow(0.02, dt);

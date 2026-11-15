@@ -178,4 +178,67 @@ check(sc.enemies[0].maxHp > MG.ENEMY_TYPES[sc.enemies[0].type].hp, 'pests are to
 check(b.coat === 1 && sc.hudModel().strips.length === 2, 'player 2 has a sandy coat and their own key strip');
 b.invuln = 0; b.joey.rescueUsed = true; b.takeHit({ dmg: 999, kbx: 0, kby: 0, stun: 0.1 }, sc); frames(60 * 6);
 check(sc.slots[1].f.state !== 'ko' && sc.state === 'play', 'a knocked-out partner hops back in after 5 seconds');
+
+// ---- the practice corner (a new player's first map): a dummy and a coach board walk through the moves
+localStorage.clear();
+function practiceMap(players) {
+  MG.Engine.setScene(new MG.CampaignScene(players ? { level: 0, players: players, practice: true } : { charId: 'boomer', level: 0, practice: true }));
+  frames(2);
+  return scene();
+}
+MG.Engine.setScene(new MG.CampaignScene({ charId: 'boomer', level: 0 })); frames(1);
+var plain = scene().practice;
+MG.Engine.setScene(new MG.CampaignScene({ charId: 'boomer', level: 1, practice: true })); frames(1);
+var second = scene().practice;
+sc = practiceMap(); p = sc.player;
+check(!!sc.practice && !plain && !second, 'the practice corner is on the first map, only when started from the world map (opts.practice)');
+check(sc.targets('player').indexOf(sc.practice.dummy) >= 0 && sc.practice.view().say === 'PUNCH the dummy', 'the dummy stands there to hit, and the coach says: PUNCH the dummy');
+var rx = sc.enemies.map(function (e) { return e.x; });
+frames(120);
+check(sc.enemies.every(function (e, i) { return Math.abs(e.x - rx[i]) < 1; }) && sc.player.hp === sc.player.maxHp, 'the pests wait while you practise');
+// the moves, one by one
+function nextTo() { p.x = sc.practice.dummy.x - 55; p.facing = 1; p.vx = 0; }
+var score0 = sc.score;
+[18, 18, 30].forEach(function (n) { nextTo(); press('KeyF', n); });
+check(sc.practice.view().say === 'KICK it' && sc.score === score0, 'three punches on the dummy (no points for it), then: KICK it');
+nextTo(); press('KeyE', 45);
+check(sc.practice.view().say === 'JUMP', 'a kick, then: JUMP');
+press('KeyW', 50);
+check(sc.practice.view().say === 'BLOCK (hold it)', 'a jump, then: BLOCK');
+key('KeyS', true); frames(40); key('KeyS', false); frames(5);
+check(/GRENADE/.test(sc.practice.view().say), 'holding block, then: drop a GRENADE and punch or kick it');
+p.grenades = 0; frames(2);
+check(p.grenades === 1, 'out of grenades? the coach hands you one');
+nextTo(); press('KeyG', 30); press('KeyF', 20);
+check(sc.practice.done && !sc.practice.skipped && MG.Save.get('practiced', false) === true, 'a punted grenade finishes the practice (and it\'s saved)');
+var view = sc.practice.view();
+frames(60 * 4);
+check(view && view.done && !sc.practice.view() && sc.targets('player').indexOf(sc.practice.dummy) < 0, '"READY! CLEAR THE PESTS" for 3 seconds, and the dummy is just scenery now');
+var moved = sc.enemies.some(function (e, i) { return Math.abs(e.x - rx[i]) > 5; });
+check(moved, '...and the pests come');
+check(!practiceMap().practice, 'once it\'s done, the first map starts without it');
+// walking on skips it; clearing the first map ends it too
+localStorage.clear();
+sc = practiceMap(); p = sc.player;
+key('KeyD', true); frames(100); key('KeyD', false); frames(2);
+check(sc.practice.done && sc.practice.skipped && !sc.practice.view() && MG.Save.get('practiced', false), 'walking on past the dummy skips the practice');
+localStorage.clear(); MG.Progress.clear(MG.LEVELS[0].id);
+check(!practiceMap().practice, 'no practice once the first map has been cleared');
+localStorage.clear();
+// the coach board: keys for this player (touch: the buttons; two players: both keys)
+sc = practiceMap();
+var board = texts(function (c) { MG.CampaignHUD.draw(c, sc.hudModel()); });
+check(board.indexOf('PRACTICE CORNER') >= 0 && board.indexOf('PUNCH the dummy') >= 0 && board.indexOf(MG.Keys.label('P1', 'attack')) >= 0, 'the coach board shows the move and its key');
+MG.Touch.enabled = true;
+check(sc.hudModel().practice.keyNames[0][0] === 'PUNCH', '...the button name on a touch screen');
+MG.Touch.enabled = false;
+sc = practiceMap([{ id: 0, cid: 'boomer', local: 'P1' }, { id: 1, cid: 'tank', local: 'P2' }]);
+var kn = sc.hudModel().practice.keyNames;
+check(kn.length === 2 && kn[0][0] === MG.Keys.label('P1', 'attack') && kn[1][0] === MG.Keys.label('P2', 'attack'), '...both players\' keys with two on one keyboard');
+sc.restart(); frames(1);
+check(!!scene().practice, 'Restart Map keeps the practice corner (until it\'s done)');
+MG.Engine.setScene(new MG.CampaignScene({ level: 0, net: true, players: [{ id: 0, cid: 'boomer', local: 'SOLO' }], practice: true }));
+check(!scene().practice, 'not in Wi-Fi games');
+MG.Net.leave && MG.Net.leave();
+localStorage.clear();
 done('campaign');

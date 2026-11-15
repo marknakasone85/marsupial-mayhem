@@ -98,6 +98,8 @@
     keyName(action, layout = MG.Input.lastDevice) {
       const PAD = { left: '◀', right: '▶', up: 'A', down: 'LB', attack: 'X', big: 'Y', special: 'B', shoot: 'RB', grenade: 'LT', joey: 'Back', pouch: 'RT' };
       const SOLO = { attack: 'J', big: 'K', special: 'L' }; // playing alone with the arrow keys
+      const TOUCH = { left: '◀', right: '▶', up: 'JUMP', down: 'BLOCK', attack: 'PUNCH', big: 'KICK', special: 'SUPER', shoot: 'SHOOT', grenade: 'BOOM', joey: 'JOEY', pouch: 'POUCH' };
+      if (MG.Touch && MG.Touch.enabled && layout === MG.Input.lastDevice) return TOUCH[action] || null;
       if (layout === 'pad') return PAD[action] || null;
       if (layout === 'arrows') return SOLO[action] || MG.Keys.label('P2', action);
       return MG.Keys.label('P1', action);

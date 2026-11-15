@@ -123,6 +123,8 @@ Every playable marsupial has a **joey** (a baby of its own kind) and a **pouch s
 
 Since 15 Nov 2026 the key strip at the bottom shows the joey's level (with a pink bar on its key while it rests) and the pouch's saved item, and the top-left panel leaves them out while the strip or the touch buttons are showing (players asked for every control at the bottom).
 
+**The practice corner** (15 Nov 2026): a new player's first map starts with a training dummy and a coach board: punch it 3 times, kick it, jump, hold block, then drop a grenade and punch or kick it. Each step shows its key (or touch button). The pests wait until it's done; walking on past the dummy skips it. Details in `docs/DECISIONS.md`.
+
 **Wi-Fi:** the joey and the pouch are in the snapshots, and the JOEY and POUCH presses are sent like any other button.
 
 ## Weapons, shop and upgrades (the owner's choices, 13 Nov 2026)

@@ -10,6 +10,7 @@
 
   MG.CampaignScene = class {
     // opts: { level, charId }                          one player
+    //       practice: true                               a new player's first map gets the practice corner
     //       { level, players: [{ id, cid, local }] }    local = 'SOLO' | 'P1' | 'P2', or null for a Wi-Fi player
     //       net: true                                    this computer hosts a Wi-Fi game
     constructor(opts) {
@@ -62,6 +63,8 @@
       this.scaleForPlayers(players.length);
       // CPU champions fighting beside the players (Grin Isle)
       this.allies = (this.L.allies || []).map((cid, i) => this.makeAlly(cid, 80 + i * 40));
+      // the practice corner (a new player's first map, started from the world map)
+      this.practice = opts.practice && MG.Practice.wanted(this) ? new MG.Practice(this) : null;
     }
 
     makeAlly(cid, x) {
@@ -268,7 +271,9 @@
     }
     targets(team) {
       if (team === 'enemy') return this.aliveFighters();
-      return this.enemies.filter((e) => e.alive).concat(this.crates.filter((c) => c.alive));
+      const list = this.enemies.filter((e) => e.alive).concat(this.crates.filter((c) => c.alive));
+      const dummy = this.practice && this.practice.target();
+      return dummy ? list.concat([dummy]) : list;
     }
     spawn(p) { this.projectiles.push(p); }
     spawnGrenade(g) { this.grenades.push(g); }
@@ -300,7 +305,7 @@
     floorBelow(x, y) { return MG.floorBelow(this.platforms, this.groundY, x, y); }
     waterAt(x) { return MG.waterAt(this.water, x); }
     onHit(attacker, target, hit, result) {
-      if (result === 'hit' && !target.isProp && this.fighters.includes(attacker)) this.score += 10;
+      if (result === 'hit' && !target.isProp && !target.noScore && this.fighters.includes(attacker)) this.score += 10;
     }
     onEnemyKilled(e, hit) {
       this.score += e.d.score;
@@ -439,12 +444,15 @@
         if (this.state === 'play') slot.f.meter = Math.min(MG.SPECIAL_COST, slot.f.meter + dt * 3);
       }
       this.updateAllies(dt);
+      if (this.practice) this.practice.update(dt);
+      const waiting = !!(this.practice && this.practice.holds()); // pests wait while the players practise
       this.flashT = Math.max(0, this.flashT - dt);
       this.updateRevives(dt);
 
       for (const e of this.enemies) {
         if (e.alive && !e.aggro && (e.x < this.camX - 300 || e.x > this.camX + W + 300)) continue;
         if (e === this.boss && !this.bossAwake) continue;
+        e.waiting = waiting;
         e.update(dt, this, this.nearestFighter(e.x));
       }
       this.enemies = this.enemies.filter((e) => e.alive || e.dying > 0);
@@ -703,7 +711,7 @@
       this.fx.text(lead.x, lead.y - 160, 'BACK ON YOUR FEET!', '#ffd23f', 28);
     }
     goLevel(i) {
-      MG.Engine.setScene(new MG.CampaignScene({ level: i, net: this.net, players: this.currentPlayers() }));
+      MG.Engine.setScene(new MG.CampaignScene({ level: i, net: this.net, players: this.currentPlayers(), practice: true }));
     }
     restart() { this.goLevel(this.levelIndex); }
     backToLobby() {
@@ -754,7 +762,17 @@
       this.slots.forEach((s, i) => { players[i].below = strips.some((st) => st.fighter === s.f) || (MG.Touch.visible() && s.f === this.touchPlayer()); });
       const nextGate = this.gates.findIndex((g) => !g.opened);
       const g = nextGate >= 0 ? this.gates[nextGate] : null;
+      // the practice corner's coach board: the keys for each player on this computer
+      let practice = this.practice && this.state === 'play' ? this.practice.view() : null;
+      if (practice && practice.keys) {
+        const locals = this.slots.filter((sl) => sl.local);
+        practice = Object.assign({}, practice, {
+          keyNames: locals.length > 1 ? locals.map((sl) => practice.keys.map((a) => MG.Keys.label(sl.local === 'P2' ? 'P2' : 'P1', a)))
+            : [practice.keys.map((a) => UI.keyName(a))],
+        });
+      }
       return {
+        practice,
         t: this.t, coop: this.coop, players, score: this.score, mapName: this.L.name,
         net: this.net ? MG.Net.hudInfo() : null,
         progress: lead.x / this.goalX,
@@ -772,7 +790,7 @@
         crates: this.crates, pickups: this.pickups, enemies: this.enemies,
         players: this.slots.map((s) => s.f.renderState()).concat(this.allies.map((f) => f.renderState())),
         grenades: this.grenades, projectiles: this.projectiles, coins: this.coins, npcs: this.npcs,
-        goalOpen: !this.boss || !this.boss.alive, world: this,
+        goalOpen: !this.boss || !this.boss.alive, world: this, dummy: this.practice ? this.practice.dummy : null,
       });
       MG.CampaignHUD.draw(ctx, this.hudModel());
       MG.CampaignHUD.overlays(ctx, {
@@ -844,6 +862,7 @@
     if (v.goalOpen || vis(goalX)) A.finish(ctx, goalX + 60, v.groundY, v.t);
     for (const g of v.gates) if (vis(g.x)) A.gate(ctx, g.x, v.groundY, { open: g.lift, t: v.t, left: g.left });
     for (const c of v.crates) if (vis(c.x)) c.draw(ctx);
+    if (v.dummy && vis(v.dummy.x)) v.dummy.draw(ctx);
     for (const pk of v.pickups) if (vis(pk.x)) pk.draw(ctx);
     for (const n of v.npcs || []) if (n.kind !== 'croc' && vis(n.x)) n.draw(ctx, v.world);
     if (MG.Settings.contrast) {

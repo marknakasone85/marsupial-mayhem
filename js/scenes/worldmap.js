@@ -433,7 +433,7 @@
       const i = this.levelIndex(stop), L = MG.LEVELS[i];
       const go = () => {
         if (this.net) MG.Net.send({ t: 'start', mode: 'campaign', level: i }, 'all', true);
-        return new MG.CampaignScene({ level: i, net: this.net, players: this.players });
+        return new MG.CampaignScene({ level: i, net: this.net, players: this.players, practice: true });
       };
       // some maps have a story first (the betrayal on Grin Isle...)
       const seen = MG.Save.get('story', {}) || {};
