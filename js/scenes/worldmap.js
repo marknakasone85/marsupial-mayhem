@@ -250,7 +250,12 @@
     }
     draw(ctx) {
       MG.Story.drawPanel(ctx, this.id, this.page, this.t);
-      UI.text(ctx, MG.Touch.enabled ? 'Tap to continue' : 'Press any key to continue   (Esc skips the story)', W / 2, H - 14, 13, '#ffffff', 'center');
+      if (MG.Touch.enabled) UI.text(ctx, 'Tap to continue', W / 2, H - 14, 13, '#ffffff', 'center');
+      else {
+        // any key turns the page; Esc (on a keyboard) skips the rest of the story
+        const K = UI.menuKeys();
+        UI.keyBar(ctx, K.pad ? [[['A'], 'next (any button)']] : [[['Enter'], 'next (any key)'], '|', [['Esc'], 'skip the story']]);
+      }
     }
   };
 
@@ -559,19 +564,21 @@
       const top = this.net || this.guest ? 46 : 24;
       UI.outlineText(ctx, 'MARSUPIAL WORLD', 16, top, 22, '#ffd23f');
       const stop = this.stops[cur];
-      UI.panel(ctx, 16, H - 74, 470, 58);
+      const bar = !this.guest && !MG.Touch.enabled; // the key bar sits at the bottom left, under the stop's panel
+      const py = bar ? H - 112 : H - 74;
+      UI.panel(ctx, 16, py, 470, 58);
       if (stop === 'shop') {
-        UI.text(ctx, 'THE PLATYPUS\'S SHOP', 30, H - 56, 17, '#ffd23f');
-        UI.text(ctx, 'Weapons, armor and upgrades. Egg-layers can sell stuff!', 30, H - 32, 12, '#ffffff');
+        UI.text(ctx, 'THE PLATYPUS\'S SHOP', 30, py + 18, 17, '#ffd23f');
+        UI.text(ctx, 'Weapons, armor and upgrades. Egg-layers can sell stuff!', 30, py + 42, 12, '#ffffff');
       } else {
         const li = this.levelIndex(stop), L = MG.LEVELS[li];
         const world = MG.WORLDS.find((w) => w.levels.includes(stop));
         const label = `${world ? world.name : L.world}: ${L.name}`;
-        UI.text(ctx, label, 30, H - 56, label.length > 44 ? 13 : 15, '#ffd23f');
+        UI.text(ctx, label, 30, py + 18, label.length > 44 ? 13 : 15, '#ffd23f');
         const best = MG.Progress.best(stop);
         const info = !isOpen(cur) ? 'Locked: clear the map before it first.'
           : (isCleared(stop) ? '✓ Cleared' + (best ? `   Best score ${best}` : '') : 'Not cleared yet') + (L.boss && L.boss.type !== 'bigBuck' ? '   Boss: ' + MG.ENEMY_TYPES[L.boss.type].name : '');
-        UI.text(ctx, info, 30, H - 32, info.length > 60 ? 11 : 12, '#ffffff');
+        UI.text(ctx, info, 30, py + 42, info.length > 60 ? 11 : 12, '#ffffff');
       }
       if (!this.guest) {
         const r = this.playRect();
@@ -579,8 +586,11 @@
         ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, 14); ctx.fill();
         UI.text(ctx, stop === 'shop' ? 'SHOP' : 'PLAY ▶', r.x + r.w / 2, r.y + r.h / 2 + 1, 22, '#2b193d', 'center');
         this.drawShopButton(ctx);
-        const hint = MG.Touch.enabled ? 'Tap a stop to walk there, tap again (or PLAY) to go' : 'Arrows / A D: walk     Enter / F: go     B: shop     Esc: ' + (this.net ? 'lobby' : 'title screen');
-        UI.text(ctx, hint, W - 16, top, 12, '#ffffff', 'right');
+        if (bar) {
+          const K = UI.menuKeys();
+          UI.keyBar(ctx, [[K.leftRight, 'walk'], [K.ok, stop === 'shop' ? 'open the shop' : 'play'], [K.pad ? ['Y'] : ['B'], 'shop'], '|',
+            [K.back, this.net ? 'lobby' : 'title screen']], { x: 16, w: 470 });
+        } else UI.text(ctx, 'Tap a stop to walk there, tap again (or PLAY) to go', W - 16, top, 12, '#ffffff', 'right');
       } else {
         UI.outlineText(ctx, 'The host picks the next map...', W - 110, H - 46, 15, '#ffffff', 'center');
       }

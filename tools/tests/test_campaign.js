@@ -214,6 +214,61 @@ MG.Touch.isTouchDevice = true;
 check(!MG.stripOn(), '...while a phone or tablet can still switch them off');
 MG.Touch.isTouchDevice = wasTouch; MG.Touch.enabled = false; MG.Save.set('keyStrip', true);
 sc = fresh();
+
+// ---- the screens around the game get the same labelled key bar (the owner, 15 Nov 2026)
+function barOf(makeScene, setup) {
+  var bars = [], real = MG.UI.keyBar;
+  MG.UI.keyBar = function (c, items, opts) {
+    var r = real.apply(this, arguments);
+    bars.push({ labels: items.filter(function (it) { return Array.isArray(it); }).map(function (it) { return it[1]; }),
+      keys: items.filter(function (it) { return Array.isArray(it); }).map(function (it) { return it[0].join(' '); }), where: r, opts: opts || {} });
+    return r;
+  };
+  try {
+    MG.Engine.setScene(makeScene()); frames(3);
+    if (setup) setup(scene());
+    bars.length = 0; // only the frame drawn here
+    scene().draw(measured().ctx);
+  } finally { MG.UI.keyBar = real; }
+  return bars;
+}
+function barFits(b) { return b && b.where.x >= -0.5 && b.where.x + b.where.w <= 960.5; }
+var solo = [{ id: 0, cid: 'boomer', local: 'SOLO' }], duo = [{ id: 0, cid: 'boomer', local: 'P1' }, { id: 1, cid: 'tank', local: 'P2' }];
+Object.keys(MG.STORY).forEach(function (id) { MG.Story.markSeen(id); }); // (straight to the map, no story panels)
+var wm = barOf(function () { return new MG.WorldMapScene({ players: solo }); });
+check(wm.length === 1 && barFits(wm[0]) && ['walk', 'play', 'shop', 'title screen'].every(function (l) { return wm[0].labels.indexOf(l) >= 0; }) && wm[0].keys.indexOf('B') >= 0 && wm[0].opts.x === 16,
+  'world map: ← → walk, Enter play, B shop, Esc title screen (a box at the bottom left, under the stop\'s panel)');
+var shopB = barOf(function () { return new MG.ShopScene({ players: solo, fromMenu: true }); });
+check(shopB.length === 1 && barFits(shopB[0]) && ['buy', 'sell back'].every(function (l) { return shopB[0].labels.indexOf(l) >= 0; }) && shopB[0].keys.indexOf('X') >= 0, 'shop: look, Enter buy, X sell back, Esc');
+var selB = barOf(function () { return new MG.SelectScene({ mode: 'campaign' }); });
+check(selB.length === 1 && barFits(selB[0]) && selB[0].labels.indexOf('pick') >= 0 && selB[0].labels.indexOf('back') >= 0, 'character select: choose, Enter pick, Esc back');
+var coopB = barOf(function () { return new MG.SelectScene({ mode: 'coop' }); });
+check(coopB.length === 1 && barFits(coopB[0]) && coopB[0].keys.join('|') === 'W A S D|F|E|← ↑ ↓ →|,|.|Esc', 'two players picking: P1 W A S D, F pick, E change; P2 arrows, , pick, . change (the real keys)');
+var setB = barOf(function () { return new MG.SettingsScene({}); });
+var keysB = barOf(function () { return new MG.SettingsScene({}); }, function (st) { st.page = 'keys'; });
+var waitB = barOf(function () { return new MG.SettingsScene({}); }, function (st) { st.page = 'keys'; st.waiting = true; });
+check(setB.length === 1 && keysB.length === 1 && waitB.length === 1 && [setB, keysB, waitB].every(function (b) { return barFits(b[0]); }) && waitB[0].labels.indexOf('cancel') >= 0,
+  'Settings and its keys pages (and while waiting for a new key)');
+var lastKeyRow = new MG.SettingsScene({}).keyRect(MG.Keys.ACTIONS.length + 1);
+check(lastKeyRow.y + lastKeyRow.h <= 490, '...with every key row above the bar');
+var storyB = barOf(function () { return new MG.StoryScene({ id: 'opening', after: function () { return new MG.MenuScene(); } }); });
+check(storyB.length === 1 && barFits(storyB[0]) && storyB[0].labels.indexOf('skip the story') >= 0, 'story panels: Enter next (any key), Esc skips the story');
+var pauseB = barOf(function () { return new MG.CampaignScene({ charId: 'boomer', level: 0 }); }, function (c) { c.t = 6; c.pause(); });
+check(pauseB.length === 1 && pauseB[0].labels.join() === 'choose,OK,back to the game', 'the pause menu: choose, OK, Esc back to the game');
+var wonB = barOf(function () { return new MG.CampaignScene({ level: 0, net: true, players: [{ id: 0, cid: 'boomer', local: 'SOLO' }] }); }, function (c) { c.t = 6; c.win(); frames(1); });
+var lastBtn = scene().menu.rect(scene().menu.items.length - 1);
+check(wonB.length === 1 && scene().menu.items.length === 6 && lastBtn.y + lastBtn.h <= 490, 'Stage Clear (6 buttons on Wi-Fi): every button stays above the bar');
+MG.Net.leave && MG.Net.leave();
+var duelMenuB = barOf(function () { return new MG.DuelMenuScene(); });
+check(duelMenuB.length === 1 && barFits(duelMenuB[0]), 'the Tournament Duel menu');
+MG.Input.lastDevice = 'pad';
+var padB = barOf(function () { return new MG.WorldMapScene({ players: solo }); });
+MG.Input.lastDevice = 'wasd';
+check(padB[0].keys.indexOf('A') >= 0 && padB[0].keys.indexOf('Y') >= 0 && padB[0].keys.indexOf('B') >= 0, '...with a gamepad\'s buttons when one is in use');
+MG.Touch.enabled = true;
+var tapB = barOf(function () { return new MG.WorldMapScene({ players: solo }); }).concat(barOf(function () { return new MG.ShopScene({ players: solo, fromMenu: true }); }));
+MG.Touch.enabled = false;
+check(tapB.length === 0, 'phones and tablets keep their tap hints instead');
 MG.Touch.enabled = false;
 
 // 2 players on one keyboard: separate controls, shared screen, tougher pests, revive after 5 s

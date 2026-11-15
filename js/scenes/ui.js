@@ -235,6 +235,81 @@
       return where;
     },
 
+    // A labelled key bar for the screens around the game (world map, shop, character select, story,
+    // Settings, pause and other menus), with the same look as the key strip during play: each key with
+    // what it does written underneath.
+    //  items: [keys[], label] | '|' (a divider) | { tag, color } (starts a player's keys, e.g. 'P1')
+    //  opts: { x, w } for a box of that width from x (left-aligned); otherwise a band along the bottom.
+    // Returns { x, w, k } like keyStrip. Phones and tablets keep their tap hints instead (MG.Touch.enabled).
+    keyBar(ctx, items, opts = {}) {
+      const kfs = 14, lfs = 12, capH = 22, gap = 14, sep = 12, bandH = 44;
+      const kfont = `bold ${kfs}px ${FONT}`, lfont = `bold ${lfs}px ${FONT}`;
+      const textW = (str, f) => { ctx.font = f; return ctx.measureText(str).width; };
+      const capW = (k) => Math.max(capH, textW(k, kfont) + 12);
+      const parts = items.map((it) => {
+        if (it === '|') return { div: true, w: sep };
+        if (it && it.tag) return { tag: it.tag, color: it.color, w: textW(it.tag, kfont) + 10 };
+        const [keys, label] = it;
+        const kw = keys.reduce((a, k) => a + capW(k) + 3, 0) - 3;
+        return { keys, label, kw, w: Math.max(kw, textW(label, lfont)) };
+      });
+      const total = parts.reduce((a, m) => a + m.w, 0) + gap * Math.max(0, parts.filter((m) => !m.div).length - 1);
+      const room = (opts.w || MG.W) - 28;
+      const k = Math.min(1, room / total);
+      const H = MG.H, capY = H - 29, labY = H - 10;
+      let x = opts.x !== undefined ? opts.x + 14 : (MG.W - total * k) / 2;
+      ctx.save();
+      ctx.fillStyle = 'rgba(16,8,26,0.82)';
+      if (opts.x !== undefined) { ctx.beginPath(); ctx.roundRect(opts.x, H - bandH - 2, Math.min(opts.w, total * k + 28), bandH, 12); ctx.fill(); }
+      else { ctx.fillRect(0, H - bandH, MG.W, bandH); ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(0, H - bandH, MG.W, 2); }
+      const where = { x: x - 14 * k, w: (total + 28) * k, k };
+      ctx.translate(x, H); ctx.scale(k, k); ctx.translate(-x, -H);
+      parts.forEach((m, i) => {
+        if (m.div) {
+          ctx.fillStyle = 'rgba(255,255,255,0.22)';
+          ctx.fillRect(x + m.w / 2 - gap / 2 - 1, H - bandH + 8, 2, bandH - 14);
+          x += m.w;
+          return;
+        }
+        if (m.tag) UI.text(ctx, m.tag, x, H - bandH / 2, kfs, m.color || '#ffd23f');
+        else {
+          let kx = x + (m.w - m.kw) / 2;
+          for (const key of m.keys) {
+            const w = capW(key);
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.beginPath(); ctx.roundRect(kx, capY - capH / 2, w, capH, 5); ctx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(kx + 2, capY + capH / 2 - 3, w - 4, 2);
+            UI.text(ctx, key, kx + w / 2, capY + 0.5, kfs, '#2b193d', 'center');
+            kx += w + 3;
+          }
+          UI.text(ctx, m.label, x + m.w / 2, labY, lfs, '#ffffff', 'center');
+        }
+        x += m.w + (i < parts.length - 1 && !(parts[i + 1] && parts[i + 1].div) ? gap : 0);
+      });
+      ctx.restore();
+      return where;
+    },
+    // The usual menu keys, for the controls in use (keyboard or gamepad).
+    menuKeys() {
+      const pad = MG.Input.lastDevice === 'pad';
+      return {
+        pad,
+        upDown: pad ? ['▲', '▼'] : ['↑', '↓'],
+        leftRight: pad ? ['◀', '▶'] : ['←', '→'],
+        arrows: pad ? ['D-pad'] : ['←', '↑', '↓', '→'],
+        ok: pad ? ['A'] : ['Enter'],
+        back: pad ? ['B'] : ['Esc'],
+      };
+    },
+    // The bar for a plain list menu (pause, after a map, duel menus): choose, OK and, if given, Esc's job.
+    menuBar(ctx, escLabel) {
+      if (MG.Touch && MG.Touch.enabled) return null;
+      const K = UI.menuKeys();
+      const items = [[K.upDown, 'choose'], [K.ok, 'OK']];
+      if (escLabel) items.push('|', [K.pad && escLabel === 'back to the game' ? ['Start'] : K.back, escLabel]);
+      return UI.keyBar(ctx, items);
+    },
+
     // The pouch's saved item as a small icon (HUDs): a heart, or a power-up's colour and symbol.
     pouchItem(ctx, type, x, y, r = 8) {
       if (type === 'heart') { ctx.save(); ctx.translate(x, y + r * 1.1); ctx.scale(r / 16, r / 16); MG.Art.heart(ctx, 0, 0, 0); ctx.restore(); }

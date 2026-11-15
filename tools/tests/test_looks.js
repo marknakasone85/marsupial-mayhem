@@ -250,8 +250,9 @@ check(walk1[1][0] !== walk2[1][0] && stand1[1][0] === stand2[1][0] && stand1[3][
 // Wi-Fi: the squash goes in the update, trailing zeros don't
 var snap0 = JSON.parse(JSON.stringify(MG.Sync.snapshot(sc)));
 check(snap0.en.length > 0 && snap0.en.every(function (a) { return a.length <= 7 || a[a.length - 1]; }), 'pests in Wi-Fi updates: zeros at the end are left off (smaller updates)');
-var other = sc.enemies.filter(function (e) { return e.alive && e !== pest; })[0];
-other.landT = other.t; other.landV = 700; other.hurtAt = -9;
+var other = sc.enemies.filter(function (e) { return e.alive && e !== pest && !e.hidden; })[0];
+// (standing on the ground: a pest caught mid-hop would add its stretch to the landing squash)
+other.onGround = true; other.vy = 0; other.hurt = 0; other.landT = other.t; other.landV = 700; other.hurtAt = -9;
 var snap1 = JSON.parse(JSON.stringify(MG.Sync.snapshot(sc)));
 var row = snap1.en.filter(function (a) { return a[0] === other.uid; })[0];
 check(row && row.length === 14 && row[13] < -15 && row[13] === Math.round(row[13]), 'a landing pest\'s squash goes to Wi-Fi friends (field 13, in hundredths: ' + (row && row[13]) + ')');

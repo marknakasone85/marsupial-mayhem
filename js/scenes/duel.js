@@ -518,7 +518,7 @@
       }
       if (this.showControls) { UI.fade(ctx, 0.6); UI.controlsPanel(ctx); return; }
       if (this.state === 'paused') { UI.fade(ctx, 0.55); UI.outlineText(ctx, 'PAUSED', W / 2, 140, 44, '#ffd23f', 'center'); }
-      if (this.menu && (this.state === 'paused' || this.stateT > 0.8)) this.menu.draw(ctx);
+      if (this.menu && (this.state === 'paused' || this.stateT > 0.8)) { this.menu.draw(ctx); UI.menuBar(ctx, this.state === 'paused' ? 'back to the game' : null); }
     }
   };
 

@@ -650,7 +650,9 @@
       items.push({ label: 'Play Again', act: () => this.restart() });
       if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
       items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
-      this.menu = new MG.MenuList(items, W / 2, 330, { w: 320, h: 30, gap: 5, fontSize: 18 });
+      // (the last button stays above the key bar at the bottom)
+      const n = items.length, bh = n > 5 ? 28 : 30, gap = n > 5 ? 4 : 5;
+      this.menu = new MG.MenuList(items, W / 2, Math.min(330, 490 - (n * bh + (n - 1) * gap)), { w: 320, h: bh, gap, fontSize: 18 });
     }
 
     // Back to the Marsupial World map (same players). Story panels play there.
@@ -797,7 +799,7 @@
         state: this.state, stateT: this.stateT, t: this.t, L: this.L, score: this.score,
         hpBonus: this.hpBonus, newBest: this.newBest, coop: this.coop, showControls: this.showControls, joeyGrew: this.joeyGrew, coinLine: this.coinLine,
       });
-      if (this.menu && !this.showControls) this.menu.draw(ctx);
+      if (this.menu && !this.showControls) { this.menu.draw(ctx); UI.menuBar(ctx, this.state === 'paused' ? 'back to the game' : null); }
       MG.drawScreenFlash(ctx, this.flashT / (this.flashMax || 1));
     }
   };

@@ -169,6 +169,7 @@
           UI.text(ctx, 'The battle keeps going for everyone else!', W / 2, 166, 15, '#dddddd', 'center');
         }
         this.menu.draw(ctx);
+        UI.menuBar(ctx, this.ended ? null : 'back to the game');
       }
     }
   };

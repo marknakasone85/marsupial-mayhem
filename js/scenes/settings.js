@@ -40,7 +40,7 @@
     enter() { MG.Audio.playMusic('title'); }
     back() { MG.Engine.setScene(this.opts.back ? this.opts.back() : new MG.MenuScene()); }
     rect(i) { return { x: W / 2 - 230, y: 74 + i * 35, w: 460, h: 31 }; }
-    keyRect(i) { return { x: W / 2 - 230, y: 86 + i * 33, w: 460, h: 29 }; }
+    keyRect(i) { return { x: W / 2 - 230, y: 82 + i * 30, w: 460, h: 27 }; } // (room for the key bar under them)
 
     update(dt) {
       this.t += dt;
@@ -101,7 +101,11 @@
         const label = typeof it.label === 'function' ? it.label() : it.label;
         UI.text(ctx, (it.change ? '◀  ' : '') + label + (it.change ? '  ▶' : ''), r.x + r.w / 2, r.y + r.h / 2 + 1, 17, on ? '#2b193d' : '#ffffff', 'center');
       });
-      UI.text(ctx, MG.Touch.enabled ? 'Tap a setting to change it (tap its left side to go back a step).' : '↑ ↓ choose   ← → or Enter change   Esc back', W / 2, H - 16, 13, '#9bf6ff', 'center');
+      if (MG.Touch.enabled) UI.text(ctx, 'Tap a setting to change it (tap its left side to go back a step).', W / 2, H - 16, 13, '#9bf6ff', 'center');
+      else {
+        const K = UI.menuKeys();
+        UI.keyBar(ctx, [[K.upDown, 'choose'], [K.leftRight, 'change'], [K.ok, 'change / open'], '|', [K.back, 'back']]);
+      }
     }
     drawKeys(ctx) {
       const A = MG.Keys.ACTIONS, p = this.player;
@@ -114,9 +118,10 @@
         UI.text(ctx, name, r.x + 16, r.y + r.h / 2 + 1, 16, on ? '#2b193d' : '#ffffff');
         if (key) UI.text(ctx, this.waiting && on ? 'press a key...' : key, r.x + r.w - 16, r.y + r.h / 2 + 1, 16, on ? '#2b193d' : '#ffd23f', 'right');
       });
-      const hint = this.waiting ? 'Press the new key (Esc cancels). If another action had it, they swap.' : '↑ ↓ choose   Enter: change the key   Esc back   (gamepads and touch buttons stay the same)';
-      UI.text(ctx, hint, W / 2, H - 16, 13, '#9bf6ff', 'center');
-      if (this.msgT > 0) UI.outlineText(ctx, this.msg, W / 2, 74, 16, '#9ef01a', 'center');
+      if (this.waiting) UI.keyBar(ctx, [[['any key'], 'the new key (if another action had it, they swap)'], '|', [['Esc'], 'cancel']]);
+      else UI.keyBar(ctx, [[['↑', '↓'], 'choose'], [['Enter'], 'change the key'], '|', [['Esc'], 'back']]);
+      if (!this.waiting) UI.text(ctx, 'Gamepads and touch buttons stay the same.', W / 2, H - 56, 12, '#bbbbbb', 'center');
+      if (this.msgT > 0) UI.outlineText(ctx, this.msg, W / 2, 70, 16, '#9ef01a', 'center');
     }
   };
 })();

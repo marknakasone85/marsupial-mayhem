@@ -244,18 +244,22 @@
         // the picks so far, then the menu
         this.drawDetails(ctx, true);
         this.menu.draw(ctx);
-        UI.text(ctx, 'Arrows + Enter, or click / tap.   Esc = back', W / 2, H - 14, 13, '#9bf6ff', 'center');
+        if (MG.Touch.enabled) UI.text(ctx, 'Tap to choose.', W / 2, H - 14, 13, '#9bf6ff', 'center');
+        else UI.menuBar(ctx, 'back');
         UI.backButton(ctx);
         return;
       }
       for (let i = 0; i < COUNT; i++) this.drawTile(ctx, i);
       this.drawDetails(ctx, false);
       if (this.hint) UI.outlineText(ctx, this.hint, W / 2, 312, 16, '#ff4d6d', 'center');
-      const help = this.twoPickers
-        ? 'P1: W A S D + F to pick, G to change     P2: arrows + , or Enter, . to change     Esc = back'
-        : this.phase === 'cpuChar' ? 'Pick who you\'ll fight: arrows + Enter, or click / tap.   Esc = back'
-        : 'Arrows + Enter, or click / tap a marsupial.   Esc = back';
-      UI.text(ctx, help, W / 2, H - 12, 13, '#9bf6ff', 'center');
+      if (MG.Touch.enabled) UI.text(ctx, this.phase === 'cpuChar' ? 'Tap who you\'ll fight.' : 'Tap a marsupial to pick it.', W / 2, H - 12, 13, '#9bf6ff', 'center');
+      else {
+        const K = UI.menuKeys();
+        UI.keyBar(ctx, this.twoPickers
+          ? [{ tag: 'P1', color: MG.PLAYER_COLORS[0] }, [['W', 'A', 'S', 'D'], 'choose'], [['F'], 'pick'], [['E'], 'change'], '|',
+            { tag: 'P2', color: MG.PLAYER_COLORS[1] }, [['←', '↑', '↓', '→'], 'choose'], [[','], 'pick'], [['.'], 'change'], '|', [['Esc'], 'back']]
+          : [[K.arrows, 'choose'], [K.ok, this.phase === 'cpuChar' ? 'pick who you fight' : 'pick'], '|', [K.back, 'back']]);
+      }
       UI.backButton(ctx);
     }
 
@@ -289,7 +293,7 @@
     }
 
     drawDetails(ctx, compact) {
-      const y = compact ? 330 : 318, h = compact ? 170 : 190;
+      const y = compact ? 326 : 314, h = compact ? 162 : 178; // (room for the key bar under it)
       const showTwo = this.twoPickers || this.mode === 'duelCpu' && (this.phase !== 'char');
       const pick = (p) => (this.isSecret(this.cur[p]) ? null : this.defAt(this.cur[p]));
       if (!showTwo) {
@@ -340,8 +344,9 @@
       UI.outlineText(ctx, 'TOURNAMENT DUEL', W / 2, 90, 50, '#ffd23f', 'center');
       UI.text(ctx, 'The fight for marsupial supremacy! First to win 2 rounds.', W / 2, 140, 17, '#ffffff', 'center');
       this.menu.draw(ctx);
-      UI.text(ctx, 'Fair fights: everyone starts equal. Grab the pickups that drop onto the stage!', W / 2, H - 40, 14, '#9bf6ff', 'center');
-      UI.text(ctx, 'Wi-Fi battles for 2-4 players: WI-FI on the title screen.', W / 2, H - 20, 13, '#cccccc', 'center');
+      UI.text(ctx, 'Fair fights: everyone starts equal. Grab the pickups that drop onto the stage!', W / 2, H - 82, 14, '#9bf6ff', 'center');
+      UI.text(ctx, 'Wi-Fi battles for 2-4 players: WI-FI on the title screen.', W / 2, H - 62, 13, '#cccccc', 'center');
+      UI.menuBar(ctx, 'title screen');
       UI.backButton(ctx);
     }
   };

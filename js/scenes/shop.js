@@ -374,12 +374,15 @@
       this.cardsShown().forEach((cd, i) => this.drawWallet(ctx, cd, i));
       this.drawPlay(ctx);
       const ex = this.exitLabel();
-      const hint = MG.Touch.enabled
-        ? 'Tap a tab, then an item. Tap BUY under your coins to buy it, SELL to sell it back for half.  ' + ex + ' when you\'re done.'
-        : this.shoppers.length > 1
-        ? 'P1: W A S D move, F buy, X sell     P2: arrows move, , buy, . sell     Up from the top row: the tabs'
-        : 'Arrows / W A S D: look (up at the top row picks a tab)    F / Enter: buy    X: sell back    Esc: ' + ex;
-      UI.text(ctx, hint, W / 2, H - 16, 12.5, '#9bf6ff', 'center');
+      if (MG.Touch.enabled) UI.text(ctx, 'Tap a tab, then an item. Tap BUY under your coins to buy it, SELL to sell it back for half.  ' + ex + ' when you\'re done.', W / 2, H - 16, 12.5, '#9bf6ff', 'center');
+      else {
+        // (up from the top row of items picks a section tab)
+        const K = UI.menuKeys(), done = [K.pad ? ['Start'] : ['Esc'], ex.toLowerCase()];
+        UI.keyBar(ctx, this.shoppers.length > 1
+          ? [{ tag: 'P1', color: MG.PLAYER_COLORS[0] }, [['W', 'A', 'S', 'D'], 'look'], [['F'], 'buy'], [['X'], 'sell back'], '|',
+            { tag: 'P2', color: MG.PLAYER_COLORS[1] }, [['←', '↑', '↓', '→'], 'look'], [[','], 'buy'], [['.'], 'sell back'], '|', done]
+          : [[K.arrows, 'look (up: the tabs)'], [K.ok, 'buy'], [K.pad ? ['Y'] : ['X'], 'sell back'], '|', done]);
+      }
       if (MG.Net.lost && (this.net || this.guest)) UI.outlineText(ctx, 'Connection lost - reconnecting...', W / 2, 30, 18, '#ff4d6d', 'center');
     }
 
