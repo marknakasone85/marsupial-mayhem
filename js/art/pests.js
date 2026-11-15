@@ -1,7 +1,10 @@
 // The pests: rabbits (and Big Buck), feral cats, feral pigs, plus the long grass cats hide in.
-// Facing right, feet at (0, 0). o: { t, facing, scale, flash, air, crouch, charging, colors }
+// Facing right, feet at (0, 0). o: { t, facing, scale, flash, air, crouch, charging, moving, colors,
+// sq (squash and stretch from MG.Enemy: + stretched in the air, - squashed on landing; MG.Enemy.draw
+// does the scaling, the art only adds follow-through: ears and tails) }
 (function () {
   const A = MG.Art;
+  const U = MG.U;
   const LINE = '#2b1a14';
   const white = (o, col) => (o.flash ? '#ffffff' : col);
 
@@ -69,13 +72,16 @@
     A.oval(ctx, 4, -11 + crouch * 3, 8, 7, 0, white(o, c.belly));
     A.oval(ctx, air ? 16 : 10, air ? -10 : -3, 4.5, 3, 0, white(o, c.dark), LINE, 1.4);
     if (o.warlord) warlordCape(ctx, o, crouch);
-    // head and long ears (flattened back mid-hop)
+    // head and long ears (flattened back mid-hop, swept further back in a stretch, flopping forward
+    // when it lands with a thud); each ear swings from its base on the head
     const hx = 12, hy = -25 + crouch * 4;
-    const earTilt = air ? -0.9 : -0.35;
-    A.oval(ctx, hx - 7, hy - 13, 3.8, 11.5, earTilt, white(o, c.fur), LINE, 1.6);
-    A.oval(ctx, hx - 7, hy - 12, 1.6, 8, earTilt, white(o, c.ear));
-    A.oval(ctx, hx - 2, hy - 14, 3.8, 11.5, earTilt + 0.25, white(o, c.fur), LINE, 1.6);
-    A.oval(ctx, hx - 2, hy - 13, 1.6, 8, earTilt + 0.25, white(o, c.ear));
+    const sq = o.sq || 0;
+    const earTilt = U.clamp((air ? -0.9 : -0.35) - Math.max(0, sq) * 2 - Math.min(0, sq) * 4.5, -1.3, 0.7);
+    for (const [bx, by, da] of [[hx - 3.06, hy - 2.2, 0], [hx - 0.85, hy - 2.56, 0.25]]) {
+      const a = earTilt + da, sx = Math.sin(a), cy = Math.cos(a);
+      A.oval(ctx, bx + sx * 11.5, by - cy * 11.5, 3.8, 11.5, a, white(o, c.fur), LINE, 1.6);
+      A.oval(ctx, bx + sx * 10.5, by - cy * 10.5, 1.6, 8, a, white(o, c.ear));
+    }
     A.oval(ctx, hx, hy, 9.5, 8.5, 0, white(o, c.fur), LINE, 2);
     // angry eye, pink nose, buck teeth, whiskers
     A.oval(ctx, hx + 3, hy - 2, 2.8, 3, 0, '#ffffff', LINE, 1);
@@ -142,19 +148,25 @@
     ctx.scale((o.facing || 1) * s, s);
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    // tail (flicks while crouching)
+    // tail (flicks while crouching; streams out behind in a leap, whips up when it lands)
     ctx.fillStyle = white(o, c.fur);
     ctx.strokeStyle = LINE;
     ctx.lineWidth = 1.8;
+    const sq = o.sq || 0;
     const flick = o.crouch ? Math.sin(t * 14) * 6 : Math.sin(t * 2) * 3;
-    A.taper(ctx, -24, -22 + low, -40, -26 + low, -42 + flick, -44 + low, 7, 4);
+    const trail = Math.max(0, sq), whip = Math.min(0, sq);
+    A.taper(ctx, -24, -22 + low, -40 - trail * 30, -26 + low + trail * 20, -42 + flick - trail * 70, -44 + low + trail * 110 + whip * 50, 7, 4);
     ctx.fill(); ctx.stroke();
-    // legs: stretched out in a pounce, tucked when crouching
+    // legs: stretched out in a pounce, tucked when crouching, a slinking walk when it moves
+    // (diagonal pairs together: back-left with front-right)
+    const walk = o.moving && !air && !o.crouch ? 1 : 0;
     const legs = air ? [[-18, -14, -34, -6], [-12, -14, -26, -4], [16, -18, 34, -12], [20, -16, 38, -6]]
       : [[-18, -12, -19, 0], [-12, -12, -11, 0], [14, -12, 13, 0], [20, -12, 21, 0]];
     legs.forEach(([x0, y0, x1, y1], i) => {
+      const ph = t * 11 + (i === 0 || i === 3 ? 0 : Math.PI);
+      const fx = walk * Math.sin(ph) * 6, fy = walk * -Math.max(0, Math.cos(ph)) * 4;
       ctx.fillStyle = white(o, i % 2 ? c.fur : c.stripe);
-      A.taper(ctx, x0, y0 + low, (x0 + x1) / 2, (y0 + y1) / 2 + low * 0.5, x1, y1 + (air ? 0 : low * 0.1), 7, 5);
+      A.taper(ctx, x0, y0 + low, (x0 + x1 + fx) / 2, (y0 + y1 + fy) / 2 + low * 0.5, x1 + fx, y1 + fy + (air ? 0 : low * 0.1), 7, 5);
       ctx.fill(); ctx.stroke();
     });
     // body with tabby stripes

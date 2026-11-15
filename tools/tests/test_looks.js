@@ -196,5 +196,127 @@ drawS({ pose: 'hurt', vx: -600 }); drawS({ pose: 'walk', vx: 300, tea: 1 });
 MG.Art.speedLines = realL;
 check(walking === 0 && lines === 2, 'speed lines when flying back from a hit or dashing (and with Billy Tea), not when walking');
 
+// ---- livelier pests (15 Nov 2026): squash and stretch, ears, tails and a cat's walk
+var stub = { groundY: MG.GROUND_Y, platforms: [], fighters: [], fx: { shake: noop, ring: noop, burst: noop, text: noop, gore: noop, splat: noop }, spawn: noop };
+function hop(type, vy) {
+  // a real hop through the pest's own physics: the most stretch in the air, the deepest squash on landing
+  var e = new MG.Enemy(type, 300, MG.GROUND_Y - 1, { hidden: false }), air = 0, land = 0, end = 0;
+  e.onGround = false; e.vy = vy;
+  for (var i = 0; i < 150; i++) {
+    e.t += 1 / 60; e.physics(1 / 60, stub);
+    var q = e.squash();
+    if (!e.onGround) air = Math.max(air, q); else land = Math.min(land, q);
+    end = q;
+  }
+  return { air: air, land: land, end: end, e: e };
+}
+var rh = hop('rabbit', -340), bh = hop('bigBuck', -980);
+check(rh.air > 0.05 && rh.land < -0.08 && Math.abs(rh.end) < 0.01, 'a rabbit\'s hop: stretched in the air (' + rh.air.toFixed(2) + '), squashed on landing (' + rh.land.toFixed(2) + '), then back to normal');
+check(bh.land < rh.land - 0.05, 'a bigger drop, a bigger squash (Big Buck landing from his leap: ' + bh.land.toFixed(2) + ')');
+MG.Engine.setScene(new MG.CampaignScene({ charId: 'boomer', level: 0 })); sc = scene(); frames(3);
+var pest = sc.enemies.filter(function (e) { return e.type === 'rabbit' && e.alive; })[0];
+pest.t = 9; pest.landT = -9; pest.onGround = true; pest.vy = 0;
+var calm = pest.squash();
+pest.takeHit({ dmg: 1, kbx: 0, kby: 0, dir: 1, from: sc.player }, sc);
+check(calm === 0 && pest.squash() < -0.08, 'standing still: no squash; a hit makes a pest wobble');
+var hid = new MG.Enemy('cat', 300); hid.landT = hid.t;
+var dead = hop('rabbit', -340).e; dead.landT = dead.t; dead.alive = false;
+check(hid.hidden && hid.squash() === 0 && dead.squash() === 0, 'a cat hiding in the grass and a knocked-out pest don\'t squash');
+var seenSq = null, realRabbit = MG.Art.rabbit;
+MG.Art.rabbit = function (ctx, x, y, o) { seenSq = o.sq; return realRabbit.apply(this, arguments); };
+pest.t = 20; pest.hurtAt = -9; pest.landT = 20; pest.landV = 700;
+r = recCtx(); pest.draw(r.ctx, sc);
+MG.Art.rabbit = realRabbit;
+var wide = r.log.some(function (x) { return x[0] === 'scale' && x[1] > 1.05 && x[2] < 0.9; });
+check(seenSq < -0.15 && wide, 'a landing pest is drawn wider and flatter around its feet, and the art is told (sq ' + seenSq + ')');
+pest.landT = -9;
+r = recCtx(); pest.draw(r.ctx, sc);
+check(!r.log.some(function (x) { return x[0] === 'scale' && Math.abs(Math.abs(x[1]) - Math.abs(x[2])) > 0.001; }), '...and a pest standing still isn\'t squashed at all');
+// follow-through in the art
+var ears = [], realOval = MG.Art.oval;
+MG.Art.oval = function (ctx, x, y, rx, ry, rot) { if (rx === 3.8 && ry === 11.5) ears.push(rot); return realOval.apply(this, arguments); };
+function earsAt(o) { ears = []; MG.Art.rabbit(recCtx().ctx, 0, 0, o); return ears[0]; }
+var earStand = earsAt({ t: 1 }), earFly = earsAt({ t: 1, air: true, sq: 0.1 }), earThud = earsAt({ t: 1, sq: -0.15 });
+MG.Art.oval = realOval;
+check(earFly < -0.95 && earThud > earStand + 0.4, 'rabbit ears: swept back in a hop (' + earFly.toFixed(2) + '), flopping forward on a thud (' + earThud.toFixed(2) + ')');
+var tapers = [], realTaper = MG.Art.taper;
+MG.Art.taper = function (ctx, x0, y0, x1, y1, x2, y2) { tapers.push([x2, y2]); return realTaper.apply(this, arguments); };
+function catAt(o) { tapers = []; MG.Art.cat(recCtx().ctx, 0, 0, o); return tapers.slice(); }
+var tailStill = catAt({ t: 0 })[0], tailLeap = catAt({ t: 0, air: true, sq: 0.1 })[0], tailThud = catAt({ t: 0, sq: -0.15 })[0];
+var walk1 = catAt({ t: 0, moving: true }), walk2 = catAt({ t: 0.15, moving: true }), stand1 = catAt({ t: 0 }), stand2 = catAt({ t: 0.15 });
+MG.Art.taper = realTaper;
+check(tailLeap[0] < tailStill[0] - 3 && tailLeap[1] > tailStill[1] + 5 && tailThud[1] < tailStill[1] - 4, 'a cat\'s tail streams out behind in a leap and whips up when it lands');
+check(walk1[1][0] !== walk2[1][0] && stand1[1][0] === stand2[1][0] && stand1[3][0] === stand2[3][0], 'a cat walks on its legs (they stood still before), and stands still when it stops');
+// Wi-Fi: the squash goes in the update, trailing zeros don't
+var snap0 = JSON.parse(JSON.stringify(MG.Sync.snapshot(sc)));
+check(snap0.en.length > 0 && snap0.en.every(function (a) { return a.length <= 7 || a[a.length - 1]; }), 'pests in Wi-Fi updates: zeros at the end are left off (smaller updates)');
+var other = sc.enemies.filter(function (e) { return e.alive && e !== pest; })[0];
+other.landT = other.t; other.landV = 700; other.hurtAt = -9;
+var snap1 = JSON.parse(JSON.stringify(MG.Sync.snapshot(sc)));
+var row = snap1.en.filter(function (a) { return a[0] === other.uid; })[0];
+check(row && row.length === 14 && row[13] < -15 && row[13] === Math.round(row[13]), 'a landing pest\'s squash goes to Wi-Fi friends (field 13, in hundredths: ' + (row && row[13]) + ')');
+MG.Net.id = 1;
+var guest = new MG.RemoteScene({ level: 0 }), gErr = null, gWide = false;
+try {
+  guest.onNet(snap1); guest.update(1 / 30);
+  var ge = guest.enemies.get(other.uid);
+  r = recCtx(); ge.draw(r.ctx, guest);
+  gWide = ge.remoteSq < -0.15 && r.log.some(function (x) { return x[0] === 'scale' && x[1] > 1.05 && x[2] < 0.9; });
+  guest.draw(recCtx().ctx);
+  snap1.n += 1; snap1.en.forEach(function (a) { if (a[0] === other.uid) a[2] += 4; });
+  guest.onNet(snap1);
+} catch (e) { gErr = '' + e; }
+check(!gErr && gWide, 'a friend\'s screen draws the squash too' + (gErr ? ': ' + gErr : ''));
+check(!gErr && Math.abs(guest.enemies.get(other.uid).vx) > 10 && guest.enemies.get(pest.uid).vx === 0, '...and knows which pests are walking (a cat\'s legs, a pig\'s trot)');
+MG.Net.id = 0; MG.Net.onMessage = null;
+
+// ---- more detail in the ground
+var gThemes = Object.keys(themes);
+var noGround = gThemes.filter(function (th) { return !MG.GROUND_DETAIL[th]; });
+check(noGround.length === 0, 'every world has ground detail (' + gThemes.length + ' worlds)' + (noGround.length ? ': missing ' + noGround.join(', ') : ''));
+// a context that checks every number it's given
+function numCtx() {
+  var bad = [], paints = 0, ells = [];
+  var ctx = new Proxy({}, {
+    get: function (t, p) {
+      if (p in t) return t[p];
+      if (p === 'createLinearGradient' || p === 'createRadialGradient') return function () { return { addColorStop: noop }; };
+      return function () {
+        for (var i = 0; i < arguments.length; i++) if (typeof arguments[i] === 'number' && !isFinite(arguments[i])) bad.push(p);
+        if (p === 'fill' || p === 'stroke' || p === 'fillRect') paints++;
+        if (p === 'ellipse') ells.push(Math.round(arguments[0] * 10) / 10);
+      };
+    },
+    set: function (t, p, v) { t[p] = v; return true; },
+  });
+  return { ctx: ctx, bad: bad, paints: function () { return paints; }, ells: ells };
+}
+var gBad = [], gMost = 0, gEmpty = [];
+gThemes.forEach(function (th) {
+  [0, 777.5, 5321].forEach(function (cx) {
+    [false, true].forEach(function (sunset) {
+      var n = numCtx();
+      MG.Art.groundDetail(n.ctx, th, cx, MG.GROUND_Y, 3.3, sunset);
+      if (n.bad.length) gBad.push(th + ' ' + n.bad[0]);
+      if (!n.paints()) gEmpty.push(th);
+      gMost = Math.max(gMost, n.paints());
+    });
+  });
+});
+check(gBad.length === 0 && gEmpty.length === 0, 'each world\'s ground detail draws, with no broken numbers' + (gBad.length ? ': ' + gBad.slice(0, 3).join(', ') : '') + (gEmpty.length ? '; nothing in ' + gEmpty.join(', ') : ''));
+check(gMost <= 12, 'cheap: batched into a few fills and strokes a frame (at most ' + gMost + ')');
+var o1 = numCtx(), o2 = numCtx();
+MG.Art.groundDetail(o1.ctx, 'outback', 500, MG.GROUND_Y, 0); MG.Art.groundDetail(o2.ctx, 'outback', 600, MG.GROUND_Y, 0);
+var inView = o1.ells.filter(function (x) { return x > 200 && x < 700; });
+check(inView.length > 5 && inView.every(function (x) { return o2.ells.indexOf(Math.round((x - 100) * 10) / 10) >= 0; }), 'pebbles and tracks scroll with the ground (' + inView.length + ' checked)');
+var og = MG.GROUND_DETAIL.outback;
+check(og.stones && og.cracks && og.tufts && og.strata && og.tracks, 'the Outback\'s red dirt: pebbles, cracks, tufts, layers and kangaroo tracks');
+var gCalls = 0, realGD = MG.Art.groundDetail;
+MG.Art.groundDetail = function () { gCalls++; return realGD.apply(this, arguments); };
+MG.Engine.setScene(new MG.CampaignScene({ charId: 'boomer', level: 4 })); frames(2); var inMaps = gCalls;
+MG.Engine.setScene(new MG.DuelScene({ players: [{ id: 0, cid: 'boomer', local: 'P1' }, { id: 1, cid: 'tank', cpu: 1 }], stage: 0 })); frames(2);
+MG.Art.groundDetail = realGD;
+check(inMaps > 0 && gCalls > inMaps, 'the maps and the duel stages draw it');
+
 fresh();
 done('looks');

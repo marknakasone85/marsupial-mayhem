@@ -810,6 +810,7 @@
     ctx.save();
     v.fx.camera(ctx, v.camX);
     A.background(ctx, v.camX, v.t, v.groundY, v.L.sky, theme);
+    if (A.groundDetail) A.groundDetail(ctx, theme, v.camX, v.groundY, v.t, v.L.sky === 'sunset');
     const lit = { theme, sunset: v.L.sky === 'sunset', camX: v.camX, t: v.t, groundY: v.groundY };
     if (MG.Light) MG.Light.back(ctx, lit);
     ctx.save();
