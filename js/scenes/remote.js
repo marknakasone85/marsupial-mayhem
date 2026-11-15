@@ -85,13 +85,15 @@
       for (const id of Object.keys(this.players)) if (!seen.has(+id)) delete this.players[id];
 
       const ids = new Set();
-      for (const [uid, type, x, y, facing, fl, alive, spin, dizzy, et, vf, pn, pa] of m.en || []) {
+      for (const [uid, type, x, y, facing, fl, alive, spin, dizzy, et, vf, pn, pa, sq] of m.en || []) {
         if (!has(MG.ENEMY_TYPES, type)) continue;
         ids.add(uid);
         let e = this.enemies.get(uid);
         if (!e) { e = new MG.Enemy(type, x, y); this.enemies.set(uid, e); }
-        Object.assign(e, { tx: x, ty: y, facing, flash: fl ? 0.1 : 0, alive: !!alive, spin, hurt: dizzy ? 0.6 : 0, t: et, remoteFlags: vf || 0, hidden: !!(vf & 4),
-          remotePose: typeof pn === 'string' ? [pn, pa || 1] : null });
+        // vx only says whether it's walking (a cat's legs, a pig's trot): from how far it moved since the last update
+        const vx = e.tx !== undefined ? (x - e.tx) * 30 : 0;
+        Object.assign(e, { tx: x, ty: y, vx, facing, flash: fl ? 0.1 : 0, alive: !!alive, spin: spin || 0, hurt: dizzy ? 0.6 : 0, t: et || 0, remoteFlags: vf || 0, hidden: !!(vf & 4),
+          remotePose: typeof pn === 'string' ? [pn, pa || 1] : null, remoteSq: (+sq || 0) / 100 });
       }
       for (const uid of [...this.enemies.keys()]) if (!ids.has(uid)) this.enemies.delete(uid);
 

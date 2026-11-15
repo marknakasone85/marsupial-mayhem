@@ -100,6 +100,7 @@
 - **The title screen's line-up:** Boomer and the power characters at the front left, Benny, Drowsy and Bins at the front right, the fast ones at the back. The quokka on the mesa grins for about 2 seconds in every 11 (a hint, not a spoiler: the Smile Squad are friends at the start).
 - **Light and haze is on by default**, with a Settings switch, and switches itself off on slow devices unless the player chose ON.
 - **Livelier movement** has no switch: it's subtle (at most a quarter squash), costs almost nothing, and works the same for Wi-Fi friends (the host sends the squash amount and the falling speed).
+- **Pests and ground (15 Nov 2026):** pests squash and stretch like the heroes (a bit less wobble for bosses when hit), with no switch either. The ground detail adds to each world's own ground rather than replacing it, most in the Outback and least where there was already a lot; it's always on (about 10 batched fills a frame), so it isn't part of the "Light and haze" switch.
 
 ## Chosen after a player's feedback (15 Nov 2026; the owner asked for both)
 

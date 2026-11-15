@@ -22,6 +22,16 @@
   let depth = 0; // only record the outermost call (e.g. hitText calls text internally)
 
   const S = (MG.Sync = {
+    // One pest for the campaign snapshot: [uid, type, x, y, facing, flash, alive, spin, dizzy, t, pose bits,
+    // pose name, pose amount, squash in hundredths]. Zeros at the end are left off (most pests have no
+    // pose and stand still), so a guest reads a missing field as 0.
+    enemyState(e) {
+      const p = e.pose();
+      const a = [e.uid, e.type, r1(e.x), r1(e.y), e.facing, e.flash > 0 ? 1 : 0, e.alive ? 1 : 0,
+        r2(e.spin), e.hurt > 0.5 ? 1 : 0, r2(e.t), e.visualFlags(), p ? p[0] : 0, p ? r2(p[1]) : 0, Math.round(e.squash() * 100)];
+      while (a.length > 7 && !a[a.length - 1]) a.pop();
+      return a;
+    },
     compact,
     // short names for things sent many times a second
     projState(p) {
@@ -113,8 +123,7 @@
             wpn: f.weapon ? f.weapon.id : 0, amx: f.weapon ? f.weapon.max : 0, co: sl.earned || 0, cn: scene.coinsOf(sl),
           }));
         }),
-        en: scene.enemies.map((e) => { const p = e.pose(); return [e.uid, e.type, r1(e.x), r1(e.y), e.facing, e.flash > 0 ? 1 : 0, e.alive ? 1 : 0,
-          r2(e.spin), e.hurt > 0.5 ? 1 : 0, r2(e.t), e.visualFlags(), p ? p[0] : 0, p ? r2(p[1]) : 0]; }),
+        en: scene.enemies.map(S.enemyState),
         al: (scene.allies || []).map((f) => compact(Object.assign(f.renderState(), { id: 100 + scene.allies.indexOf(f) }))),
         fl: scene.flashT > 0 ? r2(scene.flashT / (scene.flashMax || 1)) : 0,
         cr: scene.crates.map((c) => [c.alive ? 1 : 0, r2(c.wobble), c.flash > 0 ? 1 : 0]),

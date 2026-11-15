@@ -125,6 +125,7 @@
       this.hidden = d.behavior === 'ambusher' && opts.hidden !== false && !d.visible;
       this.offset = U.rand(-36, 36); // swarmers spread out around their target
       this.zone = 0;
+      this.landT = -9; this.landV = 0; this.hurtAt = -9; // for squash and stretch
     }
 
     get box() { return { x: this.x - this.d.w / 2, y: this.y - this.d.h, w: this.d.w, h: this.d.h }; }
@@ -163,6 +164,7 @@
       }
       this.hp -= hit.dmg;
       this.flash = 0.1;
+      this.hurtAt = this.t;
       const w = this.d.weight || 1;
       if (this.isBoss) {
         // the boss shrugs off small hits (no knockback), big ones push it a little
@@ -281,6 +283,7 @@
       this.vy += GRAV * dt;
       this.x += this.vx * dt;
       this.y += this.vy * dt;
+      const fallV = this.vy;
       const was = this.onGround;
       this.onGround = false;
       if (this.y >= world.groundY) { this.y = world.groundY; this.vy = 0; this.onGround = true; }
@@ -289,7 +292,7 @@
           if (prevY <= p.y + 1 && this.y >= p.y && this.x > p.x && this.x < p.x + p.w) { this.y = p.y; this.vy = 0; this.onGround = true; break; }
         }
       }
-      if (this.onGround && !was) this.onLand(world);
+      if (this.onGround && !was) { this.landT = this.t; this.landV = fallV; this.onLand(world); }
       const b = world.enemyBounds ? world.enemyBounds(this) : null;
       if (b) this.x = U.clamp(this.x, b.min, b.max);
       for (const w of world.walls ? world.walls() : []) {
@@ -781,6 +784,20 @@
       return true;
     }
 
+    // Squash and stretch (like MG.Fighter.squash): + stretches tall, - squashes flat. Stretched in
+    // the air, a squash and a rebound on landing (bigger after a bigger drop), a wobble when hit.
+    // Sent to Wi-Fi friends as enemy field 13.
+    squash() {
+      if (!this.alive || this.hidden || this.clinging || this.burrowed || this.lurking) return 0;
+      let k = 0;
+      if (!this.onGround) k = Math.min(0.14, Math.abs(this.vy) / 4000);
+      const land = this.t - this.landT;
+      if (land >= 0 && land < 0.24) { const u = land / 0.24; k -= 0.22 * U.clamp(this.landV / 700, 0.3, 1) * (1 - u) * Math.cos(u * Math.PI * 1.4); }
+      const hurt = this.t - this.hurtAt;
+      if (hurt >= 0 && hurt < 0.3) { const u = hurt / 0.3; k -= (this.isBoss ? 0.08 : 0.14) * (1 - u) * Math.cos(u * Math.PI * 2.2); }
+      return U.clamp(k, -0.24, 0.18);
+    }
+
     // Pose bits for drawing (and for Wi-Fi guests later): 1 crouching, 2 charging, 4 hidden, 8 in the air.
     visualFlags() {
       const s = this.state;
@@ -824,8 +841,11 @@
         ctx.rotate(this.spin);
         ctx.translate(-this.x, -(this.y - d.h / 2));
       }
+      // squash and stretch around the feet (the host's number on Wi-Fi guests)
+      const sq = this.remoteSq !== undefined ? this.remoteSq : this.squash();
+      if (sq) { ctx.translate(this.x, this.y); ctx.scale(1 - sq * 0.6, 1 + sq); ctx.translate(-this.x, -this.y); }
       const o = {
-        t: this.t, facing: this.facing, flash: this.flash > 0, scale: d.scale || 1, colors: d.colors, bandana: d.bandana,
+        t: this.t, facing: this.facing, flash: this.flash > 0, scale: d.scale || 1, colors: d.colors, bandana: d.bandana, sq,
         crouch: !!(vf & 1), charging: !!(vf & 2), air: !!(vf & 8), moving: Math.abs(this.vx) > 10,
         warlord: d.warlord, bigTom: d.bigTom, crown: d.crown,
         roxy: d.roxy, emperor: d.emperor, captain: d.captain, spottedTail: d.spottedTail, champ: d.champ, evil: d.evil, hypno: d.hypno && this.alive,

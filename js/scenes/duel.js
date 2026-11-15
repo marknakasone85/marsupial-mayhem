@@ -528,6 +528,7 @@
     ctx.save();
     v.fx.camera(ctx, 0);
     MG.Art.background(ctx, 0, v.t, v.groundY, v.stage.sky);
+    if (MG.Art.groundDetail) MG.Art.groundDetail(ctx, 'outback', 0, v.groundY, v.t, v.stage.sky === 'sunset');
     const lit = { theme: 'outback', sunset: v.stage.sky === 'sunset', camX: 0, t: v.t, groundY: v.groundY };
     if (MG.Light) MG.Light.back(ctx, lit);
     ctx.save();

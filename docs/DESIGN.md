@@ -211,7 +211,9 @@ The owner asked for better graphics that keep the game small. Everything stays d
   - follow-through: ears sweep back when running, flop forward on landing and trail when jumping; tails droop as the body rises and lift as it falls
   - motion smears as a blow lands: streaks behind the fist for a straight punch, a swoosh arc for haymakers, swipes and slaps, a low arc for kicks and tail sweeps, a full circle for the spin kick, streaks behind the head for bites and headbutts (shoves and hugs don't smear)
   - speed lines behind anything moving very fast: dashes, sprints, and flying back from a big hit
-- Still to do, if the owner wants: more detailed ground in the first maps, the same squash and stretch for pests, and backgrounds drawn once and reused.
+- **Livelier pests** (the owner's go-ahead, 15 Nov 2026): every pest and boss gets the same squash and stretch: stretched in a hop or leap, squashed flat on landing with a rebound (Big Buck flattens when he lands from his leap), and a wobble when hit. Rabbits' ears sweep back in a hop and flop forward on landing, a cat's tail streams out behind in a pounce and whips up when it lands, and cats now walk on their legs (they used to glide). Wi-Fi friends see it all too.
+- **More detail in the ground** (`MG.Art.groundDetail`, `js/art/ground.js`), drawn just after each world's background: a soft shadow under the lit top edge, pebbles that catch the light, cracks in dry ground, little tufts of grass along the edge, wavy layers of soil, and kangaroo tracks in the Outback's red dirt. Worlds whose ground already had a lot (the City's kerb, the snow, the lair) get a little; the Outback, where everyone starts and duels happen, gets the most. Batched into at most about 10 fills and strokes a frame.
+- Still to do, if the owner wants: backgrounds drawn once and reused.
 
 ## Content guardrails
 
